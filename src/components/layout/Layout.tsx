@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, Home, Printer, Settings, Users, BarChart2, Bell } from "lucide-react";
+import { Menu, X, Home, Printer, Settings, Users as UsersIcon, BarChart2, Bell } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface LayoutProps {
@@ -12,13 +12,13 @@ interface LayoutProps {
 const sidebarLinks = [
   { path: "/", label: "Dashboard", icon: Home },
   { path: "/printers", label: "Printers", icon: Printer },
-  { path: "/users", label: "Users", icon: Users },
+  { path: "/users", label: "Users", icon: UsersIcon },
   { path: "/analytics", label: "Analytics", icon: BarChart2 },
   { path: "/settings", label: "Settings", icon: Settings },
 ];
 
 const Layout = ({ children }: LayoutProps) => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true); // Set to true by default
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
 
@@ -37,12 +37,30 @@ const Layout = ({ children }: LayoutProps) => {
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
-  // Close sidebar when route changes on mobile
+  // Only close sidebar on mobile when route changes
   useEffect(() => {
     if (window.innerWidth < 1024) {
       setIsSidebarOpen(false);
     }
   }, [location.pathname]);
+
+  // Set sidebar state based on screen size on initial load
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 1024) {
+        setIsSidebarOpen(true);
+      } else {
+        setIsSidebarOpen(false);
+      }
+    };
+
+    // Run once on mount
+    handleResize();
+
+    // Add listener for window resize
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Page transition variants
   const pageVariants = {
@@ -55,7 +73,7 @@ const Layout = ({ children }: LayoutProps) => {
     <div className="flex h-screen overflow-hidden bg-background">
       {/* Sidebar backdrop for mobile */}
       <AnimatePresence>
-        {isSidebarOpen && (
+        {isSidebarOpen && window.innerWidth < 1024 && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -70,7 +88,7 @@ const Layout = ({ children }: LayoutProps) => {
       {/* Sidebar */}
       <motion.aside
         className={cn(
-          "fixed inset-y-0 left-0 z-30 w-72 bg-white/90 backdrop-blur-lg border-r border-border/40 shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:shadow-none",
+          "fixed inset-y-0 left-0 z-30 w-72 bg-white/90 backdrop-blur-lg border-r border-border/40 shadow-lg transform transition-transform duration-300 ease-in-out lg:static lg:shadow-none",
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
         animate={{ x: isSidebarOpen ? 0 : -288 }}
@@ -160,7 +178,7 @@ const Layout = ({ children }: LayoutProps) => {
           <div className="flex items-center justify-between p-4 lg:px-6">
             <button 
               onClick={toggleSidebar}
-              className="lg:hidden p-2 rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+              className="p-2 rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
             >
               <Menu size={20} />
             </button>
@@ -172,7 +190,7 @@ const Layout = ({ children }: LayoutProps) => {
               </button>
               
               <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                <Users size={16} className="text-primary" />
+                <UsersIcon size={16} className="text-primary" />
               </div>
             </div>
           </div>
