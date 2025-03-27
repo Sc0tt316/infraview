@@ -88,10 +88,13 @@ const Layout = ({ children }: LayoutProps) => {
       {/* Sidebar */}
       <motion.aside
         className={cn(
-          "fixed inset-y-0 left-0 z-30 w-72 bg-white/90 backdrop-blur-lg border-r border-border/40 shadow-lg transform transition-transform duration-300 ease-in-out lg:static lg:shadow-none",
-          isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+          "fixed inset-y-0 left-0 z-30 w-72 bg-white/90 backdrop-blur-lg border-r border-border/40 shadow-lg transform transition-transform duration-300 ease-in-out lg:relative lg:shadow-none",
+          isSidebarOpen ? "translate-x-0" : "-translate-x-full lg:w-0 lg:opacity-0"
         )}
-        animate={{ x: isSidebarOpen ? 0 : -288 }}
+        animate={{ 
+          x: isSidebarOpen ? 0 : -288,
+          width: isSidebarOpen ? 288 : 0
+        }}
         transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
       >
         <div className="flex flex-col h-full">
@@ -167,7 +170,10 @@ const Layout = ({ children }: LayoutProps) => {
       </motion.aside>
 
       {/* Main content */}
-      <div className="relative flex flex-col flex-1 overflow-y-auto">
+      <div className={cn(
+        "relative flex flex-col flex-1 overflow-y-auto transition-all duration-300",
+        !isSidebarOpen && "lg:w-full"
+      )}>
         {/* Header */}
         <header 
           className={cn(
