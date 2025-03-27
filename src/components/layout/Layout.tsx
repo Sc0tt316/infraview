@@ -155,7 +155,7 @@ const Layout = ({ children }: LayoutProps) => {
           <div className="mt-auto p-4 border-t border-border/40">
             <div className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-accent transition-colors">
               <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                <Users size={16} className="text-primary" />
+                <UsersIcon size={16} className="text-primary" />
               </div>
               <div className="flex-1">
                 <p className="text-sm font-medium">Admin User</p>
