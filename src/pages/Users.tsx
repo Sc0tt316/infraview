@@ -1,86 +1,194 @@
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { User, Users as UsersIcon, UserPlus, Search, Filter, MoreHorizontal, Mail, Phone, Shield, ShieldAlert, ShieldCheck } from "lucide-react";
+import { 
+  User, Users as UsersIcon, UserPlus, Search, Filter, MoreHorizontal, 
+  Mail, Phone, Shield, ShieldAlert, ShieldCheck, Edit, Trash2, RefreshCw, 
+  Check, X, AlertTriangle
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { userService, UserData } from "@/services/userService";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
-
-interface UserData {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  role: "admin" | "user" | "manager";
-  department: string;
-  status: "active" | "inactive";
-  lastActive: string;
-  avatar?: string;
-}
-
-const MOCK_USERS: UserData[] = [
-  {
-    id: "u1",
-    name: "Alex Johnson",
-    email: "alex.johnson@printerverse.com",
-    phone: "+1 (555) 123-4567",
-    role: "admin",
-    department: "IT",
-    status: "active",
-    lastActive: "2 minutes ago",
-  },
-  {
-    id: "u2",
-    name: "Sarah Miller",
-    email: "sarah.miller@printerverse.com",
-    phone: "+1 (555) 234-5678",
-    role: "user",
-    department: "Marketing",
-    status: "active",
-    lastActive: "1 hour ago",
-  },
-  {
-    id: "u3",
-    name: "Michael Chen",
-    email: "michael.chen@printerverse.com",
-    phone: "+1 (555) 345-6789",
-    role: "manager",
-    department: "Operations",
-    status: "inactive",
-    lastActive: "3 days ago",
-  },
-  {
-    id: "u4",
-    name: "Emily Rodriguez",
-    email: "emily.rodriguez@printerverse.com",
-    phone: "+1 (555) 456-7890",
-    role: "user",
-    department: "HR",
-    status: "active",
-    lastActive: "4 hours ago",
-  },
-  {
-    id: "u5",
-    name: "James Wilson",
-    email: "james.wilson@printerverse.com",
-    phone: "+1 (555) 567-8901",
-    role: "manager",
-    department: "Finance",
-    status: "active",
-    lastActive: "Yesterday",
-  },
-];
 
 const Users = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTab, setSelectedTab] = useState("all");
   const [showAddDialog, setShowAddDialog] = useState(false);
-
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    department: "",
+    role: "user"
+  });
+  
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  
+  // Fetch users with React Query
+  const { data: users = [], isLoading, isError, refetch } = useQuery({
+    queryKey: ['users'],
+    queryFn: userService.getAllUsers
+  });
+  
+  // Add user mutation
+  const addUserMutation = useMutation({
+    mutationFn: (data: Omit<UserData, 'id' | 'lastActive'>) => 
+      userService.addUser(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      setShowAddDialog(false);
+      resetForm();
+    }
+  });
+  
+  // Update user mutation
+  const updateUserMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<UserData> }) => 
+      userService.updateUser(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      setShowEditDialog(false);
+      setSelectedUser(null);
+      resetForm();
+    }
+  });
+  
+  // Delete user mutation
+  const deleteUserMutation = useMutation({
+    mutationFn: (id: string) => userService.deleteUser(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+    }
+  });
+  
+  // Change user status mutation
+  const changeStatusMutation = useMutation({
+    mutationFn: ({ id, status }: { id: string; status: UserData['status'] }) => 
+      userService.changeStatus(id, status),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+    }
+  });
+  
+  // Handle form input changes
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+  
+  // Handle select changes
+  const handleSelectChange = (name: string, value: string) => {
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+  
+  // Reset form data
+  const resetForm = () => {
+    setFormData({
+      name: "",
+      email: "",
+      phone: "",
+      department: "",
+      role: "user"
+    });
+    setIsSubmitting(false);
+  };
+  
+  // Handle add user submission
+  const handleAddUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    
+    const { name, email, phone, department, role } = formData;
+    
+    if (!name || !email || !department) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields.",
+        variant: "destructive"
+      });
+      setIsSubmitting(false);
+      return;
+    }
+    
+    const newUser = {
+      name,
+      email,
+      phone,
+      department,
+      role: role as UserData['role'],
+      status: "active" as const
+    };
+    
+    addUserMutation.mutate(newUser);
+  };
+  
+  // Handle edit user submission
+  const handleEditUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!selectedUser) return;
+    setIsSubmitting(true);
+    
+    const { name, email, phone, department, role } = formData;
+    
+    if (!name || !email || !department) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields.",
+        variant: "destructive"
+      });
+      setIsSubmitting(false);
+      return;
+    }
+    
+    updateUserMutation.mutate({
+      id: selectedUser.id,
+      data: { name, email, phone, department, role: role as UserData['role'] }
+    });
+  };
+  
+  // Open edit dialog with selected user data
+  const openEditDialog = (user: UserData) => {
+    setSelectedUser(user);
+    setFormData({
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      department: user.department,
+      role: user.role
+    });
+    setShowEditDialog(true);
+  };
+  
+  // Handle delete user
+  const handleDeleteUser = (id: string) => {
+    if (window.confirm("Are you sure you want to delete this user?")) {
+      deleteUserMutation.mutate(id);
+    }
+  };
+  
+  // Handle status change
+  const handleStatusChange = (id: string, status: UserData['status']) => {
+    changeStatusMutation.mutate({ id, status });
+  };
+  
+  // Get filtered users based on search and tabs
   const getFilteredUsers = () => {
-    let filtered = MOCK_USERS;
+    let filtered = users;
     
     if (searchQuery) {
       filtered = filtered.filter(user => 
@@ -101,7 +209,7 @@ const Users = () => {
     
     return filtered;
   };
-
+  
   const getRoleBadge = (role: UserData["role"]) => {
     switch (role) {
       case "admin":
@@ -127,13 +235,13 @@ const Users = () => {
         );
     }
   };
-
+  
   const getStatusColor = (status: UserData["status"]) => {
     return status === "active" 
       ? "text-green-600" 
       : "text-gray-600";
   };
-
+  
   const getInitials = (name: string) => {
     return name
       .split(" ")
@@ -141,7 +249,7 @@ const Users = () => {
       .join("")
       .toUpperCase();
   };
-
+  
   const staggerVariants = {
     hidden: { opacity: 0 },
     show: {
@@ -151,7 +259,7 @@ const Users = () => {
       },
     },
   };
-
+  
   const itemVariants = {
     hidden: { opacity: 0, y: 20 },
     show: { 
@@ -164,7 +272,7 @@ const Users = () => {
       }
     },
   };
-
+  
   const filteredUsers = getFilteredUsers();
 
   return (
@@ -175,49 +283,173 @@ const Users = () => {
           <p className="text-muted-foreground mt-1">Manage user access and permissions</p>
         </div>
         
-        <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-          <DialogTrigger asChild>
-            <Button className="gap-2">
-              <UserPlus size={16} />
-              <span>Add User</span>
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-lg">
-            <DialogHeader>
-              <DialogTitle>Add New User</DialogTitle>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <label htmlFor="name" className="text-sm font-medium">Full Name</label>
-                <Input id="name" placeholder="Enter full name" />
-              </div>
-              <div className="grid gap-2">
-                <label htmlFor="email" className="text-sm font-medium">Email</label>
-                <Input id="email" type="email" placeholder="Enter email address" />
-              </div>
-              <div className="grid gap-2">
-                <label htmlFor="phone" className="text-sm font-medium">Phone</label>
-                <Input id="phone" placeholder="Enter phone number" />
-              </div>
-              <div className="grid gap-2">
-                <label htmlFor="department" className="text-sm font-medium">Department</label>
-                <Input id="department" placeholder="Enter department" />
-              </div>
-              <div className="grid gap-2">
-                <label htmlFor="role" className="text-sm font-medium">Role</label>
-                <select id="role" className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
-                  <option value="user">User</option>
-                  <option value="manager">Manager</option>
-                  <option value="admin">Admin</option>
-                </select>
-              </div>
-            </div>
-            <div className="flex justify-end gap-3">
-              <Button variant="outline" onClick={() => setShowAddDialog(false)}>Cancel</Button>
-              <Button onClick={() => setShowAddDialog(false)}>Add User</Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="icon" 
+            onClick={() => refetch()} 
+            className="h-10 w-10"
+            disabled={isLoading}
+          >
+            <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
+          </Button>
+          
+          <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+            <DialogTrigger asChild>
+              <Button className="gap-2">
+                <UserPlus size={16} />
+                <span>Add User</span>
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-lg">
+              <DialogHeader>
+                <DialogTitle>Add New User</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleAddUser}>
+                <div className="grid gap-4 py-4">
+                  <div className="grid gap-2">
+                    <label htmlFor="name" className="text-sm font-medium">Full Name*</label>
+                    <Input 
+                      id="name" 
+                      name="name"
+                      value={formData.name}
+                      onChange={handleInputChange}
+                      placeholder="Enter full name" 
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <label htmlFor="email" className="text-sm font-medium">Email*</label>
+                    <Input 
+                      id="email" 
+                      name="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      placeholder="Enter email address" 
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <label htmlFor="phone" className="text-sm font-medium">Phone</label>
+                    <Input 
+                      id="phone" 
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleInputChange}
+                      placeholder="Enter phone number" 
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <label htmlFor="department" className="text-sm font-medium">Department*</label>
+                    <Input 
+                      id="department" 
+                      name="department"
+                      value={formData.department}
+                      onChange={handleInputChange}
+                      placeholder="Enter department" 
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <label htmlFor="role" className="text-sm font-medium">Role*</label>
+                    <Select 
+                      value={formData.role} 
+                      onValueChange={(value) => handleSelectChange('role', value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="user">User</SelectItem>
+                        <SelectItem value="manager">Manager</SelectItem>
+                        <SelectItem value="admin">Admin</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button type="button" variant="outline" onClick={() => setShowAddDialog(false)}>Cancel</Button>
+                  <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? 'Adding...' : 'Add User'}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+          
+          <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+            <DialogContent className="sm:max-w-lg">
+              <DialogHeader>
+                <DialogTitle>Edit User</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleEditUser}>
+                <div className="grid gap-4 py-4">
+                  <div className="grid gap-2">
+                    <label htmlFor="edit-name" className="text-sm font-medium">Full Name*</label>
+                    <Input 
+                      id="edit-name" 
+                      name="name"
+                      value={formData.name}
+                      onChange={handleInputChange}
+                      placeholder="Enter full name" 
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <label htmlFor="edit-email" className="text-sm font-medium">Email*</label>
+                    <Input 
+                      id="edit-email" 
+                      name="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      placeholder="Enter email address" 
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <label htmlFor="edit-phone" className="text-sm font-medium">Phone</label>
+                    <Input 
+                      id="edit-phone" 
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleInputChange}
+                      placeholder="Enter phone number" 
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <label htmlFor="edit-department" className="text-sm font-medium">Department*</label>
+                    <Input 
+                      id="edit-department" 
+                      name="department"
+                      value={formData.department}
+                      onChange={handleInputChange}
+                      placeholder="Enter department" 
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <label htmlFor="edit-role" className="text-sm font-medium">Role*</label>
+                    <Select 
+                      value={formData.role} 
+                      onValueChange={(value) => handleSelectChange('role', value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="user">User</SelectItem>
+                        <SelectItem value="manager">Manager</SelectItem>
+                        <SelectItem value="admin">Admin</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button type="button" variant="outline" onClick={() => setShowEditDialog(false)}>Cancel</Button>
+                  <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? 'Saving...' : 'Save Changes'}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -248,74 +480,142 @@ const Users = () => {
         </div>
       </div>
 
-      <motion.div 
-        className="space-y-4"
-        variants={staggerVariants}
-        initial="hidden"
-        animate="show"
-      >
-        {filteredUsers.map((user) => (
-          <motion.div
-            key={user.id}
-            variants={itemVariants}
-            whileHover={{ y: -2, transition: { duration: 0.2 } }}
-            className="bg-white border border-border/40 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden p-4"
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <Avatar className="h-12 w-12 border border-border">
-                  <AvatarImage src={user.avatar} alt={user.name} />
-                  <AvatarFallback className="bg-primary/10 text-primary">
-                    {getInitials(user.name)}
-                  </AvatarFallback>
-                </Avatar>
-                
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-medium text-foreground">{user.name}</h3>
-                    <span className={cn("text-xs", getStatusColor(user.status))}>
-                      •
-                    </span>
+      {isLoading ? (
+        <div className="flex items-center justify-center h-64">
+          <RefreshCw className="h-8 w-8 animate-spin text-primary/70" />
+        </div>
+      ) : isError ? (
+        <Alert variant="destructive" className="my-4">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            Failed to load users. Please try again.
+            <Button variant="outline" size="sm" className="ml-2" onClick={() => refetch()}>
+              Retry
+            </Button>
+          </AlertDescription>
+        </Alert>
+      ) : filteredUsers.length > 0 ? (
+        <motion.div 
+          className="space-y-4"
+          variants={staggerVariants}
+          initial="hidden"
+          animate="show"
+        >
+          {filteredUsers.map((user) => (
+            <motion.div
+              key={user.id}
+              variants={itemVariants}
+              whileHover={{ y: -2, transition: { duration: 0.2 } }}
+              className="bg-white border border-border/40 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden p-4"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <Avatar className="h-12 w-12 border border-border">
+                    <AvatarImage src={user.avatar} alt={user.name} />
+                    <AvatarFallback className="bg-primary/10 text-primary">
+                      {getInitials(user.name)}
+                    </AvatarFallback>
+                  </Avatar>
+                  
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-medium text-foreground">{user.name}</h3>
+                      <span className={cn("text-xs", getStatusColor(user.status))}>
+                        •
+                      </span>
+                    </div>
+                    <p className="text-sm text-muted-foreground">{user.department}</p>
                   </div>
-                  <p className="text-sm text-muted-foreground">{user.department}</p>
+                </div>
+                
+                <div className="hidden md:flex items-center gap-6">
+                  <div className="flex items-center gap-2">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm">{user.email}</span>
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    <Phone className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm">{user.phone}</span>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3">
+                  {getRoleBadge(user.role)}
+                  
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => openEditDialog(user)}>
+                        <Edit className="mr-2 h-4 w-4" />
+                        <span>Edit</span>
+                      </DropdownMenuItem>
+                      
+                      {user.status === "inactive" && (
+                        <DropdownMenuItem onClick={() => handleStatusChange(user.id, "active")}>
+                          <Check className="mr-2 h-4 w-4 text-green-600" />
+                          <span>Set active</span>
+                        </DropdownMenuItem>
+                      )}
+                      
+                      {user.status === "active" && (
+                        <DropdownMenuItem onClick={() => handleStatusChange(user.id, "inactive")}>
+                          <X className="mr-2 h-4 w-4 text-gray-600" />
+                          <span>Set inactive</span>
+                        </DropdownMenuItem>
+                      )}
+                      
+                      <DropdownMenuItem 
+                        className="text-red-600" 
+                        onClick={() => handleDeleteUser(user.id)}
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        <span>Delete</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
               
-              <div className="hidden md:flex items-center gap-6">
+              <div className="md:hidden mt-3 space-y-1 text-sm">
                 <div className="flex items-center gap-2">
                   <Mail className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">{user.email}</span>
+                  <span>{user.email}</span>
                 </div>
                 
                 <div className="flex items-center gap-2">
                   <Phone className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">{user.phone}</span>
+                  <span>{user.phone}</span>
                 </div>
               </div>
-              
-              <div className="flex items-center gap-3">
-                {getRoleBadge(user.role)}
-                
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-            
-            <div className="md:hidden mt-3 space-y-1 text-sm">
-              <div className="flex items-center gap-2">
-                <Mail className="h-4 w-4 text-muted-foreground" />
-                <span>{user.email}</span>
-              </div>
-              
-              <div className="flex items-center gap-2">
-                <Phone className="h-4 w-4 text-muted-foreground" />
-                <span>{user.phone}</span>
-              </div>
-            </div>
-          </motion.div>
-        ))}
-      </motion.div>
+            </motion.div>
+          ))}
+        </motion.div>
+      ) : (
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+            <AlertTriangle className="h-8 w-8 text-muted-foreground" />
+          </div>
+          <h3 className="text-lg font-medium">No users found</h3>
+          <p className="text-muted-foreground mt-1 max-w-md">
+            No users match your search criteria. Try changing your search or filters.
+          </p>
+          <Button 
+            variant="outline"
+            className="mt-4"
+            onClick={() => {
+              setSearchQuery("");
+              setSelectedTab("all");
+            }}
+          >
+            Clear filters
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

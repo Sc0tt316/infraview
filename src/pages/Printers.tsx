@@ -1,92 +1,182 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Printer, Plus, Search, Filter, MoreHorizontal, AlertTriangle } from "lucide-react";
+import { Printer, Plus, Search, Filter, MoreHorizontal, AlertTriangle, RefreshCw, Trash2, Edit, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { useToast } from "@/hooks/use-toast";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
-
-interface PrinterData {
-  id: string;
-  name: string;
-  model: string;
-  location: string;
-  status: "online" | "offline" | "error" | "maintenance";
-  inkLevel: number;
-  paperLevel: number;
-  jobCount: number;
-  lastActive: string;
-}
-
-const MOCK_PRINTERS: PrinterData[] = [
-  {
-    id: "p1",
-    name: "Office Printer 1",
-    model: "HP LaserJet Pro",
-    location: "First Floor",
-    status: "online",
-    inkLevel: 75,
-    paperLevel: 30,
-    jobCount: 145,
-    lastActive: "2 minutes ago",
-  },
-  {
-    id: "p2",
-    name: "Executive Printer",
-    model: "Canon PIXMA",
-    location: "Executive Suite",
-    status: "offline",
-    inkLevel: 20,
-    paperLevel: 60,
-    jobCount: 89,
-    lastActive: "2 days ago",
-  },
-  {
-    id: "p3",
-    name: "Marketing Printer",
-    model: "Epson WorkForce Pro",
-    location: "Marketing Department",
-    status: "error",
-    inkLevel: 5,
-    paperLevel: 75,
-    jobCount: 254,
-    lastActive: "5 minutes ago",
-  },
-  {
-    id: "p4",
-    name: "Conference Room Printer",
-    model: "Brother MFC",
-    location: "Main Conference Room",
-    status: "maintenance",
-    inkLevel: 50,
-    paperLevel: 100,
-    jobCount: 67,
-    lastActive: "1 hour ago",
-  },
-  {
-    id: "p5",
-    name: "Accounting Printer",
-    model: "Xerox VersaLink",
-    location: "Accounting Department",
-    status: "online",
-    inkLevel: 90,
-    paperLevel: 85,
-    jobCount: 321,
-    lastActive: "15 minutes ago",
-  },
-];
+import { printerService, PrinterData } from "@/services/printerService";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 const Printers = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTab, setSelectedTab] = useState("all");
   const [showAddDialog, setShowAddDialog] = useState(false);
-
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedPrinter, setSelectedPrinter] = useState<PrinterData | null>(null);
+  const [formData, setFormData] = useState({
+    name: "",
+    model: "",
+    location: "",
+    ipAddress: ""
+  });
+  
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  
+  // Fetch printers with React Query
+  const { data: printers = [], isLoading, isError, refetch } = useQuery({
+    queryKey: ['printers'],
+    queryFn: printerService.getAllPrinters
+  });
+  
+  // Add printer mutation
+  const addPrinterMutation = useMutation({
+    mutationFn: (data: Omit<PrinterData, 'id' | 'jobCount' | 'lastActive'>) => 
+      printerService.addPrinter(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['printers'] });
+      setShowAddDialog(false);
+      resetForm();
+    }
+  });
+  
+  // Update printer mutation
+  const updatePrinterMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<PrinterData> }) => 
+      printerService.updatePrinter(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['printers'] });
+      setShowEditDialog(false);
+      setSelectedPrinter(null);
+      resetForm();
+    }
+  });
+  
+  // Delete printer mutation
+  const deletePrinterMutation = useMutation({
+    mutationFn: (id: string) => printerService.deletePrinter(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['printers'] });
+    }
+  });
+  
+  // Change printer status mutation
+  const changeStatusMutation = useMutation({
+    mutationFn: ({ id, status }: { id: string; status: PrinterData['status'] }) => 
+      printerService.changeStatus(id, status),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['printers'] });
+    }
+  });
+  
+  // Handle form input changes
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+  
+  // Reset form data
+  const resetForm = () => {
+    setFormData({
+      name: "",
+      model: "",
+      location: "",
+      ipAddress: ""
+    });
+    setIsSubmitting(false);
+  };
+  
+  // Handle add printer submission
+  const handleAddPrinter = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    
+    const { name, model, location, ipAddress } = formData;
+    
+    if (!name || !model || !location) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields.",
+        variant: "destructive"
+      });
+      setIsSubmitting(false);
+      return;
+    }
+    
+    const newPrinter = {
+      name,
+      model, 
+      location,
+      ipAddress,
+      status: "offline" as const,
+      inkLevel: 100,
+      paperLevel: 100
+    };
+    
+    addPrinterMutation.mutate(newPrinter);
+  };
+  
+  // Handle edit printer submission
+  const handleEditPrinter = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!selectedPrinter) return;
+    setIsSubmitting(true);
+    
+    const { name, model, location, ipAddress } = formData;
+    
+    if (!name || !model || !location) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields.",
+        variant: "destructive"
+      });
+      setIsSubmitting(false);
+      return;
+    }
+    
+    updatePrinterMutation.mutate({
+      id: selectedPrinter.id,
+      data: { name, model, location, ipAddress }
+    });
+  };
+  
+  // Open edit dialog with selected printer data
+  const openEditDialog = (printer: PrinterData) => {
+    setSelectedPrinter(printer);
+    setFormData({
+      name: printer.name,
+      model: printer.model,
+      location: printer.location,
+      ipAddress: printer.ipAddress || ""
+    });
+    setShowEditDialog(true);
+  };
+  
+  // Handle delete printer
+  const handleDeletePrinter = (id: string) => {
+    if (window.confirm("Are you sure you want to delete this printer?")) {
+      deletePrinterMutation.mutate(id);
+    }
+  };
+  
+  // Handle status change
+  const handleStatusChange = (id: string, status: PrinterData['status']) => {
+    changeStatusMutation.mutate({ id, status });
+  };
+  
+  // Filter printers based on search and tabs
   const getFilteredPrinters = () => {
-    let filtered = MOCK_PRINTERS;
+    let filtered = printers;
     
     if (searchQuery) {
       filtered = filtered.filter(printer => 
@@ -102,7 +192,7 @@ const Printers = () => {
     
     return filtered;
   };
-
+  
   const getStatusColor = (status: PrinterData["status"]) => {
     switch (status) {
       case "online": return "bg-green-100 text-green-700 border-green-200";
@@ -112,7 +202,7 @@ const Printers = () => {
       default: return "bg-gray-100 text-gray-700 border-gray-200";
     }
   };
-
+  
   const getStatusText = (status: PrinterData["status"]) => {
     switch (status) {
       case "online": return "Online";
@@ -122,13 +212,13 @@ const Printers = () => {
       default: return "Unknown";
     }
   };
-
+  
   const getLevelColor = (level: number) => {
     if (level <= 10) return "text-red-600";
     if (level <= 30) return "text-yellow-600";
     return "text-green-600";
   };
-
+  
   const staggerVariants = {
     hidden: { opacity: 0 },
     show: {
@@ -138,7 +228,7 @@ const Printers = () => {
       },
     },
   };
-
+  
   const itemVariants = {
     hidden: { opacity: 0, y: 20 },
     show: { 
@@ -151,7 +241,7 @@ const Printers = () => {
       }
     },
   };
-
+  
   const filteredPrinters = getFilteredPrinters();
 
   return (
@@ -162,41 +252,139 @@ const Printers = () => {
           <p className="text-muted-foreground mt-1">Manage your network printers</p>
         </div>
         
-        <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-          <DialogTrigger asChild>
-            <Button className="gap-2">
-              <Plus size={16} />
-              <span>Add Printer</span>
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-lg">
-            <DialogHeader>
-              <DialogTitle>Add New Printer</DialogTitle>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <label htmlFor="name" className="text-sm font-medium">Printer Name</label>
-                <Input id="name" placeholder="Enter printer name" />
-              </div>
-              <div className="grid gap-2">
-                <label htmlFor="model" className="text-sm font-medium">Model</label>
-                <Input id="model" placeholder="Enter printer model" />
-              </div>
-              <div className="grid gap-2">
-                <label htmlFor="location" className="text-sm font-medium">Location</label>
-                <Input id="location" placeholder="Enter printer location" />
-              </div>
-              <div className="grid gap-2">
-                <label htmlFor="ip" className="text-sm font-medium">IP Address</label>
-                <Input id="ip" placeholder="Enter IP address" />
-              </div>
-            </div>
-            <div className="flex justify-end gap-3">
-              <Button variant="outline" onClick={() => setShowAddDialog(false)}>Cancel</Button>
-              <Button onClick={() => setShowAddDialog(false)}>Add Printer</Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="icon" 
+            onClick={() => refetch()} 
+            className="h-10 w-10"
+            disabled={isLoading}
+          >
+            <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
+          </Button>
+          
+          <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+            <DialogTrigger asChild>
+              <Button className="gap-2">
+                <Plus size={16} />
+                <span>Add Printer</span>
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-lg">
+              <DialogHeader>
+                <DialogTitle>Add New Printer</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleAddPrinter}>
+                <div className="grid gap-4 py-4">
+                  <div className="grid gap-2">
+                    <label htmlFor="name" className="text-sm font-medium">Printer Name*</label>
+                    <Input 
+                      id="name" 
+                      name="name"
+                      value={formData.name}
+                      onChange={handleInputChange}
+                      placeholder="Enter printer name" 
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <label htmlFor="model" className="text-sm font-medium">Model*</label>
+                    <Input 
+                      id="model" 
+                      name="model"
+                      value={formData.model}
+                      onChange={handleInputChange}
+                      placeholder="Enter printer model" 
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <label htmlFor="location" className="text-sm font-medium">Location*</label>
+                    <Input 
+                      id="location" 
+                      name="location"
+                      value={formData.location}
+                      onChange={handleInputChange}
+                      placeholder="Enter printer location" 
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <label htmlFor="ipAddress" className="text-sm font-medium">IP Address</label>
+                    <Input 
+                      id="ipAddress" 
+                      name="ipAddress"
+                      value={formData.ipAddress}
+                      onChange={handleInputChange}
+                      placeholder="Enter IP address" 
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button type="button" variant="outline" onClick={() => setShowAddDialog(false)}>Cancel</Button>
+                  <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? 'Adding...' : 'Add Printer'}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+          
+          <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+            <DialogContent className="sm:max-w-lg">
+              <DialogHeader>
+                <DialogTitle>Edit Printer</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleEditPrinter}>
+                <div className="grid gap-4 py-4">
+                  <div className="grid gap-2">
+                    <label htmlFor="edit-name" className="text-sm font-medium">Printer Name*</label>
+                    <Input 
+                      id="edit-name" 
+                      name="name"
+                      value={formData.name}
+                      onChange={handleInputChange}
+                      placeholder="Enter printer name" 
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <label htmlFor="edit-model" className="text-sm font-medium">Model*</label>
+                    <Input 
+                      id="edit-model" 
+                      name="model"
+                      value={formData.model}
+                      onChange={handleInputChange}
+                      placeholder="Enter printer model" 
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <label htmlFor="edit-location" className="text-sm font-medium">Location*</label>
+                    <Input 
+                      id="edit-location" 
+                      name="location"
+                      value={formData.location}
+                      onChange={handleInputChange}
+                      placeholder="Enter printer location" 
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <label htmlFor="edit-ipAddress" className="text-sm font-medium">IP Address</label>
+                    <Input 
+                      id="edit-ipAddress" 
+                      name="ipAddress"
+                      value={formData.ipAddress}
+                      onChange={handleInputChange}
+                      placeholder="Enter IP address" 
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button type="button" variant="outline" onClick={() => setShowEditDialog(false)}>Cancel</Button>
+                  <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? 'Saving...' : 'Save Changes'}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -227,7 +415,21 @@ const Printers = () => {
         </div>
       </div>
 
-      {filteredPrinters.length > 0 ? (
+      {isLoading ? (
+        <div className="flex items-center justify-center h-64">
+          <RefreshCw className="h-8 w-8 animate-spin text-primary/70" />
+        </div>
+      ) : isError ? (
+        <Alert variant="destructive" className="my-4">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            Failed to load printers. Please try again.
+            <Button variant="outline" size="sm" className="ml-2" onClick={() => refetch()}>
+              Retry
+            </Button>
+          </AlertDescription>
+        </Alert>
+      ) : filteredPrinters.length > 0 ? (
         <motion.div 
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
           variants={staggerVariants}
@@ -284,9 +486,41 @@ const Printers = () => {
               
               <div className="bg-muted/30 px-5 py-3 flex justify-between items-center">
                 <span className="text-xs text-muted-foreground">Last active: {printer.lastActive}</span>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => openEditDialog(printer)}>
+                      <Edit className="mr-2 h-4 w-4" />
+                      <span>Edit</span>
+                    </DropdownMenuItem>
+                    
+                    {printer.status !== "online" && (
+                      <DropdownMenuItem onClick={() => handleStatusChange(printer.id, "online")}>
+                        <Check className="mr-2 h-4 w-4 text-green-600" />
+                        <span>Set online</span>
+                      </DropdownMenuItem>
+                    )}
+                    
+                    {printer.status !== "offline" && (
+                      <DropdownMenuItem onClick={() => handleStatusChange(printer.id, "offline")}>
+                        <AlertTriangle className="mr-2 h-4 w-4 text-gray-600" />
+                        <span>Set offline</span>
+                      </DropdownMenuItem>
+                    )}
+                    
+                    <DropdownMenuItem 
+                      className="text-red-600" 
+                      onClick={() => handleDeletePrinter(printer.id)}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      <span>Delete</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </motion.div>
           ))}
