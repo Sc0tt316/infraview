@@ -1,9 +1,19 @@
-
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link, useLocation } from "react-router-dom";
-import { Menu, X, Home, Printer, Settings, Users as UsersIcon, BarChart2, Bell } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Menu, X, Home, Printer, Settings, Users as UsersIcon, BarChart2, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/context/AuthContext";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import NotificationDropdown from "./NotificationDropdown";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -21,6 +31,8 @@ const Layout = ({ children }: LayoutProps) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true); // Set to true by default
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -37,14 +49,12 @@ const Layout = ({ children }: LayoutProps) => {
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
-  // Only close sidebar on mobile when route changes
   useEffect(() => {
     if (window.innerWidth < 1024) {
       setIsSidebarOpen(false);
     }
   }, [location.pathname]);
 
-  // Set sidebar state based on screen size on initial load
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 1024) {
@@ -54,24 +64,25 @@ const Layout = ({ children }: LayoutProps) => {
       }
     };
 
-    // Run once on mount
     handleResize();
 
-    // Add listener for window resize
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Page transition variants
   const pageVariants = {
     initial: { opacity: 0, y: 8 },
     enter: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] } },
     exit: { opacity: 0, y: -8, transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] } },
   };
 
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
   return (
     <div className="flex h-screen overflow-hidden bg-background">
-      {/* Sidebar backdrop for mobile */}
       <AnimatePresence>
         {isSidebarOpen && window.innerWidth < 1024 && (
           <motion.div
@@ -80,12 +91,11 @@ const Layout = ({ children }: LayoutProps) => {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             className="fixed inset-0 z-20 bg-black/20 backdrop-blur-sm lg:hidden"
-            onClick={toggleSidebar}
+            onClick={() => setIsSidebarOpen(false)}
           />
         )}
       </AnimatePresence>
 
-      {/* Sidebar */}
       <motion.aside
         className={cn(
           "fixed inset-y-0 left-0 z-30 w-72 bg-white/90 backdrop-blur-lg border-r border-border/40 shadow-lg transform transition-transform duration-300 ease-in-out lg:relative lg:shadow-none",
@@ -110,7 +120,7 @@ const Layout = ({ children }: LayoutProps) => {
               <span className="text-xl font-medium text-primary">PrinterVerse</span>
             </Link>
             <button 
-              onClick={toggleSidebar}
+              onClick={() => setIsSidebarOpen(false)}
               className="lg:hidden p-1 rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
             >
               <X size={20} />
@@ -157,24 +167,25 @@ const Layout = ({ children }: LayoutProps) => {
 
           <div className="mt-auto p-4 border-t border-border/40">
             <div className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-accent transition-colors">
-              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                <UsersIcon size={16} className="text-primary" />
-              </div>
+              <Avatar className="h-8 w-8">
+                <AvatarImage src="" alt={user?.name || "User"} />
+                <AvatarFallback className="bg-primary/10 text-primary">
+                  {user?.name?.charAt(0) || 'U'}
+                </AvatarFallback>
+              </Avatar>
               <div className="flex-1">
-                <p className="text-sm font-medium">Admin User</p>
-                <p className="text-xs text-muted-foreground">admin@printerverse.com</p>
+                <p className="text-sm font-medium">{user?.name || "User"}</p>
+                <p className="text-xs text-muted-foreground">{user?.email || "user@example.com"}</p>
               </div>
             </div>
           </div>
         </div>
       </motion.aside>
 
-      {/* Main content */}
       <div className={cn(
         "relative flex flex-col flex-1 overflow-y-auto transition-all duration-300",
         !isSidebarOpen && "lg:w-full"
       )}>
-        {/* Header */}
         <header 
           className={cn(
             "sticky top-0 z-10 w-full bg-background/70 backdrop-blur-lg transition-all duration-200",
@@ -183,26 +194,41 @@ const Layout = ({ children }: LayoutProps) => {
         >
           <div className="flex items-center justify-between p-4 lg:px-6">
             <button 
-              onClick={toggleSidebar}
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
               className="p-2 rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
             >
               <Menu size={20} />
             </button>
             
             <div className="flex items-center ml-auto gap-3">
-              <button className="relative p-2 rounded-full hover:bg-accent transition-colors">
-                <Bell size={18} className="text-muted-foreground" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full"></span>
-              </button>
+              <NotificationDropdown />
               
-              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                <UsersIcon size={16} className="text-primary" />
-              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Avatar className="h-8 w-8 cursor-pointer">
+                    <AvatarImage src="" alt={user?.name || "User"} />
+                    <AvatarFallback className="bg-primary/10 text-primary">
+                      {user?.name?.charAt(0) || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => navigate('/settings')}>
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Settings</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleLogout}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Logout</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </header>
 
-        {/* Page content */}
         <main className="flex-1 p-4 lg:p-6">
           <AnimatePresence mode="wait">
             <motion.div
