@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Printer, Plus, Search, Filter, MoreHorizontal, AlertTriangle, RefreshCw, Trash2, Edit, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -195,11 +195,11 @@ const Printers = () => {
   
   const getStatusColor = (status: PrinterData["status"]) => {
     switch (status) {
-      case "online": return "bg-green-100 text-green-700 border-green-200";
-      case "offline": return "bg-gray-100 text-gray-700 border-gray-200";
-      case "error": return "bg-red-100 text-red-700 border-red-200";
-      case "maintenance": return "bg-yellow-100 text-yellow-700 border-yellow-200";
-      default: return "bg-gray-100 text-gray-700 border-gray-200";
+      case "online": return "bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800";
+      case "offline": return "bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700";
+      case "error": return "bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800";
+      case "maintenance": return "bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-800";
+      default: return "bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700";
     }
   };
   
@@ -214,9 +214,9 @@ const Printers = () => {
   };
   
   const getLevelColor = (level: number) => {
-    if (level <= 10) return "text-red-600";
-    if (level <= 30) return "text-yellow-600";
-    return "text-green-600";
+    if (level <= 10) return "text-red-600 dark:text-red-400";
+    if (level <= 30) return "text-yellow-600 dark:text-yellow-400";
+    return "text-green-600 dark:text-green-400";
   };
   
   const staggerVariants = {
@@ -270,7 +270,7 @@ const Printers = () => {
                 <span>Add Printer</span>
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-lg">
+            <DialogContent className="sm:max-w-lg dark:bg-gray-800">
               <DialogHeader>
                 <DialogTitle>Add New Printer</DialogTitle>
               </DialogHeader>
@@ -284,6 +284,7 @@ const Printers = () => {
                       value={formData.name}
                       onChange={handleInputChange}
                       placeholder="Enter printer name" 
+                      className="dark:bg-gray-700 dark:border-gray-600"
                     />
                   </div>
                   <div className="grid gap-2">
@@ -294,6 +295,7 @@ const Printers = () => {
                       value={formData.model}
                       onChange={handleInputChange}
                       placeholder="Enter printer model" 
+                      className="dark:bg-gray-700 dark:border-gray-600"
                     />
                   </div>
                   <div className="grid gap-2">
@@ -304,6 +306,7 @@ const Printers = () => {
                       value={formData.location}
                       onChange={handleInputChange}
                       placeholder="Enter printer location" 
+                      className="dark:bg-gray-700 dark:border-gray-600"
                     />
                   </div>
                   <div className="grid gap-2">
@@ -314,6 +317,7 @@ const Printers = () => {
                       value={formData.ipAddress}
                       onChange={handleInputChange}
                       placeholder="Enter IP address" 
+                      className="dark:bg-gray-700 dark:border-gray-600"
                     />
                   </div>
                 </div>
@@ -328,7 +332,7 @@ const Printers = () => {
           </Dialog>
           
           <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-            <DialogContent className="sm:max-w-lg">
+            <DialogContent className="sm:max-w-lg dark:bg-gray-800">
               <DialogHeader>
                 <DialogTitle>Edit Printer</DialogTitle>
               </DialogHeader>
@@ -342,6 +346,7 @@ const Printers = () => {
                       value={formData.name}
                       onChange={handleInputChange}
                       placeholder="Enter printer name" 
+                      className="dark:bg-gray-700 dark:border-gray-600"
                     />
                   </div>
                   <div className="grid gap-2">
@@ -352,6 +357,7 @@ const Printers = () => {
                       value={formData.model}
                       onChange={handleInputChange}
                       placeholder="Enter printer model" 
+                      className="dark:bg-gray-700 dark:border-gray-600"
                     />
                   </div>
                   <div className="grid gap-2">
@@ -362,6 +368,7 @@ const Printers = () => {
                       value={formData.location}
                       onChange={handleInputChange}
                       placeholder="Enter printer location" 
+                      className="dark:bg-gray-700 dark:border-gray-600"
                     />
                   </div>
                   <div className="grid gap-2">
@@ -372,6 +379,7 @@ const Printers = () => {
                       value={formData.ipAddress}
                       onChange={handleInputChange}
                       placeholder="Enter IP address" 
+                      className="dark:bg-gray-700 dark:border-gray-600"
                     />
                   </div>
                 </div>
@@ -392,20 +400,20 @@ const Printers = () => {
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
             placeholder="Search printers..."
-            className="pl-10"
+            className="pl-10 dark:bg-gray-800 dark:border-gray-700"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
         
         <div className="flex gap-2 items-center">
-          <Button variant="outline" size="sm" className="gap-2">
+          <Button variant="outline" size="sm" className="gap-2 dark:border-gray-700 dark:bg-gray-800">
             <Filter size={16} />
             <span>Filter</span>
           </Button>
           
           <Tabs defaultValue="all" className="w-fit" value={selectedTab} onValueChange={setSelectedTab}>
-            <TabsList>
+            <TabsList className="dark:bg-gray-800">
               <TabsTrigger value="all">All</TabsTrigger>
               <TabsTrigger value="online">Online</TabsTrigger>
               <TabsTrigger value="offline">Offline</TabsTrigger>
@@ -420,11 +428,11 @@ const Printers = () => {
           <RefreshCw className="h-8 w-8 animate-spin text-primary/70" />
         </div>
       ) : isError ? (
-        <Alert variant="destructive" className="my-4">
+        <Alert variant="destructive" className="my-4 dark:bg-red-900/20 dark:border-red-800">
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
             Failed to load printers. Please try again.
-            <Button variant="outline" size="sm" className="ml-2" onClick={() => refetch()}>
+            <Button variant="outline" size="sm" className="ml-2 dark:bg-gray-800 dark:border-gray-700" onClick={() => refetch()}>
               Retry
             </Button>
           </AlertDescription>
@@ -441,17 +449,17 @@ const Printers = () => {
               key={printer.id}
               variants={itemVariants}
               whileHover={{ y: -4, transition: { duration: 0.2 } }}
-              className="bg-white border border-border/40 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden"
+              className="bg-white dark:bg-gray-800 border border-border/40 dark:border-gray-700 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden"
             >
               <div className="p-5">
                 <div className="flex justify-between items-start mb-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                    <div className="w-10 h-10 bg-primary/10 dark:bg-primary/20 rounded-full flex items-center justify-center">
                       <Printer className="h-5 w-5 text-primary" />
                     </div>
                     <div>
-                      <h3 className="font-medium text-foreground">{printer.name}</h3>
-                      <p className="text-sm text-muted-foreground">{printer.model}</p>
+                      <h3 className="font-medium text-foreground dark:text-gray-200">{printer.name}</h3>
+                      <p className="text-sm text-muted-foreground dark:text-gray-400">{printer.model}</p>
                     </div>
                   </div>
                   
@@ -463,57 +471,57 @@ const Printers = () => {
                 <div className="space-y-3 mb-4">
                   <div>
                     <div className="flex justify-between items-center mb-1 text-sm">
-                      <span>Ink Level</span>
+                      <span className="dark:text-gray-300">Ink Level</span>
                       <span className={getLevelColor(printer.inkLevel)}>{printer.inkLevel}%</span>
                     </div>
-                    <Progress value={printer.inkLevel} className="h-2" />
+                    <Progress value={printer.inkLevel} className="h-2 dark:bg-gray-700" />
                   </div>
                   
                   <div>
                     <div className="flex justify-between items-center mb-1 text-sm">
-                      <span>Paper Level</span>
+                      <span className="dark:text-gray-300">Paper Level</span>
                       <span className={getLevelColor(printer.paperLevel)}>{printer.paperLevel}%</span>
                     </div>
-                    <Progress value={printer.paperLevel} className="h-2" />
+                    <Progress value={printer.paperLevel} className="h-2 dark:bg-gray-700" />
                   </div>
                 </div>
                 
-                <div className="pt-3 border-t border-border/40 flex justify-between text-sm text-muted-foreground">
+                <div className="pt-3 border-t border-border/40 dark:border-gray-700 flex justify-between text-sm text-muted-foreground dark:text-gray-400">
                   <span>Location: {printer.location}</span>
                   <span>Jobs: {printer.jobCount}</span>
                 </div>
               </div>
               
-              <div className="bg-muted/30 px-5 py-3 flex justify-between items-center">
-                <span className="text-xs text-muted-foreground">Last active: {printer.lastActive}</span>
+              <div className="bg-muted/30 dark:bg-gray-900/50 px-5 py-3 flex justify-between items-center">
+                <span className="text-xs text-muted-foreground dark:text-gray-500">Last active: {printer.lastActive}</span>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" className="h-8 w-8">
                       <MoreHorizontal className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => openEditDialog(printer)}>
+                  <DropdownMenuContent align="end" className="dark:bg-gray-800 dark:border-gray-700">
+                    <DropdownMenuItem onClick={() => openEditDialog(printer)} className="dark:hover:bg-gray-700 dark:focus:bg-gray-700">
                       <Edit className="mr-2 h-4 w-4" />
                       <span>Edit</span>
                     </DropdownMenuItem>
                     
                     {printer.status !== "online" && (
-                      <DropdownMenuItem onClick={() => handleStatusChange(printer.id, "online")}>
-                        <Check className="mr-2 h-4 w-4 text-green-600" />
+                      <DropdownMenuItem onClick={() => handleStatusChange(printer.id, "online")} className="dark:hover:bg-gray-700 dark:focus:bg-gray-700">
+                        <Check className="mr-2 h-4 w-4 text-green-600 dark:text-green-400" />
                         <span>Set online</span>
                       </DropdownMenuItem>
                     )}
                     
                     {printer.status !== "offline" && (
-                      <DropdownMenuItem onClick={() => handleStatusChange(printer.id, "offline")}>
-                        <AlertTriangle className="mr-2 h-4 w-4 text-gray-600" />
+                      <DropdownMenuItem onClick={() => handleStatusChange(printer.id, "offline")} className="dark:hover:bg-gray-700 dark:focus:bg-gray-700">
+                        <AlertTriangle className="mr-2 h-4 w-4 text-gray-600 dark:text-gray-400" />
                         <span>Set offline</span>
                       </DropdownMenuItem>
                     )}
                     
                     <DropdownMenuItem 
-                      className="text-red-600" 
+                      className="text-red-600 dark:text-red-400 dark:hover:bg-gray-700 dark:focus:bg-gray-700" 
                       onClick={() => handleDeletePrinter(printer.id)}
                     >
                       <Trash2 className="mr-2 h-4 w-4" />
@@ -527,16 +535,16 @@ const Printers = () => {
         </motion.div>
       ) : (
         <div className="flex flex-col items-center justify-center py-12 text-center">
-          <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+          <div className="w-16 h-16 bg-muted dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
             <AlertTriangle className="h-8 w-8 text-muted-foreground" />
           </div>
-          <h3 className="text-lg font-medium">No printers found</h3>
-          <p className="text-muted-foreground mt-1 max-w-md">
+          <h3 className="text-lg font-medium dark:text-gray-200">No printers found</h3>
+          <p className="text-muted-foreground mt-1 max-w-md dark:text-gray-400">
             No printers match your search criteria. Try changing your search or filters.
           </p>
           <Button 
             variant="outline"
-            className="mt-4"
+            className="mt-4 dark:bg-gray-800 dark:border-gray-700"
             onClick={() => {
               setSearchQuery("");
               setSelectedTab("all");

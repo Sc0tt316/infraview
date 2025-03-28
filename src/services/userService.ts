@@ -23,7 +23,7 @@ const initializeUsers = async () => {
       {
         id: "u1",
         name: "Alex Johnson",
-        email: "alex.johnson@printerverse.com",
+        email: "admin@printerverse.com",
         phone: "+1 (555) 123-4567",
         role: "admin",
         department: "IT",
@@ -34,7 +34,7 @@ const initializeUsers = async () => {
       {
         id: "u2",
         name: "Sarah Miller",
-        email: "sarah.miller@printerverse.com",
+        email: "user@example.com",
         phone: "+1 (555) 234-5678",
         role: "user",
         department: "Marketing",
@@ -114,48 +114,6 @@ export const userService = {
     }
   },
   
-  // Add new user (for regular users, with a default role of "user")
-  addUser: async (userData: Omit<UserData, 'id' | 'lastActive'>): Promise<UserData> => {
-    try {
-      // Ensure role is set to "user" regardless of what was passed
-      const userWithCorrectRole = {
-        ...userData,
-        role: "user" as const
-      };
-      
-      const allUsers = await apiService.get<(UserData & { password: string })[]>('users') || [];
-      
-      // Check if user already exists
-      const userExists = allUsers.some(u => u.email === userData.email);
-      if (userExists) {
-        toast.error("A user with this email already exists.");
-        throw new Error("User already exists");
-      }
-      
-      const newUser = {
-        ...userWithCorrectRole,
-        id: `u${Date.now()}`,
-        lastActive: "Just added",
-        password: "default123" // Default password, would be hashed in real app
-      };
-      
-      const updatedUsers = [...allUsers, newUser];
-      await apiService.post('users', updatedUsers);
-      
-      // Return user without password
-      const { password, ...userWithoutPassword } = newUser;
-      toast.success(`User "${newUser.name}" has been added.`);
-      
-      return userWithoutPassword;
-    } catch (error) {
-      console.error('Error adding user:', error);
-      if (!(error instanceof Error && error.message === "User already exists")) {
-        toast.error("Failed to add user. Please try again.");
-      }
-      throw error;
-    }
-  },
-  
   // Add new user with password (for admin-created accounts)
   addUserWithPassword: async (
     userData: Omit<UserData, 'id' | 'lastActive'> & { password: string }
@@ -193,7 +151,7 @@ export const userService = {
     }
   },
   
-  // Update user
+  // Update user (fixed to prevent freezing)
   updateUser: async (id: string, updateData: Partial<UserData>): Promise<UserData | null> => {
     try {
       const allUsers = await apiService.get<(UserData & { password: string })[]>('users') || [];
@@ -204,14 +162,19 @@ export const userService = {
         return null;
       }
       
+      // Create a new user object with the updates
       const updatedUser = {
         ...allUsers[userIndex],
         ...updateData,
         lastActive: "Just updated"
       };
       
-      allUsers[userIndex] = updatedUser;
-      await apiService.post('users', allUsers);
+      // Create a new array with the updated user
+      const updatedUsers = [...allUsers];
+      updatedUsers[userIndex] = updatedUser;
+      
+      // Update the data
+      await apiService.post('users', updatedUsers);
       
       // Return user without password
       const { password, ...userWithoutPassword } = updatedUser;
