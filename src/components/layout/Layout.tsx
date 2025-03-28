@@ -28,7 +28,7 @@ const sidebarLinks = [
 ];
 
 const Layout = ({ children }: LayoutProps) => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true); // Set to true by default
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
@@ -230,18 +230,7 @@ const Layout = ({ children }: LayoutProps) => {
         </header>
 
         <main className="flex-1 p-4 lg:p-6">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={location.pathname}
-              initial="initial"
-              animate="enter"
-              exit="exit"
-              variants={pageVariants}
-              className="h-full"
-            >
-              {children}
-            </motion.div>
-          </AnimatePresence>
+          {children}
         </main>
       </div>
     </div>
