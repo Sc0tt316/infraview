@@ -1,6 +1,6 @@
 
 import { apiService } from './api';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 // Define user types
 export interface UserData {
@@ -19,7 +19,7 @@ export interface UserData {
 const initializeUsers = async () => {
   const existingUsers = await apiService.get<UserData[]>('users');
   if (!existingUsers) {
-    const mockUsers: UserData[] = [
+    const mockUsers: (UserData & { password: string })[] = [
       {
         id: "u1",
         name: "Alex Johnson",
@@ -29,6 +29,7 @@ const initializeUsers = async () => {
         department: "IT",
         status: "active",
         lastActive: "2 minutes ago",
+        password: "admin123" // Note: In a real app, this would be hashed
       },
       {
         id: "u2",
@@ -39,6 +40,7 @@ const initializeUsers = async () => {
         department: "Marketing",
         status: "active",
         lastActive: "1 hour ago",
+        password: "user123"
       },
       {
         id: "u3",
@@ -49,6 +51,7 @@ const initializeUsers = async () => {
         department: "Operations",
         status: "inactive",
         lastActive: "3 days ago",
+        password: "manager123"
       },
       {
         id: "u4",
@@ -59,6 +62,7 @@ const initializeUsers = async () => {
         department: "HR",
         status: "active",
         lastActive: "4 hours ago",
+        password: "user456"
       },
       {
         id: "u5",
@@ -69,6 +73,7 @@ const initializeUsers = async () => {
         department: "Finance",
         status: "active",
         lastActive: "Yesterday",
+        password: "manager456"
       },
     ];
     await apiService.post('users', mockUsers);
@@ -83,15 +88,16 @@ export const userService = {
   getAllUsers: async (): Promise<UserData[]> => {
     try {
       await initializeUsers();
-      const users = await apiService.get<UserData[]>('users');
-      return users || [];
+      const users = await apiService.get<(UserData & { password?: string })[]>('users');
+      
+      // Remove password field from users before returning
+      return users ? users.map(user => {
+        const { password, ...userWithoutPassword } = user;
+        return userWithoutPassword;
+      }) : [];
     } catch (error) {
       console.error('Error fetching users:', error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch users. Please try again.",
-        variant: "destructive"
-      });
+      toast.error("Failed to fetch users. Please try again.");
       return [];
     }
   },
@@ -103,42 +109,86 @@ export const userService = {
       return users.find(user => user.id === id) || null;
     } catch (error) {
       console.error(`Error fetching user ${id}:`, error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch user details. Please try again.",
-        variant: "destructive"
-      });
+      toast.error("Failed to fetch user details. Please try again.");
       return null;
     }
   },
   
-  // Add new user
+  // Add new user (for regular users, with a default role of "user")
   addUser: async (userData: Omit<UserData, 'id' | 'lastActive'>): Promise<UserData> => {
     try {
-      const users = await userService.getAllUsers();
+      // Ensure role is set to "user" regardless of what was passed
+      const userWithCorrectRole = {
+        ...userData,
+        role: "user" as const
+      };
       
-      const newUser: UserData = {
+      const allUsers = await apiService.get<(UserData & { password: string })[]>('users') || [];
+      
+      // Check if user already exists
+      const userExists = allUsers.some(u => u.email === userData.email);
+      if (userExists) {
+        toast.error("A user with this email already exists.");
+        throw new Error("User already exists");
+      }
+      
+      const newUser = {
+        ...userWithCorrectRole,
+        id: `u${Date.now()}`,
+        lastActive: "Just added",
+        password: "default123" // Default password, would be hashed in real app
+      };
+      
+      const updatedUsers = [...allUsers, newUser];
+      await apiService.post('users', updatedUsers);
+      
+      // Return user without password
+      const { password, ...userWithoutPassword } = newUser;
+      toast.success(`User "${newUser.name}" has been added.`);
+      
+      return userWithoutPassword;
+    } catch (error) {
+      console.error('Error adding user:', error);
+      if (!(error instanceof Error && error.message === "User already exists")) {
+        toast.error("Failed to add user. Please try again.");
+      }
+      throw error;
+    }
+  },
+  
+  // Add new user with password (for admin-created accounts)
+  addUserWithPassword: async (
+    userData: Omit<UserData, 'id' | 'lastActive'> & { password: string }
+  ): Promise<UserData> => {
+    try {
+      const allUsers = await apiService.get<(UserData & { password: string })[]>('users') || [];
+      
+      // Check if user already exists
+      const userExists = allUsers.some(u => u.email === userData.email);
+      if (userExists) {
+        toast.error("A user with this email already exists.");
+        throw new Error("User already exists");
+      }
+      
+      const newUser = {
         ...userData,
         id: `u${Date.now()}`,
         lastActive: "Just added"
       };
       
-      const updatedUsers = [...users, newUser];
+      const updatedUsers = [...allUsers, newUser];
       await apiService.post('users', updatedUsers);
       
-      toast({
-        title: "Success",
-        description: `User "${newUser.name}" has been added.`,
-      });
+      // Return user without password
+      const { password, ...userWithoutPassword } = newUser;
+      toast.success(`User "${newUser.name}" has been added.`);
       
-      return newUser;
+      return userWithoutPassword;
     } catch (error) {
-      console.error('Error adding user:', error);
-      toast({
-        title: "Error",
-        description: "Failed to add user. Please try again.",
-        variant: "destructive"
-      });
+      console.error('Error adding user with password:', error);
+      if (!(error instanceof Error && error.message === "User already exists")) {
+        toast.error("Failed to add user. Please try again.");
+      }
       throw error;
     }
   },
@@ -146,40 +196,31 @@ export const userService = {
   // Update user
   updateUser: async (id: string, updateData: Partial<UserData>): Promise<UserData | null> => {
     try {
-      const users = await userService.getAllUsers();
-      const userIndex = users.findIndex(user => user.id === id);
+      const allUsers = await apiService.get<(UserData & { password: string })[]>('users') || [];
+      const userIndex = allUsers.findIndex(user => user.id === id);
       
       if (userIndex === -1) {
-        toast({
-          title: "Error",
-          description: "User not found.",
-          variant: "destructive"
-        });
+        toast.error("User not found.");
         return null;
       }
       
       const updatedUser = {
-        ...users[userIndex],
+        ...allUsers[userIndex],
         ...updateData,
         lastActive: "Just updated"
       };
       
-      users[userIndex] = updatedUser;
-      await apiService.post('users', users);
+      allUsers[userIndex] = updatedUser;
+      await apiService.post('users', allUsers);
       
-      toast({
-        title: "Success",
-        description: `User "${updatedUser.name}" has been updated.`,
-      });
+      // Return user without password
+      const { password, ...userWithoutPassword } = updatedUser;
+      toast.success(`User "${updatedUser.name}" has been updated.`);
       
-      return updatedUser;
+      return userWithoutPassword;
     } catch (error) {
       console.error(`Error updating user ${id}:`, error);
-      toast({
-        title: "Error",
-        description: "Failed to update user. Please try again.",
-        variant: "destructive"
-      });
+      toast.error("Failed to update user. Please try again.");
       return null;
     }
   },
@@ -187,35 +228,24 @@ export const userService = {
   // Delete user
   deleteUser: async (id: string): Promise<boolean> => {
     try {
-      const users = await userService.getAllUsers();
-      const userIndex = users.findIndex(user => user.id === id);
+      const allUsers = await apiService.get<(UserData & { password: string })[]>('users') || [];
+      const userIndex = allUsers.findIndex(user => user.id === id);
       
       if (userIndex === -1) {
-        toast({
-          title: "Error",
-          description: "User not found.",
-          variant: "destructive"
-        });
+        toast.error("User not found.");
         return false;
       }
       
-      const userName = users[userIndex].name;
-      const updatedUsers = users.filter(user => user.id !== id);
+      const userName = allUsers[userIndex].name;
+      const updatedUsers = allUsers.filter(user => user.id !== id);
       await apiService.post('users', updatedUsers);
       
-      toast({
-        title: "Success",
-        description: `User "${userName}" has been deleted.`,
-      });
+      toast.success(`User "${userName}" has been deleted.`);
       
       return true;
     } catch (error) {
       console.error(`Error deleting user ${id}:`, error);
-      toast({
-        title: "Error",
-        description: "Failed to delete user. Please try again.",
-        variant: "destructive"
-      });
+      toast.error("Failed to delete user. Please try again.");
       return false;
     }
   },

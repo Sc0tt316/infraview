@@ -1,9 +1,14 @@
+
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Menu, X, Home, Printer, Settings, Users as UsersIcon, BarChart2, LogOut } from "lucide-react";
+import { 
+  Menu, X, Home, Printer, Settings, Users as UsersIcon, 
+  BarChart2, LogOut, Sun, Moon, RefreshCw 
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
+import { useTheme } from "@/context/ThemeContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -13,6 +18,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 import NotificationDropdown from "./NotificationDropdown";
 
 interface LayoutProps {
@@ -33,6 +39,12 @@ const Layout = ({ children }: LayoutProps) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
+
+  // Handle refresh current page
+  const handleRefresh = () => {
+    window.location.reload();
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -82,7 +94,7 @@ const Layout = ({ children }: LayoutProps) => {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div className={cn("flex h-screen overflow-hidden bg-background", theme === 'dark' ? 'dark' : '')}>
       <AnimatePresence>
         {isSidebarOpen && window.innerWidth < 1024 && (
           <motion.div
@@ -90,7 +102,7 @@ const Layout = ({ children }: LayoutProps) => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-20 bg-black/20 backdrop-blur-sm lg:hidden"
+            className="fixed inset-0 z-20 bg-black/20 backdrop-blur-sm dark:bg-black/50 lg:hidden"
             onClick={() => setIsSidebarOpen(false)}
           />
         )}
@@ -98,7 +110,7 @@ const Layout = ({ children }: LayoutProps) => {
 
       <motion.aside
         className={cn(
-          "fixed inset-y-0 left-0 z-30 w-72 bg-white/90 backdrop-blur-lg border-r border-border/40 shadow-lg transform transition-transform duration-300 ease-in-out lg:relative lg:shadow-none",
+          "fixed inset-y-0 left-0 z-30 w-72 bg-white/90 dark:bg-gray-900/90 backdrop-blur-lg border-r border-border/40 shadow-lg transform transition-transform duration-300 ease-in-out lg:relative lg:shadow-none",
           isSidebarOpen ? "translate-x-0" : "-translate-x-full lg:w-0 lg:opacity-0"
         )}
         animate={{ 
@@ -188,7 +200,7 @@ const Layout = ({ children }: LayoutProps) => {
       )}>
         <header 
           className={cn(
-            "sticky top-0 z-10 w-full bg-background/70 backdrop-blur-lg transition-all duration-200",
+            "sticky top-0 z-10 w-full bg-background/70 dark:bg-gray-900/70 backdrop-blur-lg transition-all duration-200",
             scrolled ? "border-b border-border/40 shadow-sm" : ""
           )}
         >
@@ -201,6 +213,24 @@ const Layout = ({ children }: LayoutProps) => {
             </button>
             
             <div className="flex items-center ml-auto gap-3">
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={handleRefresh}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <RefreshCw size={18} />
+              </Button>
+              
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={toggleTheme}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+              </Button>
+              
               <NotificationDropdown />
               
               <DropdownMenu>
@@ -229,7 +259,7 @@ const Layout = ({ children }: LayoutProps) => {
           </div>
         </header>
 
-        <main className="flex-1 p-4 lg:p-6">
+        <main className="flex-1 p-4 lg:p-6 dark:bg-gray-900 transition-colors duration-200">
           {children}
         </main>
       </div>

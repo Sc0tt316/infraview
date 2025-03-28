@@ -123,7 +123,7 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
       email,
       name,
       password, // In a real app, this would be hashed
-      role: 'user' as const
+      role: 'user' as const // Always assign "user" role for new registrations
     };
     
     // Update all users in localStorage
@@ -140,7 +140,7 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
     return true;
   };
 
-  // New function: Update user role (only admins can use this)
+  // Update user role (only admins can use this)
   const updateUserRole = async (userId: string, newRole: 'admin' | 'user'): Promise<boolean> => {
     // Check if current user is an admin
     if (!user || user.role !== 'admin') {

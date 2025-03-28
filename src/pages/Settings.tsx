@@ -1,8 +1,8 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { User, Bell, Shield, UserCog } from "lucide-react";
+import { User, Bell, Shield, UserCog, Camera, Check } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -20,10 +20,10 @@ import {
   NavigationMenuTrigger,
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { useAuth, User as UserType } from "@/context/AuthContext";
-import { userService } from "@/services/userService";
+import { useAuth } from "@/context/AuthContext";
+import { useTheme } from "@/context/ThemeContext";
 
 type SettingsTab = "account" | "appearance" | "notifications" | "security";
 
@@ -32,15 +32,18 @@ const Settings = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<"admin" | "user">("user");
-  const [isDarkMode, setIsDarkMode] = useState(false);
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [pushNotifications, setPushNotifications] = useState(true);
   const [passwordUpdates, setPasswordUpdates] = useState(true);
   const [twoFactorAuth, setTwoFactorAuth] = useState(false);
-  const [users, setUsers] = useState<UserType[]>([]);
+  const [avatarUrl, setAvatarUrl] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
   const { user } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
-  const isAdmin = user?.role === "admin";
+  const isDarkMode = theme === 'dark';
 
   // Load settings from localStorage on component mount
   useEffect(() => {
@@ -55,68 +58,70 @@ const Settings = () => {
     if (savedSettings) {
       try {
         const parsedSettings = JSON.parse(savedSettings);
-        setIsDarkMode(parsedSettings.isDarkMode || false);
         setEmailNotifications(parsedSettings.emailNotifications || true);
         setPushNotifications(parsedSettings.pushNotifications || true);
         setPasswordUpdates(parsedSettings.passwordUpdates || true);
         setTwoFactorAuth(parsedSettings.twoFactorAuth || false);
+        
+        // Load avatar URL if it exists
+        if (parsedSettings.avatarUrl) {
+          setAvatarUrl(parsedSettings.avatarUrl);
+        }
       } catch (error) {
         console.error('Failed to parse settings:', error);
       }
     }
-    
-    // Load all users if admin
-    if (isAdmin) {
-      loadUsers();
-    }
-  }, [user, isAdmin]);
+  }, [user]);
 
-  // Load all users for admin
-  const loadUsers = () => {
-    const allUsers = localStorage.getItem('all_users');
-    if (allUsers) {
-      try {
-        const parsedUsers = JSON.parse(allUsers);
-        const usersWithoutPasswords = parsedUsers.map((user: any) => {
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const { password, ...userWithoutPassword } = user;
-          return userWithoutPassword;
-        });
-        setUsers(usersWithoutPasswords);
-      } catch (error) {
-        console.error('Failed to parse users:', error);
-      }
+  // Trigger file input click when avatar is clicked
+  const handleAvatarClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  // Handle avatar file change
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // In a real app, you would upload this file to a server
+      // For now, we'll create a data URL
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const dataUrl = event.target?.result as string;
+        setAvatarUrl(dataUrl);
+        
+        // Update the settings in localStorage
+        const savedSettings = localStorage.getItem('user_settings');
+        const settings = savedSettings ? JSON.parse(savedSettings) : {};
+        settings.avatarUrl = dataUrl;
+        localStorage.setItem('user_settings', JSON.stringify(settings));
+        
+        toast.success("Avatar updated successfully");
+      };
+      reader.readAsDataURL(file);
     }
   };
 
   // Save settings to localStorage
   const saveSettings = () => {
-    const settings = {
-      isDarkMode,
-      emailNotifications,
-      pushNotifications,
-      passwordUpdates,
-      twoFactorAuth
-    };
+    setIsSubmitting(true);
     
-    localStorage.setItem('user_settings', JSON.stringify(settings));
-    
-    toast({
-      title: "Settings saved",
-      description: "Your settings have been saved successfully.",
-    });
-  };
-
-  // Handle role change (only for admins)
-  const handleRoleChange = async (userId: string, newRole: "admin" | "user") => {
-    if (!isAdmin) return;
-    
-    const { updateUserRole } = useAuth();
-    const success = await updateUserRole(userId, newRole);
-    
-    if (success) {
-      loadUsers(); // Reload users after update
-    }
+    setTimeout(() => {
+      const settings = {
+        isDarkMode,
+        emailNotifications,
+        pushNotifications,
+        passwordUpdates,
+        twoFactorAuth,
+        avatarUrl
+      };
+      
+      localStorage.setItem('user_settings', JSON.stringify(settings));
+      
+      toast.success("Settings saved successfully");
+      setIsSubmitting(false);
+    }, 600);
   };
   
   return (
@@ -215,15 +220,25 @@ const Settings = () => {
               <CardContent className="space-y-6">
                 <div className="flex flex-col md:flex-row gap-6">
                   <div className="flex flex-col items-center gap-4">
-                    <Avatar className="h-24 w-24">
-                      <AvatarImage src="" alt={user?.name || 'User'} />
-                      <AvatarFallback className="text-2xl">
-                        {user?.name?.charAt(0) || 'U'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <Button variant="outline" size="sm">
-                      Change Avatar
-                    </Button>
+                    <div className="relative group">
+                      <Avatar className="h-24 w-24 cursor-pointer border-2 border-transparent group-hover:border-primary transition-all duration-200" onClick={handleAvatarClick}>
+                        <AvatarImage src={avatarUrl} alt={user?.name || 'User'} />
+                        <AvatarFallback className="text-2xl">
+                          {user?.name?.charAt(0) || 'U'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="absolute inset-0 bg-black/50 rounded-full opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-200">
+                        <Camera className="h-6 w-6 text-white" />
+                      </div>
+                    </div>
+                    <input 
+                      type="file" 
+                      ref={fileInputRef}
+                      onChange={handleAvatarChange}
+                      accept="image/*"
+                      className="hidden"
+                    />
+                    <span className="text-xs text-muted-foreground">Click to change avatar</span>
                   </div>
                   <div className="flex-1 space-y-4">
                     <div className="grid gap-2">
@@ -254,53 +269,21 @@ const Settings = () => {
                     </div>
                   </div>
                 </div>
-                
-                {/* Admin section: Manage all users */}
-                {isAdmin && (
-                  <div className="mt-8 border-t pt-6">
-                    <h3 className="text-lg font-medium mb-4">Manage Users (Admin Only)</h3>
-                    <div className="overflow-x-auto">
-                      <table className="w-full border-collapse">
-                        <thead>
-                          <tr className="bg-muted/50 border-b">
-                            <th className="text-left p-2">Name</th>
-                            <th className="text-left p-2">Email</th>
-                            <th className="text-left p-2">Role</th>
-                            <th className="text-left p-2">Actions</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {users.map((u) => (
-                            <tr key={u.id} className="border-b">
-                              <td className="p-2">{u.name}</td>
-                              <td className="p-2">{u.email}</td>
-                              <td className="p-2">{u.role}</td>
-                              <td className="p-2">
-                                <RadioGroup 
-                                  value={u.role} 
-                                  onValueChange={(value) => handleRoleChange(u.id, value as "admin" | "user")}
-                                  className="flex items-center space-x-4"
-                                >
-                                  <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="user" id={`user-${u.id}`} />
-                                    <Label htmlFor={`user-${u.id}`}>User</Label>
-                                  </div>
-                                  <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="admin" id={`admin-${u.id}`} />
-                                    <Label htmlFor={`admin-${u.id}`}>Admin</Label>
-                                  </div>
-                                </RadioGroup>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                )}
               </CardContent>
               <CardFooter className="flex justify-end">
-                <Button onClick={saveSettings}>Save Changes</Button>
+                <Button onClick={saveSettings} disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <span className="flex items-center">
+                      <span className="animate-spin mr-2">
+                        <svg className="h-4 w-4" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                      </span>
+                      Saving...
+                    </span>
+                  ) : "Save Changes"}
+                </Button>
               </CardFooter>
             </Card>
           )}
@@ -323,12 +306,24 @@ const Settings = () => {
                   <Switch 
                     id="dark-mode" 
                     checked={isDarkMode} 
-                    onCheckedChange={setIsDarkMode} 
+                    onCheckedChange={toggleTheme} 
                   />
                 </div>
               </CardContent>
               <CardFooter className="flex justify-end">
-                <Button onClick={saveSettings}>Save Changes</Button>
+                <Button onClick={saveSettings} disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <span className="flex items-center">
+                      <span className="animate-spin mr-2">
+                        <svg className="h-4 w-4" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                      </span>
+                      Saving...
+                    </span>
+                  ) : "Save Changes"}
+                </Button>
               </CardFooter>
             </Card>
           )}
@@ -367,7 +362,19 @@ const Settings = () => {
                 </div>
               </CardContent>
               <CardFooter className="flex justify-end">
-                <Button onClick={saveSettings}>Save Changes</Button>
+                <Button onClick={saveSettings} disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <span className="flex items-center">
+                      <span className="animate-spin mr-2">
+                        <svg className="h-4 w-4" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                      </span>
+                      Saving...
+                    </span>
+                  ) : "Save Changes"}
+                </Button>
               </CardFooter>
             </Card>
           )}
@@ -409,7 +416,19 @@ const Settings = () => {
                 </div>
               </CardContent>
               <CardFooter className="flex justify-end">
-                <Button onClick={saveSettings}>Save Changes</Button>
+                <Button onClick={saveSettings} disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <span className="flex items-center">
+                      <span className="animate-spin mr-2">
+                        <svg className="h-4 w-4" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                      </span>
+                      Saving...
+                    </span>
+                  ) : "Save Changes"}
+                </Button>
               </CardFooter>
             </Card>
           )}

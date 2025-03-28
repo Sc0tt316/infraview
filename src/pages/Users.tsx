@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { 
   User, Users as UsersIcon, UserPlus, Search, Filter, MoreHorizontal, 
   Mail, Phone, Shield, ShieldAlert, ShieldCheck, Edit, Trash2, RefreshCw, 
-  Check, X, AlertTriangle
+  Check, X, AlertTriangle, Lock
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,13 +12,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { userService, UserData } from "@/services/userService";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/context/AuthContext";
 
 const Users = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -32,11 +33,13 @@ const Users = () => {
     email: "",
     phone: "",
     department: "",
-    role: "user"
+    role: "user",
+    password: "" // New field for admin to set password
   });
   
   const queryClient = useQueryClient();
-  const { toast } = useToast();
+  const { user: currentUser } = useAuth();
+  const isAdmin = currentUser?.role === "admin";
   
   // Fetch users with React Query
   const { data: users = [], isLoading, isError, refetch } = useQuery({
@@ -46,8 +49,8 @@ const Users = () => {
   
   // Add user mutation
   const addUserMutation = useMutation({
-    mutationFn: (data: Omit<UserData, 'id' | 'lastActive'>) => 
-      userService.addUser(data),
+    mutationFn: (data: Omit<UserData, 'id' | 'lastActive'> & { password: string }) => 
+      userService.addUserWithPassword(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       setShowAddDialog(false);
@@ -102,7 +105,8 @@ const Users = () => {
       email: "",
       phone: "",
       department: "",
-      role: "user"
+      role: "user",
+      password: ""
     });
     setIsSubmitting(false);
   };
@@ -112,14 +116,10 @@ const Users = () => {
     e.preventDefault();
     setIsSubmitting(true);
     
-    const { name, email, phone, department, role } = formData;
+    const { name, email, phone, department, role, password } = formData;
     
-    if (!name || !email || !department) {
-      toast({
-        title: "Error",
-        description: "Please fill in all required fields.",
-        variant: "destructive"
-      });
+    if (!name || !email || !department || !password) {
+      toast.error("Please fill in all required fields.");
       setIsSubmitting(false);
       return;
     }
@@ -130,7 +130,8 @@ const Users = () => {
       phone,
       department,
       role: role as UserData['role'],
-      status: "active" as const
+      status: "active" as const,
+      password
     };
     
     addUserMutation.mutate(newUser);
@@ -146,11 +147,7 @@ const Users = () => {
     const { name, email, phone, department, role } = formData;
     
     if (!name || !email || !department) {
-      toast({
-        title: "Error",
-        description: "Please fill in all required fields.",
-        variant: "destructive"
-      });
+      toast.error("Please fill in all required fields.");
       setIsSubmitting(false);
       return;
     }
@@ -169,7 +166,8 @@ const Users = () => {
       email: user.email,
       phone: user.phone,
       department: user.department,
-      role: user.role
+      role: user.role,
+      password: "" // We don't edit password here, but keep the field in state
     });
     setShowEditDialog(true);
   };
@@ -275,6 +273,21 @@ const Users = () => {
   
   const filteredUsers = getFilteredUsers();
 
+  // If user is not admin, show restricted access message
+  if (!isAdmin) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[60vh] text-center">
+        <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+          <ShieldAlert className="h-8 w-8 text-muted-foreground" />
+        </div>
+        <h3 className="text-lg font-medium">Restricted Access</h3>
+        <p className="text-muted-foreground mt-1 max-w-md">
+          You need administrator privileges to access the user management page.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -326,6 +339,17 @@ const Users = () => {
                       value={formData.email}
                       onChange={handleInputChange}
                       placeholder="Enter email address" 
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <label htmlFor="password" className="text-sm font-medium">Password*</label>
+                    <Input 
+                      id="password" 
+                      name="password"
+                      type="password"
+                      value={formData.password}
+                      onChange={handleInputChange}
+                      placeholder="Enter password for new user" 
                     />
                   </div>
                   <div className="grid gap-2">
@@ -506,7 +530,7 @@ const Users = () => {
               key={user.id}
               variants={itemVariants}
               whileHover={{ y: -2, transition: { duration: 0.2 } }}
-              className="bg-white border border-border/40 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden p-4"
+              className="bg-white dark:bg-gray-800 border border-border/40 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden p-4"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
