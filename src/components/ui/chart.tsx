@@ -1,3 +1,4 @@
+
 import * as React from "react"
 import * as RechartsPrimitive from "recharts"
 
@@ -353,6 +354,136 @@ function getPayloadConfigFromPayload(
     : config[key as keyof typeof config]
 }
 
+// Add BarChart and LineChart components
+interface ChartProps {
+  data: any[];
+  categories: string[];
+  index: string;
+  colors: string[];
+  valueFormatter?: (value: number) => string;
+  showAnimation?: boolean;
+}
+
+const BarChart: React.FC<ChartProps> = ({ 
+  data, 
+  categories, 
+  index, 
+  colors, 
+  valueFormatter = (value: number) => `${value}`,
+  showAnimation = false,
+}) => {
+  const config: ChartConfig = React.useMemo(() => {
+    return categories.reduce((acc, category, i) => {
+      acc[category] = { color: colors[i % colors.length] };
+      return acc;
+    }, {} as ChartConfig);
+  }, [categories, colors]);
+
+  return (
+    <ChartContainer config={config}>
+      <RechartsPrimitive.BarChart data={data}>
+        <RechartsPrimitive.CartesianGrid strokeDasharray="3 3" vertical={false} />
+        <RechartsPrimitive.XAxis 
+          dataKey={index} 
+          tick={{ fontSize: 12 }}
+          tickLine={false}
+          axisLine={{ strokeWidth: 0 }}
+        />
+        <RechartsPrimitive.YAxis 
+          tick={{ fontSize: 12 }}
+          tickLine={false}
+          axisLine={{ strokeWidth: 0 }}
+          tickFormatter={(value) => valueFormatter(value).split(' ')[0]}
+        />
+        <RechartsPrimitive.Tooltip
+          content={
+            <ChartTooltipContent
+              formatter={(value, name, item) => (
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-muted-foreground">{name}</span>
+                  <span className="font-mono font-medium tabular-nums">
+                    {valueFormatter(Number(value))}
+                  </span>
+                </div>
+              )}
+            />
+          }
+        />
+        {categories.map((category, i) => (
+          <RechartsPrimitive.Bar
+            key={category}
+            dataKey={category}
+            fill={colors[i % colors.length]}
+            radius={[4, 4, 0, 0]}
+            {...(showAnimation && { animationDuration: 500 })}
+          />
+        ))}
+      </RechartsPrimitive.BarChart>
+    </ChartContainer>
+  );
+};
+
+const LineChart: React.FC<ChartProps> = ({ 
+  data, 
+  categories, 
+  index, 
+  colors, 
+  valueFormatter = (value: number) => `${value}`,
+  showAnimation = false,
+}) => {
+  const config: ChartConfig = React.useMemo(() => {
+    return categories.reduce((acc, category, i) => {
+      acc[category] = { color: colors[i % colors.length] };
+      return acc;
+    }, {} as ChartConfig);
+  }, [categories, colors]);
+
+  return (
+    <ChartContainer config={config}>
+      <RechartsPrimitive.LineChart data={data}>
+        <RechartsPrimitive.CartesianGrid strokeDasharray="3 3" vertical={false} />
+        <RechartsPrimitive.XAxis 
+          dataKey={index} 
+          tick={{ fontSize: 12 }}
+          tickLine={false}
+          axisLine={{ strokeWidth: 0 }}
+        />
+        <RechartsPrimitive.YAxis 
+          tick={{ fontSize: 12 }}
+          tickLine={false}
+          axisLine={{ strokeWidth: 0 }}
+          tickFormatter={(value) => valueFormatter(value).split(' ')[0]}
+        />
+        <RechartsPrimitive.Tooltip
+          content={
+            <ChartTooltipContent
+              formatter={(value, name, item) => (
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-muted-foreground">{name}</span>
+                  <span className="font-mono font-medium tabular-nums">
+                    {valueFormatter(Number(value))}
+                  </span>
+                </div>
+              )}
+            />
+          }
+        />
+        {categories.map((category, i) => (
+          <RechartsPrimitive.Line
+            key={category}
+            type="monotone"
+            dataKey={category}
+            stroke={colors[i % colors.length]}
+            strokeWidth={2}
+            dot={{ r: 4, strokeWidth: 2 }}
+            {...(showAnimation && { animationDuration: 500 })}
+          />
+        ))}
+      </RechartsPrimitive.LineChart>
+    </ChartContainer>
+  );
+};
+
 export {
   ChartContainer,
   ChartTooltip,
@@ -360,4 +491,6 @@ export {
   ChartLegend,
   ChartLegendContent,
   ChartStyle,
+  BarChart,
+  LineChart
 }

@@ -1,136 +1,87 @@
 
-import React, { useState } from "react";
-import { motion } from "framer-motion";
-import { AlertTriangle, Bell, Clock, Filter, Search, RefreshCw, Printer, User } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useToast } from "@/hooks/use-toast";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { cn } from "@/lib/utils";
-import { useQuery } from "@tanstack/react-query";
-import { analyticsService } from "@/services/analyticsService";
+import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { format } from 'date-fns';
+import { analyticsService } from '@/services/analyticsService';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Search, AlertCircle, ArrowUpDown, Printer, UserRound, Bell } from 'lucide-react';
+
+interface AlertItem {
+  id: string;
+  title: string;
+  message: string;
+  severity: 'critical' | 'warning' | 'info';
+  timestamp: string;
+  printer?: string;
+  user?: string;
+  resolved: boolean;
+}
 
 const Alerts = () => {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filterType, setFilterType] = useState("all");
-  const [sortOrder, setSortOrder] = useState<"newest" | "oldest" | "highPriority">("newest");
-  const { toast } = useToast();
-  
+  const [search, setSearch] = useState('');
+  const [sortBy, setSortBy] = useState<'timestamp' | 'severity'>('timestamp');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [filterType, setFilterType] = useState<'all' | 'critical' | 'warning' | 'info'>('all');
+  const [filterResolved, setFilterResolved] = useState<'all' | 'resolved' | 'unresolved'>('all');
+
   // Fetch alerts data
-  const { 
-    data: alertsData = [],
-    isLoading,
-    isError,
-    refetch
-  } = useQuery({
+  const { data: alertsData, isLoading } = useQuery({
     queryKey: ['alerts'],
     queryFn: analyticsService.getAlerts
   });
 
-  // Handle refresh
-  const handleRefresh = () => {
-    refetch();
-    toast({
-      title: "Refreshed",
-      description: "Alerts have been refreshed.",
-    });
-  };
+  // Filter and sort alerts
+  const filteredAlerts = React.useMemo(() => {
+    if (!alertsData) return [];
 
-  // Filter and sort alerts data
-  const getFilteredAlerts = () => {
-    let filtered = alertsData;
-    
-    if (searchQuery) {
+    let filtered = [...alertsData];
+
+    // Filter by search term
+    if (search) {
+      const searchLower = search.toLowerCase();
       filtered = filtered.filter(alert => 
-        alert.message.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        alert.source.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        alert.entityName?.toLowerCase().includes(searchQuery.toLowerCase())
+        alert.title.toLowerCase().includes(searchLower) || 
+        alert.message.toLowerCase().includes(searchLower) ||
+        (alert.printer && alert.printer.toLowerCase().includes(searchLower)) ||
+        (alert.user && alert.user.toLowerCase().includes(searchLower))
       );
     }
-    
-    if (filterType !== "all") {
-      filtered = filtered.filter(alert => alert.type === filterType);
+
+    // Filter by type
+    if (filterType !== 'all') {
+      filtered = filtered.filter(alert => alert.severity === filterType);
     }
-    
+
+    // Filter by resolved status
+    if (filterResolved !== 'all') {
+      filtered = filtered.filter(alert => 
+        filterResolved === 'resolved' ? alert.resolved : !alert.resolved
+      );
+    }
+
     // Sort alerts
-    switch (sortOrder) {
-      case "newest":
-        return filtered.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-      case "oldest":
-        return filtered.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
-      case "highPriority":
-        return filtered.sort((a, b) => {
-          if (a.priority === "high" && b.priority !== "high") return -1;
-          if (a.priority !== "high" && b.priority === "high") return 1;
-          if (a.priority === "medium" && b.priority === "low") return -1;
-          if (a.priority === "low" && b.priority === "medium") return 1;
-          return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
-        });
-      default:
-        return filtered;
-    }
-  };
-
-  const getAlertIcon = (type: string) => {
-    switch (type) {
-      case "printer": return <Printer className="h-4 w-4" />;
-      case "user": return <User className="h-4 w-4" />;
-      case "system": return <AlertTriangle className="h-4 w-4" />;
-      default: return <Bell className="h-4 w-4" />;
-    }
-  };
-
-  const getAlertColor = (type: string, priority: string) => {
-    const baseClasses = "text-white bg-opacity-90 dark:bg-opacity-70";
-    
-    if (priority === "high") {
-      return `${baseClasses} bg-red-500 dark:bg-red-700`;
-    } else if (priority === "medium") {
-      return `${baseClasses} bg-yellow-500 dark:bg-yellow-700`;
-    }
-    
-    switch (type) {
-      case "printer": return `${baseClasses} bg-blue-500 dark:bg-blue-700`;
-      case "user": return `${baseClasses} bg-green-500 dark:bg-green-700`;
-      case "system": return `${baseClasses} bg-purple-500 dark:bg-purple-700`;
-      default: return `${baseClasses} bg-gray-500 dark:bg-gray-700`;
-    }
-  };
-
-  const getPriorityLabel = (priority: string) => {
-    switch (priority) {
-      case "high": return <span className="px-2 py-1 rounded-full text-xs bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300">High</span>;
-      case "medium": return <span className="px-2 py-1 rounded-full text-xs bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300">Medium</span>;
-      case "low": return <span className="px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300">Low</span>;
-      default: return null;
-    }
-  };
-
-  const filteredAlerts = getFilteredAlerts();
-
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.05
+    filtered.sort((a, b) => {
+      if (sortBy === 'timestamp') {
+        const dateA = new Date(a.timestamp).getTime();
+        const dateB = new Date(b.timestamp).getTime();
+        return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
+      } else {
+        const severityOrder = { critical: 3, warning: 2, info: 1 };
+        const severityA = severityOrder[a.severity];
+        const severityB = severityOrder[b.severity];
+        return sortOrder === 'asc' ? severityA - severityB : severityB - severityA;
       }
-    }
-  };
+    });
 
-  const itemVariants = {
-    hidden: { opacity: a0, y: 20 },
-    show: { 
-      opacity: 1, 
-      y: 0,
-      transition: {
-        type: "spring",
-        stiffness: 300,
-        damping: 24
-      }
-    }
+    return filtered;
+  }, [alertsData, search, filterType, filterResolved, sortBy, sortOrder]);
+
+  const toggleSortOrder = () => {
+    setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
   };
 
   return (
@@ -138,139 +89,113 @@ const Alerts = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Alerts</h1>
-          <p className="text-muted-foreground mt-1">View and manage system alerts</p>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <Button 
-            variant="outline" 
-            size="icon" 
-            onClick={handleRefresh} 
-            className="h-10 w-10"
-            disabled={isLoading}
-          >
-            <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
-          </Button>
+          <p className="text-muted-foreground mt-1">Monitor and manage system alerts</p>
         </div>
       </div>
 
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative w-full sm:w-80">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-          <Input
-            placeholder="Search alerts..."
-            className="pl-10 dark:bg-gray-800 dark:border-gray-700"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-        
-        <div className="flex gap-2 items-center">
-          <Select value={sortOrder} onValueChange={(value) => setSortOrder(value as "newest" | "oldest" | "highPriority")}>
-            <SelectTrigger className="w-[180px] dark:border-gray-700 dark:bg-gray-800">
-              <SelectValue placeholder="Sort by" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="newest">Newest first</SelectItem>
-              <SelectItem value="oldest">Oldest first</SelectItem>
-              <SelectItem value="highPriority">Priority (High first)</SelectItem>
-            </SelectContent>
-          </Select>
-          
-          <Button variant="outline" size="sm" className="gap-2 dark:border-gray-700 dark:bg-gray-800">
-            <Filter size={16} />
-            <span>Filter</span>
-          </Button>
-          
-          <Tabs defaultValue="all" className="w-fit" value={filterType} onValueChange={setFilterType}>
-            <TabsList className="dark:bg-gray-800">
-              <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="printer">Printers</TabsTrigger>
-              <TabsTrigger value="user">Users</TabsTrigger>
-              <TabsTrigger value="system">System</TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </div>
-      </div>
-
-      {isLoading ? (
-        <div className="flex items-center justify-center h-64">
-          <RefreshCw className="h-8 w-8 animate-spin text-primary/70" />
-        </div>
-      ) : isError ? (
-        <Alert variant="destructive" className="my-4">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            Failed to load alerts data. Please try again.
-            <Button variant="outline" size="sm" className="ml-2" onClick={() => refetch()}>
-              Retry
-            </Button>
-          </AlertDescription>
-        </Alert>
-      ) : filteredAlerts.length > 0 ? (
-        <motion.div 
-          variants={containerVariants}
-          initial="hidden"
-          animate="show"
-          className="space-y-4"
-        >
-          {filteredAlerts.map((alert) => (
-            <motion.div
-              key={alert.id}
-              variants={itemVariants}
-              className="flex items-start gap-4 p-4 rounded-lg border border-border/40 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm"
-            >
-              <div className={cn(
-                "w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0",
-                getAlertColor(alert.type, alert.priority)
-              )}>
-                {getAlertIcon(alert.type)}
-              </div>
-              <div className="flex-1">
-                <div className="flex flex-col sm:flex-row sm:justify-between">
-                  <h4 className="font-medium text-foreground dark:text-gray-200">
-                    {alert.title}
-                    {alert.entityName && (
-                      <span className="ml-1 font-normal text-muted-foreground dark:text-gray-400">
-                        for {alert.entityName}
-                      </span>
-                    )}
-                  </h4>
-                  <div className="flex items-center mt-1 sm:mt-0 text-xs text-muted-foreground dark:text-gray-400">
-                    <Clock className="mr-1 h-3 w-3" />
-                    <span>{alert.timestamp}</span>
+      <Card>
+        <CardHeader className="pb-2">
+          <div className="flex flex-col sm:flex-row justify-between gap-4">
+            <div className="relative w-full sm:w-64">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search alerts..."
+                className="pl-8 w-full"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Select value={filterType} onValueChange={(value) => setFilterType(value as any)}>
+                <SelectTrigger className="w-[120px]">
+                  <SelectValue placeholder="Filter by" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Severity</SelectItem>
+                  <SelectItem value="critical">Critical</SelectItem>
+                  <SelectItem value="warning">Warning</SelectItem>
+                  <SelectItem value="info">Info</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={filterResolved} onValueChange={(value) => setFilterResolved(value as any)}>
+                <SelectTrigger className="w-[120px]">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="resolved">Resolved</SelectItem>
+                  <SelectItem value="unresolved">Unresolved</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button variant="outline" size="icon" onClick={toggleSortOrder}>
+                <ArrowUpDown className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="flex justify-center py-8">
+              <Bell className="h-8 w-8 animate-pulse text-muted-foreground" />
+            </div>
+          ) : filteredAlerts.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-8 text-center">
+              <AlertCircle className="h-10 w-10 text-muted-foreground mb-2" />
+              <h3 className="text-lg font-medium">No alerts found</h3>
+              <p className="text-muted-foreground mt-1 max-w-md">
+                {search ? "No alerts match your search criteria." : "There are no alerts to display."}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {filteredAlerts.map((alert) => (
+                <div 
+                  key={alert.id} 
+                  className="flex flex-col md:flex-row gap-4 p-4 rounded-lg border bg-background/50"
+                >
+                  <div className="flex items-start gap-4 flex-1">
+                    <div>
+                      <Badge
+                        className={
+                          alert.severity === 'critical' ? 'bg-red-500 hover:bg-red-600' : 
+                          alert.severity === 'warning' ? 'bg-amber-500 hover:bg-amber-600' : 
+                          'bg-blue-500 hover:bg-blue-600'
+                        }
+                      >
+                        {alert.severity}
+                      </Badge>
+                      <h3 className="text-md font-medium mt-2">{alert.title}</h3>
+                      <p className="text-muted-foreground text-sm mt-1">{alert.message}</p>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {alert.printer && (
+                          <div className="flex items-center text-xs text-muted-foreground">
+                            <Printer className="h-3 w-3 mr-1" />
+                            {alert.printer}
+                          </div>
+                        )}
+                        {alert.user && (
+                          <div className="flex items-center text-xs text-muted-foreground">
+                            <UserRound className="h-3 w-3 mr-1" />
+                            {alert.user}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex flex-row md:flex-col items-center md:items-end justify-between md:justify-start">
+                    <div className="text-xs text-muted-foreground">
+                      {format(new Date(alert.timestamp), 'PPp')}
+                    </div>
+                    <Badge variant={alert.resolved ? "outline" : "secondary"} className="mt-2">
+                      {alert.resolved ? "Resolved" : "Unresolved"}
+                    </Badge>
                   </div>
                 </div>
-                <p className="text-sm text-muted-foreground mt-1 dark:text-gray-400">{alert.message}</p>
-                <div className="mt-2 flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground dark:text-gray-500">Source: {alert.source}</span>
-                  {getPriorityLabel(alert.priority)}
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </motion.div>
-      ) : (
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <div className="w-16 h-16 bg-muted dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
-            <Bell className="h-8 w-8 text-muted-foreground" />
-          </div>
-          <h3 className="text-lg font-medium dark:text-gray-200">No alerts found</h3>
-          <p className="text-muted-foreground mt-1 max-w-md dark:text-gray-400">
-            No alerts match your search criteria. Try changing your search or filters.
-          </p>
-          <Button 
-            variant="outline"
-            className="mt-4 dark:bg-gray-800 dark:border-gray-700"
-            onClick={() => {
-              setSearchQuery("");
-              setFilterType("all");
-            }}
-          >
-            Clear filters
-          </Button>
-        </div>
-      )}
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };

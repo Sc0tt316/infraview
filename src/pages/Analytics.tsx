@@ -103,7 +103,8 @@ const Analytics = () => {
                   key === 'totalVolume' ? 'Total Print Volume' : 
                   key === 'activeJobs' ? 'Active Print Jobs' : 
                   key === 'completedJobs' ? 'Completed Jobs (30d)' : 
-                  key === 'failedJobs' ? 'Failed Jobs (30d)' : key}
+                  key === 'failedJobs' ? 'Failed Jobs (30d)' : 
+                  key === 'totalUsers' ? 'Total Users' : key}
               </CardTitle>
             </CardHeader>
             <CardContent>
