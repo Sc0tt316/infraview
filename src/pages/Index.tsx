@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { format, subDays } from 'date-fns';
@@ -17,7 +18,7 @@ import {
   Wrench,
   FileWarning,
   CheckCircle,
-  PieChart
+  Info
 } from 'lucide-react';
 import { analyticsService } from '@/services/analyticsService';
 import { printerService } from '@/services/printerService';
@@ -26,7 +27,28 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { BarChart, PieChart as PieChartComponent } from "@/components/ui/chart";
+import { BarChart, LineChart } from "@/components/ui/chart";
+import { ActivityLogData } from '@/pages/Activity';
+import { AlertData } from '@/pages/Alerts';
+
+// Define analytics data interface
+interface AnalyticsData {
+  summary: {
+    totalPrinters: number;
+    totalUsers: number;
+    departmentVolume: {
+      department: string;
+      volume: number;
+    }[];
+  };
+  printerStatus: {
+    online: number;
+    offline: number;
+    error: number;
+    warning: number;
+    maintenance: number;
+  };
+}
 
 const Index = () => {
   const { toast } = useToast();
@@ -100,8 +122,6 @@ const Index = () => {
     });
   };
   
-  // Keep existing utility functions
-  
   // Render the dashboard
   return (
     <div className="space-y-6">
@@ -165,7 +185,7 @@ const Index = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {dashboardData?.departmentVolume?.reduce((sum, item) => sum + item.volume, 0).toLocaleString() || 0}
+              {dashboardData?.summary?.departmentVolume?.reduce((sum, item) => sum + item.volume, 0).toLocaleString() || 0}
             </div>
             <p className="text-xs text-muted-foreground">
               pages printed
@@ -199,14 +219,13 @@ const Index = () => {
               <div className="flex items-center justify-center h-[300px]">
                 <RefreshCw className="h-8 w-8 animate-spin text-primary/70" />
               </div>
-            ) : dashboardData?.departmentVolume && dashboardData.departmentVolume.length > 0 ? (
+            ) : dashboardData?.summary?.departmentVolume && dashboardData.summary.departmentVolume.length > 0 ? (
               <div className="h-[300px]">
                 <BarChart
-                  data={dashboardData.departmentVolume}
+                  data={dashboardData.summary.departmentVolume}
                   categories={['volume']}
                   index="department"
                   valueFormatter={(value) => `${value.toLocaleString()} pages`}
-                  className="h-[300px]"
                 />
               </div>
             ) : (
@@ -230,17 +249,11 @@ const Index = () => {
               <div className="flex items-center justify-center h-[300px]">
                 <RefreshCw className="h-8 w-8 animate-spin text-primary/70" />
               </div>
-            ) : printersData ? (
+            ) : dashboardData?.printerStatus ? (
               <div className="h-[300px]">
                 {/* Create status data for pie chart */}
                 {(() => {
-                  const statusCounts = {
-                    online: printersData.filter(p => p.status === 'online').length,
-                    offline: printersData.filter(p => p.status === 'offline').length,
-                    error: printersData.filter(p => p.status === 'error').length,
-                    warning: printersData.filter(p => p.status === 'warning').length,
-                    maintenance: printersData.filter(p => p.status === 'maintenance').length
-                  };
+                  const statusCounts = dashboardData.printerStatus;
                   
                   const pieData = [
                     { name: 'Online', value: statusCounts.online },
@@ -250,38 +263,60 @@ const Index = () => {
                     { name: 'Maintenance', value: statusCounts.maintenance }
                   ].filter(item => item.value > 0);
                   
+                  // Instead of pie chart, use a simple visualization
                   return (
-                    <PieChartComponent
-                      data={pieData}
-                      category="value"
-                      index="name"
-                      valueFormatter={(value) => `${value} printers`}
-                      colors={["green", "gray", "red", "orange", "blue"]}
-                      className="h-[300px]"
-                    />
+                    <div className="flex flex-col h-[300px] justify-center space-y-4">
+                      {pieData.map(item => (
+                        <div key={item.name} className="flex items-center space-x-2">
+                          <div className={`h-4 w-4 rounded-full ${
+                            item.name === 'Online' ? 'bg-green-500' : 
+                            item.name === 'Offline' ? 'bg-gray-400' : 
+                            item.name === 'Error' ? 'bg-red-500' : 
+                            item.name === 'Warning' ? 'bg-orange-400' : 
+                            'bg-blue-500'
+                          }`} />
+                          <div className="flex-1">
+                            <div className="text-sm font-medium">{item.name}</div>
+                            <div className="h-2 bg-gray-100 rounded-full mt-1">
+                              <div 
+                                className={`h-2 rounded-full ${
+                                  item.name === 'Online' ? 'bg-green-500' : 
+                                  item.name === 'Offline' ? 'bg-gray-400' : 
+                                  item.name === 'Error' ? 'bg-red-500' : 
+                                  item.name === 'Warning' ? 'bg-orange-400' : 
+                                  'bg-blue-500'
+                                }`} 
+                                style={{ width: `${(item.value / Object.values(statusCounts).reduce((a, b) => a + b, 0)) * 100}%` }} 
+                              />
+                            </div>
+                          </div>
+                          <div className="text-sm font-medium">{item.value}</div>
+                        </div>
+                      ))}
+                    </div>
                   );
                 })()}
                 
                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mt-4">
                   <div className="flex items-center gap-2">
                     <div className="h-3 w-3 rounded-full bg-green-500"></div>
-                    <span className="text-sm text-muted-foreground">Online ({printersData.filter(p => p.status === 'online').length})</span>
+                    <span className="text-sm text-muted-foreground">Online ({dashboardData?.printerStatus?.online || 0})</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="h-3 w-3 rounded-full bg-gray-400"></div>
-                    <span className="text-sm text-muted-foreground">Offline ({printersData.filter(p => p.status === 'offline').length})</span>
+                    <span className="text-sm text-muted-foreground">Offline ({dashboardData?.printerStatus?.offline || 0})</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="h-3 w-3 rounded-full bg-red-500"></div>
-                    <span className="text-sm text-muted-foreground">Error ({printersData.filter(p => p.status === 'error').length})</span>
+                    <span className="text-sm text-muted-foreground">Error ({dashboardData?.printerStatus?.error || 0})</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="h-3 w-3 rounded-full bg-orange-400"></div>
-                    <span className="text-sm text-muted-foreground">Warning ({printersData.filter(p => p.status === 'warning').length})</span>
+                    <span className="text-sm text-muted-foreground">Warning ({dashboardData?.printerStatus?.warning || 0})</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="h-3 w-3 rounded-full bg-blue-500"></div>
-                    <span className="text-sm text-muted-foreground">Maintenance ({printersData.filter(p => p.status === 'maintenance').length})</span>
+                    <span className="text-sm text-muted-foreground">Maintenance ({dashboardData?.printerStatus?.maintenance || 0})</span>
                   </div>
                 </div>
               </div>
@@ -316,22 +351,22 @@ const Index = () => {
                     className="flex items-center justify-between py-2 border-b last:border-b-0"
                   >
                     <div className="flex items-center gap-2">
-                      {job.status === 'completed' ? (
+                      {job.type === 'success' ? (
                         <CheckCircle className="h-4 w-4 text-green-500" />
-                      ) : job.status === 'failed' ? (
+                      ) : job.type === 'error' ? (
                         <X className="h-4 w-4 text-red-500" />
                       ) : (
                         <Clock className="h-4 w-4 text-blue-500" />
                       )}
                       <div>
-                        <p className="text-sm font-medium">{job.fileName}</p>
-                        <p className="text-xs text-muted-foreground">{job.user} • {format(new Date(job.timestamp), 'MMM d, h:mm a')}</p>
+                        <p className="text-sm font-medium">{job.entityType}</p>
+                        <p className="text-xs text-muted-foreground">{job.user || 'System'} • {format(new Date(job.timestamp), 'MMM d, h:mm a')}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="whitespace-nowrap">{job.pages} pages</Badge>
-                      <Badge variant={job.status === 'completed' ? 'success' : job.status === 'failed' ? 'destructive' : 'secondary'} className="whitespace-nowrap">
-                        {job.status}
+                      <Badge variant="outline" className="whitespace-nowrap">{job.entityId || '-'}</Badge>
+                      <Badge variant={job.type === 'success' ? 'outline' : job.type === 'error' ? 'destructive' : 'secondary'} className="whitespace-nowrap">
+                        {job.type}
                       </Badge>
                     </div>
                   </div>

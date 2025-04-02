@@ -54,7 +54,6 @@ import { Badge } from '@/components/ui/badge';
 import { Pagination } from '@/components/ui/pagination';
 import PrinterDetailModal from '@/components/printers/PrinterDetailModal';
 
-// Define printer form schema
 const printerSchema = z.object({
   name: z.string().min(2, {
     message: "Printer name must be at least 2 characters.",
@@ -83,20 +82,17 @@ const Printers = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch printers
   const { data: printersData, isLoading, refetch } = useQuery({
     queryKey: ['printers'],
     queryFn: printerService.getAllPrinters,
   });
 
-  // Fetch printer details for selected printer
   const { data: printerDetails } = useQuery({
     queryKey: ['printerDetails', selectedPrinter],
     queryFn: () => selectedPrinter ? printerService.getPrinterById(selectedPrinter) : undefined,
     enabled: !!selectedPrinter,
   });
 
-  // Add printer mutation
   const addPrinterMutation = useMutation(printerService.addPrinter, {
     onSuccess: () => {
       toast({
@@ -115,7 +111,6 @@ const Printers = () => {
     },
   });
 
-  // Update printer mutation
   const updatePrinterMutation = useMutation(
     (data: { id: string; data: Partial<PrinterData> }) => printerService.updatePrinter(data.id, data.data),
     {
@@ -138,7 +133,6 @@ const Printers = () => {
     }
   );
 
-  // Delete printer mutation
   const deletePrinterMutation = useMutation(printerService.deletePrinter, {
     onSuccess: () => {
       toast({
@@ -156,18 +150,15 @@ const Printers = () => {
     },
   });
 
-  // Handle printer deletion
   const handleDeletePrinter = (id: string) => {
     deletePrinterMutation.mutate(id);
   };
 
-  // Handle printer edit
   const handleEditPrinter = (printer: PrinterData) => {
     setPrinterToEdit(printer);
     setIsEditing(true);
   };
 
-  // Handle refresh
   const handleRefresh = () => {
     refetch();
     toast({
@@ -176,17 +167,14 @@ const Printers = () => {
     });
   };
 
-  // Filter printers based on search query
   const filteredPrinters = printersData?.filter(printer =>
     printer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     printer.model.toLowerCase().includes(searchQuery.toLowerCase()) ||
     printer.location.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Paginate printers
   const paginatedPrinters = filteredPrinters?.slice((page - 1) * itemsPerPage, page * itemsPerPage);
 
-  // Form for adding a new printer
   const addForm = useForm<z.infer<typeof printerSchema>>({
     resolver: zodResolver(printerSchema),
     defaultValues: {
@@ -201,7 +189,6 @@ const Printers = () => {
     },
   });
 
-  // Form for editing a printer
   const editForm = useForm<z.infer<typeof printerSchema>>({
     resolver: zodResolver(printerSchema),
     defaultValues: printerToEdit || {
@@ -224,19 +211,16 @@ const Printers = () => {
     }
   }, [printerToEdit, editForm]);
 
-  // Handle add printer submission
   const handleAddSubmit = (values: z.infer<typeof printerSchema>) => {
     addPrinterMutation.mutate(values);
   };
 
-  // Handle edit printer submission
   const handleEditSubmit = (values: z.infer<typeof printerSchema>) => {
     if (printerToEdit) {
       updatePrinterMutation.mutate({ id: printerToEdit.id, data: values });
     }
   };
 
-  // Get status color
   const getStatusColor = (status: PrinterData["status"]) => {
     switch (status) {
       case "online":
@@ -480,19 +464,36 @@ const Printers = () => {
                   ))}
                 </TableBody>
               </Table>
-              <TableFooter>
-                <TableRow>
-                  <TableCell colSpan={7}>
-                    <Pagination
-                      page={page}
-                      onPageChange={setPage}
-                      totalCount={filteredPrinters.length}
-                      pageSize={itemsPerPage}
-                      siblingCount={1}
-                    />
-                  </TableCell>
-                </TableRow>
-              </TableFooter>
+              <div className="flex justify-center mt-4">
+                <nav aria-label="Pagination" className="flex items-center space-x-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage(page - 1)}
+                    disabled={page === 1}
+                  >
+                    Previous
+                  </Button>
+                  {Array.from({ length: Math.ceil(filteredPrinters.length / itemsPerPage) }).map((_, i) => (
+                    <Button
+                      key={i}
+                      variant={page === i + 1 ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setPage(i + 1)}
+                    >
+                      {i + 1}
+                    </Button>
+                  ))}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage(page + 1)}
+                    disabled={page === Math.ceil(filteredPrinters.length / itemsPerPage)}
+                  >
+                    Next
+                  </Button>
+                </nav>
+              </div>
             </motion.div>
           ) : (
             <div className="flex flex-col items-center justify-center py-8 text-center">
@@ -611,33 +612,33 @@ const Printers = () => {
                     <FormMessage />
                   </FormItem>
                 )}
-                />
-                <FormField
-                  control={editForm.control}
-                  name="ipAddress"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>IP Address</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter IP Address" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={editForm.control}
-                  name="department"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Department</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter Department" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              />
+              <FormField
+                control={editForm.control}
+                name="ipAddress"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>IP Address</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter IP Address" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editForm.control}
+                name="department"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Department</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter Department" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <DialogFooter>
                 <DialogClose asChild>
                   <Button type="button" variant="secondary">

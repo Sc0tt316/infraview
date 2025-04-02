@@ -19,6 +19,24 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
 
+// Define alert data interface
+export interface AlertData {
+  id: string;
+  timestamp: string;
+  title: string;
+  description: string;
+  level: "critical" | "warning" | "info";
+  status: "active" | "resolved" | "acknowledged";
+  printer?: {
+    id?: string;
+    name?: string;
+  } | string;
+  user?: {
+    id?: string;
+    name?: string;
+  } | string;
+}
+
 // Alert query params
 const alertQueryParams = {
   limit: 100,
@@ -192,13 +210,13 @@ const Alerts = () => {
                       
                       {alert.printer && (
                         <div className="mt-2 text-xs text-muted-foreground">
-                          Printer: {alert.printer?.name || alert.printer || ''}
+                          Printer: {typeof alert.printer === 'object' ? alert.printer.name : alert.printer}
                         </div>
                       )}
                       
                       {alert.user && (
                         <div className="mt-1 text-xs text-muted-foreground">
-                          User: {alert.user?.name || alert.user || ''}
+                          User: {typeof alert.user === 'object' ? alert.user.name : alert.user}
                         </div>
                       )}
                     </div>

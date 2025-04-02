@@ -18,6 +18,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
 
+// Define activity log interface if it's not already defined elsewhere
+export interface ActivityLogData {
+  id: string;
+  timestamp: string;
+  type: "error" | "warning" | "info" | "success";
+  description: string;
+  entityType?: string;
+  entityId?: string;
+  action?: string;
+  user?: string;
+}
+
 // Define parameters for the activity query
 const activityQueryParams = {
   limit: 100,
