@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { 
@@ -253,7 +252,7 @@ const Dashboard = () => {
               { 
                 id: 3, 
                 title: "Print Jobs (Today)", 
-                value: analytics?.printVolume?.reduce((sum, item) => sum + item.prints, 0) || 0, 
+                value: analytics?.printVolume?.reduce((sum, item) => sum + (item.volume || 0), 0) || 0, 
                 change: "-35", 
                 percent: "4%", 
                 trend: "down", 
@@ -382,12 +381,17 @@ const Dashboard = () => {
                     <div className="h-60 w-full flex items-center justify-center">
                       <RefreshCw className="h-8 w-8 animate-spin text-primary/70" />
                     </div>
-                  ) : (
-                    <div className="h-60">
+                  ) : analytics?.printerStatus && analytics.printerStatus.length > 0 ? (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.5 }}
+                      className="h-60"
+                    >
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                           <Pie
-                            data={analytics?.printerStatus || []}
+                            data={analytics.printerStatus}
                             cx="50%"
                             cy="50%"
                             innerRadius={60}
@@ -395,7 +399,7 @@ const Dashboard = () => {
                             paddingAngle={5}
                             dataKey="value"
                           >
-                            {analytics?.printerStatus.map((entry, index) => (
+                            {analytics.printerStatus.map((entry, index) => (
                               <Cell key={`cell-${index}`} fill={entry.color} />
                             ))}
                           </Pie>
@@ -410,6 +414,14 @@ const Dashboard = () => {
                           <Legend />
                         </PieChart>
                       </ResponsiveContainer>
+                    </motion.div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-60 text-center">
+                      <CalendarIcon className="h-10 w-10 text-muted-foreground mb-2" />
+                      <h3 className="text-lg font-medium">No department data available</h3>
+                      <p className="text-muted-foreground mt-1 max-w-md">
+                        There is no print volume data by department available at this time.
+                      </p>
                     </div>
                   )}
                 </CardContent>

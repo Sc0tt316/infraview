@@ -41,15 +41,15 @@ const Activity = () => {
     let filtered = activityData;
     
     if (searchQuery) {
-      filtered = filtered.filter(activity => 
+      filtered = filtered.filter((activity: ActivityLogData) => 
         activity.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
         activity.user.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        activity.entityName?.toLowerCase().includes(searchQuery.toLowerCase())
+        (activity.entityName && activity.entityName.toLowerCase().includes(searchQuery.toLowerCase()))
       );
     }
     
     if (filterType !== "all") {
-      filtered = filtered.filter(activity => activity.type === filterType);
+      filtered = filtered.filter((activity: ActivityLogData) => activity.type === filterType);
     }
     
     return filtered;
@@ -168,7 +168,7 @@ const Activity = () => {
           animate="show"
           className="space-y-4"
         >
-          {filteredActivities.map((activity) => (
+          {filteredActivities.map((activity: ActivityLogData) => (
             <motion.div
               key={activity.id}
               variants={itemVariants}
