@@ -13,6 +13,7 @@ import Printers from "./pages/Printers";
 import Users from "./pages/Users";
 import Analytics from "./pages/Analytics";
 import Activity from "./pages/Activity";
+import Alerts from "./pages/Alerts";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
@@ -85,6 +86,14 @@ const AppRoutes = () => {
         <ProtectedRoute>
           <Layout>
             <Activity />
+          </Layout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/alerts" element={
+        <ProtectedRoute>
+          <Layout>
+            <Alerts />
           </Layout>
         </ProtectedRoute>
       } />

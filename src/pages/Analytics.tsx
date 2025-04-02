@@ -1,551 +1,212 @@
-import React, { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import { 
-  BarChart2, 
-  Calendar, 
-  Printer, 
-  Users, 
-  Activity, 
-  TrendingUp, 
-  TrendingDown,
-  FileText,
-  Clock,
-  AlertTriangle,
-  RefreshCw
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Legend, 
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  LineChart,
-  Line
-} from "recharts";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useToast } from "@/hooks/use-toast";
-import { useQuery } from "@tanstack/react-query";
-import { analyticsService } from "@/services/analyticsService";
-import { printerService } from "@/services/printerService";
-import { cn } from "@/lib/utils";
-import { DateRange } from "react-day-picker";
-import DateRangePicker from "@/components/analytics/DateRangePicker";
+
+import React, { useState, useEffect } from 'react';
+import { format, subDays } from 'date-fns';
+import { motion } from 'framer-motion';
+import { analyticsService } from '@/services/analyticsService';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useToast } from '@/hooks/use-toast';
+import { RefreshCw, Calendar as CalendarIcon } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { DateRange } from 'react-day-picker';
+import DateRangePicker from '@/components/analytics/DateRangePicker';
+import { BarChart, LineChart } from '@/components/ui/chart';
 
 const Analytics = () => {
-  const [timeRange, setTimeRange] = useState("week");
-  const [dateRange, setDateRange] = useState<DateRange | undefined>();
+  const [timeRange, setTimeRange] = useState<'day' | 'week' | 'month' | 'year' | 'custom'>('month');
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: subDays(new Date(), 30),
+    to: new Date(),
+  });
   const { toast } = useToast();
   
-  const { 
-    data: analyticsData,
-    isLoading: isAnalyticsLoading,
-    isError: isAnalyticsError,
-    refetch: refetchAnalytics 
-  } = useQuery({
+  // Fetch analytics data
+  const { data: analyticsData, isLoading: isAnalyticsLoading, refetch: refetchAnalytics } = useQuery({
     queryKey: ['analytics'],
     queryFn: analyticsService.getAnalyticsData
   });
   
-  const { 
-    data: printVolumeData = [],
-    isLoading: isPrintVolumeLoading,
-    refetch: refetchPrintVolume
-  } = useQuery({
+  // Fetch print volume data based on time range
+  const { data: volumeData, isLoading: isVolumeLoading, refetch: refetchVolume } = useQuery({
     queryKey: ['printVolume', timeRange, dateRange],
-    queryFn: () => {
-      if (dateRange?.from && dateRange?.to) {
-        return analyticsService.getPrintVolumeByDateRange(dateRange.from, dateRange.to);
+    queryFn: async () => {
+      if (timeRange === 'custom' && dateRange?.from && dateRange?.to) {
+        return analyticsService.getPrintVolumeByDateRange(dateRange);
       }
-      return analyticsService.getPrintVolumeByTimeRange(timeRange as any);
-    },
-  });
-  
-  const { 
-    data: statistics,
-    isLoading: isStatisticsLoading,
-    refetch: refetchStatistics
-  } = useQuery({
-    queryKey: ['statistics'],
-    queryFn: analyticsService.getStatistics
-  });
-  
-  const { 
-    data: printers = [],
-    isLoading: isPrintersLoading,
-    refetch: refetchPrinters
-  } = useQuery({
-    queryKey: ['printers'],
-    queryFn: printerService.getAllPrinters
-  });
-  
-  const generateDepartmentData = () => {
-    const departmentCounts: Record<string, number> = {};
-    
-    printers.forEach(printer => {
-      if (printer.department) {
-        departmentCounts[printer.department] = (departmentCounts[printer.department] || 0) + printer.jobCount;
+      
+      if (timeRange !== 'custom') {
+        return analyticsService.getPrintVolumeByTimeRange(timeRange);
       }
-    });
-    
-    return Object.entries(departmentCounts).map(([name, prints]) => ({
-      name,
-      prints
-    }));
-  };
-  
-  const departmentData = generateDepartmentData();
-  
-  const handleTimeRangeChange = (value: string) => {
-    setTimeRange(value);
-    setDateRange(undefined);
-  };
-  
-  const handleDateRangeApply = () => {
-    if (dateRange?.from && dateRange?.to) {
-      setTimeRange("custom");
-      refetchPrintVolume();
+      
+      return [];
     }
-  };
+  });
   
+  // Handle data refresh
   const handleRefresh = () => {
     refetchAnalytics();
-    refetchPrintVolume();
-    refetchStatistics();
-    refetchPrinters();
+    refetchVolume();
     toast({
-      title: "Refreshed",
-      description: "Analytics data has been refreshed.",
+      title: "Data refreshed",
+      description: "Analytics data has been updated.",
     });
   };
   
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-      },
-    },
+  // Handle date range apply
+  const handleDateRangeApply = () => {
+    setTimeRange('custom');
+    refetchVolume();
   };
 
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    show: { 
-      opacity: 1, 
-      y: 0,
-      transition: {
-        type: "spring",
-        stiffness: 300,
-        damping: 24
-      }
-    },
-  };
-
-  const isLoading = isAnalyticsLoading || isPrintVolumeLoading || isStatisticsLoading || isPrintersLoading;
-
+  // Switch to 'custom' tab when dateRange changes
+  useEffect(() => {
+    if (dateRange?.from && dateRange?.to) {
+      setTimeRange('custom');
+    }
+  }, [dateRange]);
+  
   return (
-    <motion.div
-      className="space-y-6"
-      variants={containerVariants}
-      initial="hidden"
-      animate="show"
-    >
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Analytics Dashboard</h1>
-          <p className="text-muted-foreground mt-1">Monitor your printer fleet performance</p>
+          <h1 className="text-2xl font-semibold">Analytics</h1>
+          <p className="text-muted-foreground mt-1">Monitor your printer usage and performance</p>
         </div>
         
-        <div className="flex items-center gap-2">
-          <Button 
-            variant="outline" 
-            size="icon" 
-            onClick={handleRefresh} 
-            className="h-10 w-10"
-            disabled={isLoading}
-          >
-            <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
-          </Button>
-          
+        <div className="flex items-center gap-3">
           <DateRangePicker 
             dateRange={dateRange} 
-            setDateRange={setDateRange} 
-            onApply={handleDateRangeApply} 
+            setDateRange={setDateRange}
+            onApply={handleDateRangeApply}
           />
+          
+          <Button 
+            variant="outline" 
+            size="icon"
+            className="h-10 w-10"
+            disabled={isAnalyticsLoading || isVolumeLoading}
+            onClick={handleRefresh}
+          >
+            <RefreshCw className={isAnalyticsLoading || isVolumeLoading ? "animate-spin h-4 w-4" : "h-4 w-4"} />
+          </Button>
         </div>
       </div>
-
-      <Tabs defaultValue={timeRange} onValueChange={handleTimeRangeChange} className="w-fit">
-        <TabsList>
-          <TabsTrigger value="day">Today</TabsTrigger>
-          <TabsTrigger value="week">This Week</TabsTrigger>
-          <TabsTrigger value="month">This Month</TabsTrigger>
-          <TabsTrigger value="year">This Year</TabsTrigger>
-          <TabsTrigger value="custom" disabled={!dateRange?.from || !dateRange?.to}>Custom</TabsTrigger>
-        </TabsList>
-      </Tabs>
-
-      {isAnalyticsError ? (
-        <Alert variant="destructive" className="my-4">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            Failed to load analytics data. Please try again.
-            <Button variant="outline" size="sm" className="ml-2" onClick={handleRefresh}>
-              Retry
-            </Button>
-          </AlertDescription>
-        </Alert>
-      ) : (
-        <>
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <motion.div variants={itemVariants}>
-              <Card className="border-border/40 shadow-sm hover:shadow-md transition-all duration-200">
-                <CardHeader className="pb-2">
-                  <div className="flex justify-between items-start">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">Total Printers</CardTitle>
-                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                      <Printer className="h-4 w-4 text-blue-600" />
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  {isLoading ? (
-                    <div className="animate-pulse h-8 bg-muted rounded w-16"></div>
-                  ) : (
-                    <div className="flex justify-between items-end">
-                      <div>
-                        <div className="text-3xl font-bold">{statistics?.totalPrinters || 0}</div>
-                        <p className="text-xs text-muted-foreground">
-                          <span className="text-green-600 font-medium">+2</span> from last period
-                        </p>
-                      </div>
-                      <div className="flex items-center text-green-600 text-sm font-medium">
-                        <TrendingUp className="mr-1 h-4 w-4" />
-                        <span>12%</span>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {analyticsData && Object.entries(analyticsData.summary).map(([key, value]) => (
+          <Card key={key}>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                {key === 'totalPrinters' ? 'Total Printers' : 
+                  key === 'activePrinters' ? 'Active Printers' : 
+                  key === 'totalVolume' ? 'Total Print Volume' : 
+                  key === 'activeJobs' ? 'Active Print Jobs' : 
+                  key === 'completedJobs' ? 'Completed Jobs (30d)' : 
+                  key === 'failedJobs' ? 'Failed Jobs (30d)' : key}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {typeof value === 'number' && (key.includes('Volume') || key.includes('Jobs')) 
+                  ? value.toLocaleString() 
+                  : value.toString()}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>Print Volume Trends</CardTitle>
+          <Tabs
+            defaultValue="month"
+            value={timeRange}
+            onValueChange={(value) => setTimeRange(value as 'day' | 'week' | 'month' | 'year' | 'custom')}
+            className="w-full"
+          >
+            <TabsList>
+              <TabsTrigger value="day">Day</TabsTrigger>
+              <TabsTrigger value="week">Week</TabsTrigger>
+              <TabsTrigger value="month">Month</TabsTrigger>
+              <TabsTrigger value="year">Year</TabsTrigger>
+              <TabsTrigger value="custom">Custom</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </CardHeader>
+        <CardContent>
+          {isVolumeLoading ? (
+            <div className="flex items-center justify-center h-80">
+              <RefreshCw className="h-8 w-8 animate-spin text-primary/70" />
+            </div>
+          ) : volumeData && volumeData.length > 0 ? (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5 }}
+              className="h-80"
+            >
+              <LineChart
+                data={volumeData}
+                categories={['volume']}
+                index="date"
+                colors={['#7166F9']}
+                valueFormatter={(value) => `${value.toLocaleString()} pages`}
+                showAnimation={true}
+              />
             </motion.div>
-
-            <motion.div variants={itemVariants}>
-              <Card className="border-border/40 shadow-sm hover:shadow-md transition-all duration-200">
-                <CardHeader className="pb-2">
-                  <div className="flex justify-between items-start">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">Active Users</CardTitle>
-                    <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                      <Users className="h-4 w-4 text-green-600" />
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  {isLoading ? (
-                    <div className="animate-pulse h-8 bg-muted rounded w-16"></div>
-                  ) : (
-                    <div className="flex justify-between items-end">
-                      <div>
-                        <div className="text-3xl font-bold">{statistics?.totalUsers || 0}</div>
-                        <p className="text-xs text-muted-foreground">
-                          <span className="text-green-600 font-medium">+15</span> from last period
-                        </p>
-                      </div>
-                      <div className="flex items-center text-green-600 text-sm font-medium">
-                        <TrendingUp className="mr-1 h-4 w-4" />
-                        <span>8%</span>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-80 text-center">
+              <CalendarIcon className="h-10 w-10 text-muted-foreground mb-2" />
+              <h3 className="text-lg font-medium">No data available</h3>
+              <p className="text-muted-foreground mt-1 max-w-md">
+                {timeRange === 'custom' 
+                  ? "No data available for the selected date range. Try selecting a different range." 
+                  : `No data available for the selected ${timeRange}. Try selecting a different time range.`}
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>Print Volume by Department</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isAnalyticsLoading ? (
+            <div className="flex items-center justify-center h-80">
+              <RefreshCw className="h-8 w-8 animate-spin text-primary/70" />
+            </div>
+          ) : analyticsData && analyticsData.departmentVolume && analyticsData.departmentVolume.length > 0 ? (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5 }}
+              className="h-80"
+            >
+              <BarChart
+                data={analyticsData.departmentVolume}
+                categories={['volume']}
+                index="department"
+                colors={['#7166F9']}
+                valueFormatter={(value) => `${value.toLocaleString()} pages`}
+                showAnimation={true}
+              />
             </motion.div>
-
-            <motion.div variants={itemVariants}>
-              <Card className="border-border/40 shadow-sm hover:shadow-md transition-all duration-200">
-                <CardHeader className="pb-2">
-                  <div className="flex justify-between items-start">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">Print Jobs</CardTitle>
-                    <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                      <FileText className="h-4 w-4 text-purple-600" />
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  {isLoading ? (
-                    <div className="animate-pulse h-8 bg-muted rounded w-16"></div>
-                  ) : (
-                    <div className="flex justify-between items-end">
-                      <div>
-                        <div className="text-3xl font-bold">{statistics?.totalPrintJobs || 0}</div>
-                        <p className="text-xs text-muted-foreground">
-                          <span className="text-red-600 font-medium">-120</span> from last period
-                        </p>
-                      </div>
-                      <div className="flex items-center text-red-600 text-sm font-medium">
-                        <TrendingDown className="mr-1 h-4 w-4" />
-                        <span>3%</span>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </motion.div>
-
-            <motion.div variants={itemVariants}>
-              <Card className="border-border/40 shadow-sm hover:shadow-md transition-all duration-200">
-                <CardHeader className="pb-2">
-                  <div className="flex justify-between items-start">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">Paper Used</CardTitle>
-                    <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
-                      <Activity className="h-4 w-4 text-yellow-600" />
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  {isLoading ? (
-                    <div className="animate-pulse h-8 bg-muted rounded w-16"></div>
-                  ) : (
-                    <div className="flex justify-between items-end">
-                      <div>
-                        <div className="text-3xl font-bold">{statistics?.totalPaperUsed || 0}</div>
-                        <p className="text-xs text-muted-foreground">
-                          <span className="text-green-600 font-medium">+205</span> sheets
-                        </p>
-                      </div>
-                      <div className="flex items-center text-green-600 text-sm font-medium">
-                        <TrendingUp className="mr-1 h-4 w-4" />
-                        <span>5%</span>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </motion.div>
-          </div>
-
-          {/* Charts */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <motion.div variants={itemVariants} className="w-full">
-              <Card className="border-border/40 shadow-sm hover:shadow-md transition-all duration-200">
-                <CardHeader>
-                  <CardTitle className="text-lg">Print Volume</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {isPrintVolumeLoading ? (
-                    <div className="h-80 w-full flex items-center justify-center">
-                      <RefreshCw className="h-8 w-8 animate-spin text-primary/70" />
-                    </div>
-                  ) : (
-                    <div className="h-80">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={printVolumeData}>
-                          <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                          <XAxis dataKey="name" />
-                          <YAxis />
-                          <Tooltip 
-                            contentStyle={{ 
-                              backgroundColor: "white", 
-                              borderRadius: "8px", 
-                              boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-                              border: "none"
-                            }} 
-                          />
-                          <Legend />
-                          <Bar dataKey="prints" fill="#8884d8" radius={[4, 4, 0, 0]} />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </motion.div>
-
-            <motion.div variants={itemVariants} className="w-full grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card className="border-border/40 shadow-sm hover:shadow-md transition-all duration-200">
-                <CardHeader>
-                  <CardTitle className="text-lg">Printer Status</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {isAnalyticsLoading ? (
-                    <div className="h-64 w-full flex items-center justify-center">
-                      <RefreshCw className="h-8 w-8 animate-spin text-primary/70" />
-                    </div>
-                  ) : (
-                    <div className="h-64 flex items-center justify-center">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={analyticsData?.printerStatus || []}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={60}
-                            outerRadius={80}
-                            paddingAngle={5}
-                            dataKey="value"
-                          >
-                            {analyticsData?.printerStatus.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.color} />
-                            ))}
-                          </Pie>
-                          <Tooltip 
-                            contentStyle={{ 
-                              backgroundColor: "white", 
-                              borderRadius: "8px", 
-                              boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-                              border: "none"
-                            }} 
-                          />
-                          <Legend />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              <Card className="border-border/40 shadow-sm hover:shadow-md transition-all duration-200">
-                <CardHeader>
-                  <CardTitle className="text-lg">Consumables Usage</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {isAnalyticsLoading ? (
-                    <div className="h-64 w-full flex items-center justify-center">
-                      <RefreshCw className="h-8 w-8 animate-spin text-primary/70" />
-                    </div>
-                  ) : (
-                    <div className="h-64">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={analyticsData?.consumables || []}>
-                          <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                          <XAxis dataKey="name" />
-                          <YAxis />
-                          <Tooltip 
-                            contentStyle={{ 
-                              backgroundColor: "white", 
-                              borderRadius: "8px", 
-                              boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-                              border: "none"
-                            }} 
-                          />
-                          <Legend />
-                          <Line type="monotone" dataKey="ink" stroke="#8884d8" strokeWidth={2} dot={{ r: 4 }} />
-                          <Line type="monotone" dataKey="paper" stroke="#82ca9d" strokeWidth={2} dot={{ r: 4 }} />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </motion.div>
-          </div>
-
-          <motion.div variants={itemVariants}>
-            <Card className="border-border/40 shadow-sm hover:shadow-md transition-all duration-200">
-              <CardHeader>
-                <CardTitle className="text-lg">Print Volume by Department</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <div className="h-80 w-full flex items-center justify-center">
-                    <RefreshCw className="h-8 w-8 animate-spin text-primary/70" />
-                  </div>
-                ) : departmentData.length > 0 ? (
-                  <div className="h-80">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={departmentData} layout="vertical">
-                        <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                        <XAxis type="number" />
-                        <YAxis type="category" dataKey="name" />
-                        <Tooltip 
-                          contentStyle={{ 
-                            backgroundColor: "white", 
-                            borderRadius: "8px", 
-                            boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-                            border: "none"
-                          }} 
-                        />
-                        <Legend />
-                        <Bar dataKey="prints" fill="#82ca9d" radius={[0, 4, 4, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                ) : (
-                  <div className="h-80 flex items-center justify-center flex-col">
-                    <AlertTriangle className="h-8 w-8 text-muted-foreground mb-2" />
-                    <p className="text-muted-foreground">No department data available. Add departments to printers to see print volume by department.</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          <motion.div variants={itemVariants}>
-            <Card className="border-border/40 shadow-sm hover:shadow-md transition-all duration-200">
-              <CardHeader>
-                <CardTitle className="text-lg">Alert History</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {isAnalyticsLoading ? (
-                  <div className="flex flex-col gap-4">
-                    {[1, 2, 3, 4].map(i => (
-                      <div key={i} className="animate-pulse h-24 bg-muted rounded-lg w-full"></div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {analyticsData?.alertHistory.map(alert => (
-                      <div 
-                        key={alert.id} 
-                        className={cn(
-                          "flex items-start gap-4 p-4 rounded-lg border",
-                          alert.level === 'error' ? "bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800" : 
-                          alert.level === 'warning' ? "bg-yellow-50 border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-800" : 
-                          "bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800"
-                        )}
-                      >
-                        <div className={cn(
-                          "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0",
-                          alert.level === 'error' ? "bg-red-100 dark:bg-red-800" : 
-                          alert.level === 'warning' ? "bg-yellow-100 dark:bg-yellow-800" : 
-                          "bg-blue-100 dark:bg-blue-800"
-                        )}>
-                          <AlertTriangle className={cn(
-                            "h-4 w-4",
-                            alert.level === 'error' ? "text-red-600 dark:text-red-400" : 
-                            alert.level === 'warning' ? "text-yellow-600 dark:text-yellow-400" : 
-                            "text-blue-600 dark:text-blue-400"
-                          )} />
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex justify-between">
-                            <h4 className="font-medium text-foreground dark:text-gray-200">{alert.title}</h4>
-                            <div className="flex items-center text-xs text-muted-foreground dark:text-gray-400">
-                              <Clock className="mr-1 h-3 w-3" />
-                              <span>{alert.time}</span>
-                            </div>
-                          </div>
-                          <p className="text-sm text-muted-foreground mt-1 dark:text-gray-400">{alert.description}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </motion.div>
-        </>
-      )}
-    </motion.div>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-80 text-center">
+              <CalendarIcon className="h-10 w-10 text-muted-foreground mb-2" />
+              <h3 className="text-lg font-medium">No department data available</h3>
+              <p className="text-muted-foreground mt-1 max-w-md">
+                There is no print volume data by department available at this time.
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

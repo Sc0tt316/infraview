@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { 
   Menu, X, Home, Printer, Settings, Users as UsersIcon, 
-  BarChart2, LogOut
+  BarChart2, LogOut, Activity as ActivityIcon, BellRing
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
@@ -30,6 +30,8 @@ const sidebarLinks = [
   { path: "/printers", label: "Printers", icon: Printer },
   { path: "/users", label: "Users", icon: UsersIcon },
   { path: "/analytics", label: "Analytics", icon: BarChart2 },
+  { path: "/activity", label: "Activity", icon: ActivityIcon },
+  { path: "/alerts", label: "Alerts", icon: BellRing },
   { path: "/settings", label: "Settings", icon: Settings },
 ];
 
@@ -117,13 +119,13 @@ const Layout = ({ children }: LayoutProps) => {
         <div className="flex flex-col h-full">
           <div className="flex items-center justify-between p-6 border-b border-border/40">
             <Link to="/" className="flex items-center gap-3">
-              <motion.div
-                whileHover={{ rotate: 180 }}
-                transition={{ duration: 0.5, ease: "easeInOut" }}
-                className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center"
-              >
-                <Printer className="w-5 h-5 text-white" />
-              </motion.div>
+              <div className="h-10 w-10 bg-[#300054] flex items-center justify-center rounded-md border border-[#ff6b6b]">
+                <img 
+                  src="/lovable-uploads/79c40e69-54c0-4cbd-a41c-369e4c8bb316.png" 
+                  alt="M-Printer Manager Logo" 
+                  className="h-8 w-8 object-contain"
+                />
+              </div>
               <span className="text-xl font-medium text-primary">M-Printer Manager</span>
             </Link>
             <button 
