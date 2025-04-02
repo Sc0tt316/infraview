@@ -34,7 +34,7 @@ const Analytics = () => {
       if (timeRange === 'custom' && dateRange?.from && dateRange?.to) {
         return analyticsService.getPrintVolumeByDateRange({
           from: dateRange.from,
-          to: dateRange.to as Date
+          to: dateRange.to || new Date()
         });
       }
       
@@ -97,7 +97,7 @@ const Analytics = () => {
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {analyticsData && Object.entries(analyticsData.summary).map(([key, value]) => (
+        {analyticsData && analyticsData.summary && Object.entries(analyticsData.summary).map(([key, value]) => (
           <Card key={key}>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">

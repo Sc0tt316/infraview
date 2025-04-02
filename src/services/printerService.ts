@@ -1,4 +1,3 @@
-
 import { apiService } from './api';
 import { toast } from '@/hooks/use-toast';
 
@@ -8,13 +7,48 @@ export interface PrinterData {
   name: string;
   model: string;
   location: string;
-  status: "online" | "offline" | "error" | "maintenance";
+  status: "online" | "offline" | "error" | "maintenance" | "warning";
   inkLevel: number;
   paperLevel: number;
   jobCount: number;
   lastActive: string;
   ipAddress?: string;
   department?: string;
+  serialNumber?: string;
+  addedDate?: string;
+  supplies?: {
+    black: number;
+    cyan?: number;
+    magenta?: number;
+    yellow?: number;
+    waste?: number;
+  };
+  stats?: {
+    totalPages: number;
+    monthlyPages: number;
+    jams: number;
+  };
+  printLogs?: PrintLog[];
+  activity?: ActivityItem[];
+}
+
+// Define print log type
+export interface PrintLog {
+  id?: string;
+  fileName: string;
+  user: string;
+  timestamp: string;
+  status: "completed" | "failed";
+  pages: number;
+  size: string;
+}
+
+// Define activity item type
+export interface ActivityItem {
+  id?: string;
+  timestamp: string;
+  type: "error" | "warning" | "info" | "success";
+  message: string;
 }
 
 // Define log types 
@@ -521,6 +555,39 @@ export const printerService = {
         variant: "destructive"
       });
       return [];
+    }
+  },
+  
+  // Restart printer
+  restartPrinter: async (id: string): Promise<boolean> => {
+    try {
+      // In a real application, this would communicate with the printer
+      // For demo purposes, we'll just update the status and return success
+      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate processing
+      
+      // Add log record
+      const log: Omit<PrinterLog, 'id'> = {
+        printerId: id,
+        timestamp: new Date().toISOString(),
+        message: "Printer restarted",
+        type: "info",
+        user: "admin"
+      };
+      await printerService.addLog(log);
+      
+      // Add activity record
+      const activity: Omit<PrinterActivity, 'id'> = {
+        printerId: id,
+        timestamp: new Date().toISOString(),
+        action: "Printer restarted",
+        user: "admin"
+      };
+      await printerService.addActivity(activity);
+      
+      return true;
+    } catch (error) {
+      console.error(`Error restarting printer ${id}:`, error);
+      throw error;
     }
   }
 };

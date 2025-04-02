@@ -1,87 +1,98 @@
 
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
+import { motion } from 'framer-motion';
+import { RefreshCw, AlertTriangle, AlertCircle, Info, Bell, CheckCircle, Filter } from 'lucide-react';
 import { analyticsService } from '@/services/analyticsService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Search, AlertCircle, ArrowUpDown, Printer, UserRound, Bell } from 'lucide-react';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuLabel, 
+  DropdownMenuSeparator, 
+  DropdownMenuTrigger 
+} from '@/components/ui/dropdown-menu';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useToast } from '@/hooks/use-toast';
+import { useQuery } from '@tanstack/react-query';
 
-interface AlertItem {
-  id: string;
-  title: string;
-  message: string;
-  severity: 'critical' | 'warning' | 'info';
-  timestamp: string;
-  printer?: string;
-  user?: string;
-  resolved: boolean;
-}
+// Alert query params
+const alertQueryParams = {
+  limit: 100,
+  status: 'all' as const,
+  level: 'all' as const,
+  sortBy: 'timestamp',
+  sortOrder: 'desc' as const
+};
 
 const Alerts = () => {
-  const [search, setSearch] = useState('');
-  const [sortBy, setSortBy] = useState<'timestamp' | 'severity'>('timestamp');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const [filterType, setFilterType] = useState<'all' | 'critical' | 'warning' | 'info'>('all');
-  const [filterResolved, setFilterResolved] = useState<'all' | 'resolved' | 'unresolved'>('all');
-
-  // Fetch alerts data
-  const { data: alertsData, isLoading } = useQuery({
+  const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState('all');
+  
+  // Fetch alerts
+  const { data: alerts, isLoading, refetch } = useQuery({
     queryKey: ['alerts'],
-    queryFn: analyticsService.getAlerts
+    queryFn: () => analyticsService.getAlerts(alertQueryParams)
   });
-
-  // Filter and sort alerts
-  const filteredAlerts = React.useMemo(() => {
-    if (!alertsData) return [];
-
-    let filtered = [...alertsData];
-
-    // Filter by search term
-    if (search) {
-      const searchLower = search.toLowerCase();
-      filtered = filtered.filter(alert => 
-        alert.title.toLowerCase().includes(searchLower) || 
-        alert.message.toLowerCase().includes(searchLower) ||
-        (alert.printer && alert.printer.toLowerCase().includes(searchLower)) ||
-        (alert.user && alert.user.toLowerCase().includes(searchLower))
-      );
-    }
-
-    // Filter by type
-    if (filterType !== 'all') {
-      filtered = filtered.filter(alert => alert.severity === filterType);
-    }
-
-    // Filter by resolved status
-    if (filterResolved !== 'all') {
-      filtered = filtered.filter(alert => 
-        filterResolved === 'resolved' ? alert.resolved : !alert.resolved
-      );
-    }
-
-    // Sort alerts
-    filtered.sort((a, b) => {
-      if (sortBy === 'timestamp') {
-        const dateA = new Date(a.timestamp).getTime();
-        const dateB = new Date(b.timestamp).getTime();
-        return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
-      } else {
-        const severityOrder = { critical: 3, warning: 2, info: 1 };
-        const severityA = severityOrder[a.severity];
-        const severityB = severityOrder[b.severity];
-        return sortOrder === 'asc' ? severityA - severityB : severityB - severityA;
-      }
+  
+  // Filter alerts based on active tab
+  const filteredAlerts = alerts?.filter(alert => {
+    if (activeTab === 'all') return true;
+    return alert.status === activeTab;
+  });
+  
+  // Handle refresh
+  const handleRefresh = () => {
+    refetch();
+    toast({
+      title: "Alerts Refreshed",
+      description: "The alerts have been updated."
     });
-
-    return filtered;
-  }, [alertsData, search, filterType, filterResolved, sortBy, sortOrder]);
-
-  const toggleSortOrder = () => {
-    setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+  };
+  
+  // Get icon for alert severity
+  const getAlertIcon = (level: string) => {
+    switch (level) {
+      case 'critical':
+        return <AlertTriangle className="h-4 w-4" />;
+      case 'warning':
+        return <AlertCircle className="h-4 w-4" />;
+      case 'info':
+        return <Info className="h-4 w-4" />;
+      default:
+        return <Bell className="h-4 w-4" />;
+    }
+  };
+  
+  // Get color for alert severity
+  const getAlertColor = (level: string) => {
+    switch (level) {
+      case 'critical':
+        return 'text-red-500 bg-red-50 border-red-200';
+      case 'warning':
+        return 'text-amber-500 bg-amber-50 border-amber-200';
+      case 'info':
+        return 'text-blue-500 bg-blue-50 border-blue-200';
+      default:
+        return 'text-gray-500 bg-gray-50 border-gray-200';
+    }
+  };
+  
+  // Get badge style for alert status
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'active':
+        return <Badge variant="destructive">Active</Badge>;
+      case 'resolved':
+        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-100">Resolved</Badge>;
+      case 'acknowledged':
+        return <Badge variant="secondary">Acknowledged</Badge>;
+      default:
+        return <Badge variant="outline">Unknown</Badge>;
+    }
   };
 
   return (
@@ -89,109 +100,121 @@ const Alerts = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Alerts</h1>
-          <p className="text-muted-foreground mt-1">Monitor and manage system alerts</p>
+          <p className="text-muted-foreground mt-1">Monitor system alerts and issues</p>
+        </div>
+        
+        <div className="flex items-center gap-3">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <Filter className="h-4 w-4" />
+                <span>Filter</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>Filter Alerts</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">Status</DropdownMenuLabel>
+              <DropdownMenuItem>All</DropdownMenuItem>
+              <DropdownMenuItem>Active</DropdownMenuItem>
+              <DropdownMenuItem>Resolved</DropdownMenuItem>
+              <DropdownMenuItem>Acknowledged</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">Severity</DropdownMenuLabel>
+              <DropdownMenuItem>All</DropdownMenuItem>
+              <DropdownMenuItem>Critical</DropdownMenuItem>
+              <DropdownMenuItem>Warning</DropdownMenuItem>
+              <DropdownMenuItem>Info</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          
+          <Button 
+            variant="outline" 
+            size="icon"
+            className="h-10 w-10"
+            onClick={handleRefresh}
+            disabled={isLoading}
+          >
+            <RefreshCw className={isLoading ? "animate-spin h-4 w-4" : "h-4 w-4"} />
+          </Button>
         </div>
       </div>
-
+      
       <Card>
-        <CardHeader className="pb-2">
-          <div className="flex flex-col sm:flex-row justify-between gap-4">
-            <div className="relative w-full sm:w-64">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search alerts..."
-                className="pl-8 w-full"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Select value={filterType} onValueChange={(value) => setFilterType(value as any)}>
-                <SelectTrigger className="w-[120px]">
-                  <SelectValue placeholder="Filter by" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Severity</SelectItem>
-                  <SelectItem value="critical">Critical</SelectItem>
-                  <SelectItem value="warning">Warning</SelectItem>
-                  <SelectItem value="info">Info</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={filterResolved} onValueChange={(value) => setFilterResolved(value as any)}>
-                <SelectTrigger className="w-[120px]">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="resolved">Resolved</SelectItem>
-                  <SelectItem value="unresolved">Unresolved</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button variant="outline" size="icon" onClick={toggleSortOrder}>
-                <ArrowUpDown className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
+        <CardHeader className="pb-3">
+          <CardTitle>System Alerts</CardTitle>
+          <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
+            <TabsList>
+              <TabsTrigger value="all">All</TabsTrigger>
+              <TabsTrigger value="active">Active</TabsTrigger>
+              <TabsTrigger value="resolved">Resolved</TabsTrigger>
+              <TabsTrigger value="acknowledged">Acknowledged</TabsTrigger>
+            </TabsList>
+          </Tabs>
         </CardHeader>
         <CardContent>
           {isLoading ? (
             <div className="flex justify-center py-8">
-              <Bell className="h-8 w-8 animate-pulse text-muted-foreground" />
+              <RefreshCw className="h-8 w-8 animate-spin text-primary/70" />
             </div>
-          ) : filteredAlerts.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-8 text-center">
-              <AlertCircle className="h-10 w-10 text-muted-foreground mb-2" />
-              <h3 className="text-lg font-medium">No alerts found</h3>
-              <p className="text-muted-foreground mt-1 max-w-md">
-                {search ? "No alerts match your search criteria." : "There are no alerts to display."}
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {filteredAlerts.map((alert) => (
-                <div 
-                  key={alert.id} 
-                  className="flex flex-col md:flex-row gap-4 p-4 rounded-lg border bg-background/50"
+          ) : filteredAlerts && filteredAlerts.length > 0 ? (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5 }}
+              className="space-y-4"
+            >
+              {filteredAlerts.map((alert, index) => (
+                <motion.div
+                  key={alert.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: index * 0.05 }}
+                  className="border rounded-lg p-4"
                 >
-                  <div className="flex items-start gap-4 flex-1">
-                    <div>
-                      <Badge
-                        className={
-                          alert.severity === 'critical' ? 'bg-red-500 hover:bg-red-600' : 
-                          alert.severity === 'warning' ? 'bg-amber-500 hover:bg-amber-600' : 
-                          'bg-blue-500 hover:bg-blue-600'
-                        }
-                      >
-                        {alert.severity}
-                      </Badge>
-                      <h3 className="text-md font-medium mt-2">{alert.title}</h3>
-                      <p className="text-muted-foreground text-sm mt-1">{alert.message}</p>
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {alert.printer && (
-                          <div className="flex items-center text-xs text-muted-foreground">
-                            <Printer className="h-3 w-3 mr-1" />
-                            {alert.printer}
-                          </div>
-                        )}
-                        {alert.user && (
-                          <div className="flex items-center text-xs text-muted-foreground">
-                            <UserRound className="h-3 w-3 mr-1" />
-                            {alert.user}
-                          </div>
-                        )}
+                  <div className="flex items-start gap-4">
+                    <div className={`flex-shrink-0 p-2 rounded-full ${getAlertColor(alert.level || '')}`}>
+                      {getAlertIcon(alert.level || '')}
+                    </div>
+                    
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-wrap justify-between gap-2 mb-1">
+                        <span className="font-medium">{alert.title || ''}</span>
+                        <div className="flex gap-2 items-center">
+                          {getStatusBadge(alert.status || '')}
+                          <Badge variant="outline" className="font-normal">
+                            {format(new Date(alert.timestamp), 'MMM d, h:mm a')}
+                          </Badge>
+                        </div>
                       </div>
+                      
+                      <p className="text-sm text-muted-foreground">{alert.description || ''}</p>
+                      
+                      {alert.printer && (
+                        <div className="mt-2 text-xs text-muted-foreground">
+                          Printer: {alert.printer?.name || alert.printer || ''}
+                        </div>
+                      )}
+                      
+                      {alert.user && (
+                        <div className="mt-1 text-xs text-muted-foreground">
+                          User: {alert.user?.name || alert.user || ''}
+                        </div>
+                      )}
                     </div>
                   </div>
-                  <div className="flex flex-row md:flex-col items-center md:items-end justify-between md:justify-start">
-                    <div className="text-xs text-muted-foreground">
-                      {format(new Date(alert.timestamp), 'PPp')}
-                    </div>
-                    <Badge variant={alert.resolved ? "outline" : "secondary"} className="mt-2">
-                      {alert.resolved ? "Resolved" : "Unresolved"}
-                    </Badge>
-                  </div>
-                </div>
+                </motion.div>
               ))}
+            </motion.div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <CheckCircle className="h-12 w-12 text-green-500 mb-4" />
+              <h3 className="text-lg font-medium mb-1">No alerts found</h3>
+              <p className="text-muted-foreground max-w-md">
+                {activeTab === 'all'
+                  ? "There are currently no alerts in the system."
+                  : `There are no ${activeTab} alerts at this time.`}
+              </p>
             </div>
           )}
         </CardContent>

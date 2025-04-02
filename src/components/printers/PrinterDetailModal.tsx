@@ -37,6 +37,8 @@ const PrinterDetailModal = ({ printer, onClose }: PrinterDetailModalProps) => {
         return "bg-yellow-500/10 text-yellow-500 border-yellow-500/20";
       case "error":
         return "bg-red-500/10 text-red-500 border-red-500/20";
+      case "maintenance":
+        return "bg-blue-500/10 text-blue-500 border-blue-500/20";
       default:
         return "bg-gray-100 text-gray-500";
     }
@@ -124,19 +126,19 @@ const PrinterDetailModal = ({ printer, onClose }: PrinterDetailModalProps) => {
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm">Serial</span>
-                        <span className="text-sm font-medium">{printer.serialNumber}</span>
+                        <span className="text-sm font-medium">{printer.serialNumber || 'N/A'}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm">IP Address</span>
-                        <span className="text-sm font-medium">{printer.ipAddress}</span>
+                        <span className="text-sm font-medium">{printer.ipAddress || 'N/A'}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm">Department</span>
-                        <span className="text-sm font-medium">{printer.department}</span>
+                        <span className="text-sm font-medium">{printer.department || 'N/A'}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm">Added</span>
-                        <span className="text-sm font-medium">{format(new Date(printer.addedDate), 'MMM d, yyyy')}</span>
+                        <span className="text-sm font-medium">{printer.addedDate ? format(new Date(printer.addedDate), 'MMM d, yyyy') : 'N/A'}</span>
                       </div>
                     </div>
                   </div>
@@ -148,48 +150,48 @@ const PrinterDetailModal = ({ printer, onClose }: PrinterDetailModalProps) => {
                       <div className="space-y-1">
                         <div className="flex justify-between">
                           <span className="text-sm">Black Toner</span>
-                          <span className="text-sm font-medium">{printer.supplies.black}%</span>
+                          <span className="text-sm font-medium">{printer.supplies?.black || 0}%</span>
                         </div>
-                        <Progress value={printer.supplies.black} className="h-2" indicatorClassName={getInkLevelColor(printer.supplies.black)} />
+                        <Progress value={printer.supplies?.black || 0} className="h-2" indicatorClassName={getInkLevelColor(printer.supplies?.black || 0)} />
                       </div>
                       
-                      {printer.supplies.cyan !== undefined && (
+                      {printer.supplies?.cyan !== undefined && (
                         <div className="space-y-1">
                           <div className="flex justify-between">
                             <span className="text-sm">Cyan Toner</span>
-                            <span className="text-sm font-medium">{printer.supplies.cyan}%</span>
+                            <span className="text-sm font-medium">{printer.supplies?.cyan}%</span>
                           </div>
-                          <Progress value={printer.supplies.cyan} className="h-2" indicatorClassName={getInkLevelColor(printer.supplies.cyan)} />
+                          <Progress value={printer.supplies?.cyan} className="h-2" indicatorClassName={getInkLevelColor(printer.supplies?.cyan)} />
                         </div>
                       )}
                       
-                      {printer.supplies.magenta !== undefined && (
+                      {printer.supplies?.magenta !== undefined && (
                         <div className="space-y-1">
                           <div className="flex justify-between">
                             <span className="text-sm">Magenta Toner</span>
-                            <span className="text-sm font-medium">{printer.supplies.magenta}%</span>
+                            <span className="text-sm font-medium">{printer.supplies?.magenta}%</span>
                           </div>
-                          <Progress value={printer.supplies.magenta} className="h-2" indicatorClassName={getInkLevelColor(printer.supplies.magenta)} />
+                          <Progress value={printer.supplies?.magenta} className="h-2" indicatorClassName={getInkLevelColor(printer.supplies?.magenta)} />
                         </div>
                       )}
                       
-                      {printer.supplies.yellow !== undefined && (
+                      {printer.supplies?.yellow !== undefined && (
                         <div className="space-y-1">
                           <div className="flex justify-between">
                             <span className="text-sm">Yellow Toner</span>
-                            <span className="text-sm font-medium">{printer.supplies.yellow}%</span>
+                            <span className="text-sm font-medium">{printer.supplies?.yellow}%</span>
                           </div>
-                          <Progress value={printer.supplies.yellow} className="h-2" indicatorClassName={getInkLevelColor(printer.supplies.yellow)} />
+                          <Progress value={printer.supplies?.yellow} className="h-2" indicatorClassName={getInkLevelColor(printer.supplies?.yellow)} />
                         </div>
                       )}
                       
-                      {printer.supplies.waste !== undefined && (
+                      {printer.supplies?.waste !== undefined && (
                         <div className="space-y-1">
                           <div className="flex justify-between">
                             <span className="text-sm">Waste Container</span>
-                            <span className="text-sm font-medium">{printer.supplies.waste}%</span>
+                            <span className="text-sm font-medium">{printer.supplies?.waste}%</span>
                           </div>
-                          <Progress value={printer.supplies.waste} className="h-2" indicatorClassName={getInkLevelColor(100 - printer.supplies.waste)} />
+                          <Progress value={printer.supplies?.waste} className="h-2" indicatorClassName={getInkLevelColor(100 - (printer.supplies?.waste || 0))} />
                         </div>
                       )}
                     </div>
@@ -204,19 +206,19 @@ const PrinterDetailModal = ({ printer, onClose }: PrinterDetailModalProps) => {
                     <div className="bg-muted/30 rounded-lg p-3">
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-muted-foreground">Total Pages</span>
-                        <Badge variant="outline">{printer.stats.totalPages.toLocaleString()}</Badge>
+                        <Badge variant="outline">{(printer.stats?.totalPages || 0).toLocaleString()}</Badge>
                       </div>
                     </div>
                     <div className="bg-muted/30 rounded-lg p-3">
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-muted-foreground">Pages (30d)</span>
-                        <Badge variant="outline">{printer.stats.monthlyPages.toLocaleString()}</Badge>
+                        <Badge variant="outline">{(printer.stats?.monthlyPages || 0).toLocaleString()}</Badge>
                       </div>
                     </div>
                     <div className="bg-muted/30 rounded-lg p-3">
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-muted-foreground">Jams (30d)</span>
-                        <Badge variant={printer.stats.jams > 0 ? "destructive" : "outline"}>{printer.stats.jams}</Badge>
+                        <Badge variant={(printer.stats?.jams || 0) > 0 ? "destructive" : "outline"}>{printer.stats?.jams || 0}</Badge>
                       </div>
                     </div>
                   </div>
@@ -253,7 +255,7 @@ const PrinterDetailModal = ({ printer, onClose }: PrinterDetailModalProps) => {
                 <div className="space-y-4">
                   <h3 className="text-sm font-medium text-muted-foreground">Recent Print Jobs</h3>
                   
-                  {printer.printLogs.length > 0 ? (
+                  {printer.printLogs && printer.printLogs.length > 0 ? (
                     <div className="space-y-3">
                       {printer.printLogs.map((log, index) => (
                         <div 
@@ -298,7 +300,7 @@ const PrinterDetailModal = ({ printer, onClose }: PrinterDetailModalProps) => {
                 <div className="space-y-4">
                   <h3 className="text-sm font-medium text-muted-foreground">Recent Activity</h3>
                   
-                  {printer.activity.length > 0 ? (
+                  {printer.activity && printer.activity.length > 0 ? (
                     <div className="space-y-3">
                       {printer.activity.map((activity, index) => (
                         <div 
