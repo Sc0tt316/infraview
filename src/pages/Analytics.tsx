@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { format, subDays } from 'date-fns';
 import { motion } from 'framer-motion';
@@ -30,8 +31,11 @@ const Analytics = () => {
   const { data: volumeData, isLoading: isVolumeLoading, refetch: refetchVolume } = useQuery({
     queryKey: ['printVolume', timeRange, dateRange],
     queryFn: async () => {
-      if (timeRange === 'custom' && dateRange?.from) {
-        return analyticsService.getPrintVolumeByDateRange(dateRange);
+      if (timeRange === 'custom' && dateRange?.from && dateRange?.to) {
+        return analyticsService.getPrintVolumeByDateRange({
+          from: dateRange.from,
+          to: dateRange.to as Date
+        });
       }
       
       if (timeRange !== 'custom') {

@@ -288,6 +288,18 @@ const Users = () => {
     );
   }
 
+  // Fix for dialog not closing
+  const handleCloseAddDialog = () => {
+    setShowAddDialog(false);
+    resetForm();
+  };
+
+  const handleCloseEditDialog = () => {
+    setShowEditDialog(false);
+    setSelectedUser(null);
+    resetForm();
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -307,14 +319,14 @@ const Users = () => {
             <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
           </Button>
           
-          <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+          <Dialog open={showAddDialog} onOpenChange={handleCloseAddDialog}>
             <DialogTrigger asChild>
               <Button className="gap-2">
                 <UserPlus size={16} />
                 <span>Add User</span>
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-lg">
+            <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Add New User</DialogTitle>
               </DialogHeader>
@@ -390,7 +402,7 @@ const Users = () => {
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button type="button" variant="outline" onClick={() => setShowAddDialog(false)}>Cancel</Button>
+                  <Button type="button" variant="outline" onClick={handleCloseAddDialog}>Cancel</Button>
                   <Button type="submit" disabled={isSubmitting}>
                     {isSubmitting ? 'Adding...' : 'Add User'}
                   </Button>
@@ -399,8 +411,8 @@ const Users = () => {
             </DialogContent>
           </Dialog>
           
-          <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-            <DialogContent className="sm:max-w-lg">
+          <Dialog open={showEditDialog} onOpenChange={handleCloseEditDialog}>
+            <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Edit User</DialogTitle>
               </DialogHeader>
@@ -465,7 +477,7 @@ const Users = () => {
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button type="button" variant="outline" onClick={() => setShowEditDialog(false)}>Cancel</Button>
+                  <Button type="button" variant="outline" onClick={handleCloseEditDialog}>Cancel</Button>
                   <Button type="submit" disabled={isSubmitting}>
                     {isSubmitting ? 'Saving...' : 'Save Changes'}
                   </Button>
@@ -497,6 +509,7 @@ const Users = () => {
             <TabsList>
               <TabsTrigger value="all">All</TabsTrigger>
               <TabsTrigger value="active">Active</TabsTrigger>
+              <TabsTrigger value="inactive">Inactive</TabsTrigger>
               <TabsTrigger value="admin">Admins</TabsTrigger>
               <TabsTrigger value="manager">Managers</TabsTrigger>
             </TabsList>
