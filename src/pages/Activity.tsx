@@ -1,187 +1,201 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
-import { motion } from 'framer-motion';
-import { 
-  Calendar as CalendarIcon, 
-  RefreshCw, 
-  AlertTriangle, 
-  CheckCircle, 
-  Info, 
-  AlertCircle 
-} from 'lucide-react';
 import { analyticsService } from '@/services/analyticsService';
+import { printerService } from '@/services/printerService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useToast } from '@/hooks/use-toast';
-import { useQuery } from '@tanstack/react-query';
+import { RefreshCw, Search } from 'lucide-react';
+import { ActivityLogData } from '@/types/analytics';
 
-// Define activity log interface with all required fields
-export interface ActivityLogData {
-  id: string;
-  timestamp: string;
-  type: "error" | "warning" | "info" | "success";
-  description: string;
-  entityType?: string;
-  entityId?: string;
-  action?: string;
+// Overriding ActivityLogData type to include missing fields
+// This will be used until we can update the analytics service
+interface FullActivityLogData extends ActivityLogData {
   user?: string;
+  action?: string;
 }
 
-// Define parameters for the activity query
-const activityQueryParams = {
-  limit: 100,
-  sortBy: 'timestamp',
-  sortOrder: 'desc' as const
-};
-
 const Activity = () => {
-  const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState('all');
-  
-  // Fetch activity logs with proper queryFn
-  const { data: activityLogs, isLoading, refetch } = useQuery({
-    queryKey: ['activityLogs'],
-    queryFn: () => analyticsService.getActivityLogs(activityQueryParams)
-  });
-  
-  // Filter logs based on active tab
-  const filteredLogs = activityLogs?.filter(log => {
-    if (activeTab === 'all') return true;
-    return log.type === activeTab;
-  });
-  
-  // Handle refresh
-  const handleRefresh = () => {
-    refetch();
-    toast({
-      title: "Activity Refreshed",
-      description: "The activity logs have been updated."
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterType, setFilterType] = useState('all');
+  const [sortBy, setSortBy] = useState('timestamp');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
+  // Updated function to handle getActivityLogs parameters
+  const getActivityLogsWithParams = async () => {
+    return await analyticsService.getActivityLogs({
+      limit: 100, 
+      sortBy, 
+      sortOrder
     });
   };
-  
-  // Get icon for log type
-  const getLogIcon = (type: string) => {
-    switch (type) {
-      case 'error':
-        return <AlertTriangle className="h-4 w-4" />;
-      case 'warning':
-        return <AlertCircle className="h-4 w-4" />;
-      case 'info':
-        return <Info className="h-4 w-4" />;
-      case 'success':
-        return <CheckCircle className="h-4 w-4" />;
-      default:
-        return <Info className="h-4 w-4" />;
+
+  const { data: activityLogs, isLoading, refetch } = useQuery({
+    queryKey: ['activityLogs', sortBy, sortOrder],
+    queryFn: getActivityLogsWithParams 
+  });
+
+  const filteredLogs = React.useMemo(() => {
+    if (!activityLogs) return [];
+
+    let filtered = [...activityLogs];
+
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(log => 
+        log.entityId?.toLowerCase().includes(query) || 
+        log.entityType?.toLowerCase().includes(query) || 
+        (log.user && log.user.toLowerCase().includes(query)) ||
+        log.message?.toLowerCase().includes(query)
+      );
     }
+
+    // Apply type filter
+    if (filterType !== 'all') {
+      filtered = filtered.filter(log => log.type === filterType);
+    }
+
+    return filtered;
+  }, [activityLogs, searchQuery, filterType]);
+
+  const handleRefresh = () => {
+    refetch();
   };
-  
-  // Get color for log type
-  const getLogColor = (type: string) => {
-    switch (type) {
-      case 'error':
-        return 'text-red-500 bg-red-50 border-red-200';
-      case 'warning':
-        return 'text-amber-500 bg-amber-50 border-amber-200';
-      case 'info':
-        return 'text-blue-500 bg-blue-50 border-blue-200';
-      case 'success':
-        return 'text-green-500 bg-green-50 border-green-200';
-      default:
-        return 'text-gray-500 bg-gray-50 border-gray-200';
-    }
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  };
+
+  const handleFilterChange = (value: string) => {
+    setFilterType(value);
+  };
+
+  const handleSortChange = (value: string) => {
+    setSortBy(value);
+  };
+
+  const handleSortOrderChange = (value: 'asc' | 'desc') => {
+    setSortOrder(value);
   };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Activity</h1>
-          <p className="text-muted-foreground mt-1">Monitor system events and user actions</p>
+          <h1 className="text-2xl font-semibold">Activity Log</h1>
+          <p className="text-muted-foreground">View recent printer system activities</p>
         </div>
-        
-        <div className="flex items-center gap-3">
-          <Button 
-            variant="outline" 
-            size="icon"
-            className="h-10 w-10"
-            onClick={handleRefresh}
-            disabled={isLoading}
-          >
-            <RefreshCw className={isLoading ? "animate-spin h-4 w-4" : "h-4 w-4"} />
-          </Button>
-        </div>
+        <Button variant="outline" size="icon" onClick={handleRefresh}>
+          <RefreshCw className="h-4 w-4" />
+        </Button>
       </div>
-      
+
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle>Activity Logs</CardTitle>
-          <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
-            <TabsList>
-              <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="success">Success</TabsTrigger>
-              <TabsTrigger value="info">Info</TabsTrigger>
-              <TabsTrigger value="warning">Warning</TabsTrigger>
-              <TabsTrigger value="error">Error</TabsTrigger>
-            </TabsList>
-          </Tabs>
+        <CardHeader>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <CardTitle>Activity History</CardTitle>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="search"
+                  placeholder="Search logs..."
+                  className="pl-8 w-full sm:w-[200px] md:w-[250px]"
+                  value={searchQuery}
+                  onChange={handleSearchChange}
+                />
+              </div>
+              <Select value={filterType} onValueChange={handleFilterChange}>
+                <SelectTrigger className="w-full sm:w-[130px]">
+                  <SelectValue placeholder="Filter by type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="success">Success</SelectItem>
+                  <SelectItem value="error">Error</SelectItem>
+                  <SelectItem value="warning">Warning</SelectItem>
+                  <SelectItem value="info">Info</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={sortBy} onValueChange={handleSortChange}>
+                <SelectTrigger className="w-full sm:w-[150px]">
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="timestamp">Date & Time</SelectItem>
+                  <SelectItem value="entityType">Entity Type</SelectItem>
+                  <SelectItem value="type">Status</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={sortOrder} onValueChange={handleSortOrderChange}>
+                <SelectTrigger className="w-full sm:w-[120px]">
+                  <SelectValue placeholder="Order" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="asc">Ascending</SelectItem>
+                  <SelectItem value="desc">Descending</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           {isLoading ? (
             <div className="flex justify-center py-8">
               <RefreshCw className="h-8 w-8 animate-spin text-primary/70" />
             </div>
-          ) : filteredLogs && filteredLogs.length > 0 ? (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5 }}
-              className="space-y-4"
-            >
-              {filteredLogs.map((log, index) => (
-                <motion.div
-                  key={log.id || index}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: index * 0.05 }}
-                  className="border rounded-lg p-4"
-                >
-                  <div className="flex items-start gap-4">
-                    <div className={`flex-shrink-0 p-2 rounded-full ${getLogColor(log.type)}`}>
-                      {getLogIcon(log.type)}
-                    </div>
-                    
-                    <div className="flex-1 min-w-0">
-                      <div className="flex flex-wrap justify-between gap-2 mb-1">
-                        <span className="font-medium">{log.entityType || ''} {log.entityId || ''}</span>
-                        <Badge variant="outline" className="font-normal">
-                          {format(new Date(log.timestamp), 'MMM d, h:mm a')}
+          ) : filteredLogs.length > 0 ? (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date & Time</TableHead>
+                    <TableHead>Action</TableHead>
+                    <TableHead>Entity</TableHead>
+                    <TableHead>User</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredLogs.map((log, index) => (
+                    <TableRow key={log.id || index}>
+                      <TableCell className="font-medium">
+                        {format(new Date(log.timestamp), 'MMM d, yyyy h:mm a')}
+                      </TableCell>
+                      <TableCell>{log.action || log.message || log.entityType}</TableCell>
+                      <TableCell>
+                        {log.entityId ? (
+                          <Badge variant="outline" className="whitespace-nowrap">
+                            {log.entityType} #{log.entityId}
+                          </Badge>
+                        ) : log.entityType}
+                      </TableCell>
+                      <TableCell>{log.user || 'System'}</TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={
+                            log.type === 'success' ? 'outline' : 
+                            log.type === 'error' ? 'destructive' : 
+                            log.type === 'warning' ? 'secondary' : 
+                            'default'
+                          }
+                        >
+                          {log.type}
                         </Badge>
-                      </div>
-                      
-                      <p className="text-sm text-muted-foreground">{log.description || ''}</p>
-                      
-                      {log.user && (
-                        <div className="mt-2 text-xs text-muted-foreground">
-                          By: {log.user}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </motion.div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           ) : (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <AlertTriangle className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium mb-1">No activity logs found</h3>
-              <p className="text-muted-foreground max-w-md">
-                {activeTab === 'all'
-                  ? "There are currently no activity logs in the system."
-                  : `There are no ${activeTab} logs available at this time.`}
-              </p>
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">No activity logs found.</p>
             </div>
           )}
         </CardContent>

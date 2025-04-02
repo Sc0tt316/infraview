@@ -1,115 +1,99 @@
-
 import React, { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
-import { motion } from 'framer-motion';
-import { RefreshCw, AlertTriangle, AlertCircle, Info, Bell, CheckCircle, Filter } from 'lucide-react';
+import { AlertTriangle, Check, Filter, RefreshCw, Search, X } from 'lucide-react';
 import { analyticsService } from '@/services/analyticsService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuLabel, 
-  DropdownMenuSeparator, 
-  DropdownMenuTrigger 
-} from '@/components/ui/dropdown-menu';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { useQuery } from '@tanstack/react-query';
-
-// Define alert data interface with all required fields
-export interface AlertData {
-  id: string;
-  timestamp: string;
-  title: string;
-  description: string;
-  level: "critical" | "warning" | "info";
-  status: "active" | "resolved" | "acknowledged";
-  printer?: {
-    id?: string;
-    name?: string;
-  } | string;
-  user?: {
-    id?: string;
-    name?: string;
-  } | string;
-}
-
-// Alert query params
-const alertQueryParams = {
-  limit: 100,
-  status: 'all' as const,
-  level: 'all' as const,
-  sortBy: 'timestamp',
-  sortOrder: 'desc' as const
-};
+import { AlertData } from '@/types/analytics';
 
 const Alerts = () => {
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState('all');
-  
-  // Fetch alerts with proper queryFn
-  const { data: alerts, isLoading, refetch } = useQuery({
-    queryKey: ['alerts'],
-    queryFn: () => analyticsService.getAlerts(alertQueryParams)
-  });
-  
-  // Filter alerts based on active tab
-  const filteredAlerts = alerts?.filter(alert => {
-    if (activeTab === 'all') return true;
-    return alert.status === activeTab;
-  });
-  
-  // Handle refresh
-  const handleRefresh = () => {
-    refetch();
-    toast({
-      title: "Alerts Refreshed",
-      description: "The alerts have been updated."
+  const queryClient = useQueryClient();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'resolved'>('all');
+  const [filterLevel, setFilterLevel] = useState<'all' | 'critical' | 'warning' | 'info'>('all');
+  const [selectedAlert, setSelectedAlert] = useState<AlertData | null>(null);
+  const [showResolveDialog, setShowResolveDialog] = useState(false);
+
+  const getAlertsWithParams = async () => {
+    return await analyticsService.getAlerts({
+      status: filterStatus, 
+      level: filterLevel
     });
   };
-  
-  // Get icon for alert severity
-  const getAlertIcon = (level: string) => {
-    switch (level) {
-      case 'critical':
-        return <AlertTriangle className="h-4 w-4" />;
-      case 'warning':
-        return <AlertCircle className="h-4 w-4" />;
-      case 'info':
-        return <Info className="h-4 w-4" />;
-      default:
-        return <Bell className="h-4 w-4" />;
+
+  const { data: alerts, isLoading, refetch } = useQuery({
+    queryKey: ['alerts', filterStatus, filterLevel],
+    queryFn: getAlertsWithParams
+  });
+
+  const resolveAlertMutation = useMutation({
+    mutationFn: (alertId: string) => analyticsService.resolveAlert(alertId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['alerts'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboardStats'] });
+      toast({ title: "Alert resolved", description: "The alert has been marked as resolved." });
+      setShowResolveDialog(false);
+    },
+    onError: (error) => {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to resolve alert. Please try again.",
+      });
+      console.error("Error resolving alert:", error);
     }
-  };
-  
-  // Get color for alert severity
-  const getAlertColor = (level: string) => {
-    switch (level) {
-      case 'critical':
-        return 'text-red-500 bg-red-50 border-red-200';
-      case 'warning':
-        return 'text-amber-500 bg-amber-50 border-amber-200';
-      case 'info':
-        return 'text-blue-500 bg-blue-50 border-blue-200';
-      default:
-        return 'text-gray-500 bg-gray-50 border-gray-200';
+  });
+
+  const filteredAlerts = React.useMemo(() => {
+    if (!alerts) return [];
+
+    let filtered = [...alerts];
+
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(alert => 
+        alert.title.toLowerCase().includes(query) || 
+        (alert.message && alert.message.toLowerCase().includes(query)) ||
+        (alert.printer && alert.printer.name.toLowerCase().includes(query)) ||
+        (alert.user && alert.user.name.toLowerCase().includes(query))
+      );
     }
+
+    return filtered;
+  }, [alerts, searchQuery]);
+
+  const handleRefresh = () => {
+    refetch();
   };
-  
-  // Get badge style for alert status
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'active':
-        return <Badge variant="destructive">Active</Badge>;
-      case 'resolved':
-        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-100">Resolved</Badge>;
-      case 'acknowledged':
-        return <Badge variant="secondary">Acknowledged</Badge>;
-      default:
-        return <Badge variant="outline">Unknown</Badge>;
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  };
+
+  const handleStatusFilterChange = (value: 'all' | 'active' | 'resolved') => {
+    setFilterStatus(value);
+  };
+
+  const handleLevelFilterChange = (value: 'all' | 'critical' | 'warning' | 'info') => {
+    setFilterLevel(value);
+  };
+
+  const handleResolveClick = (alert: AlertData) => {
+    setSelectedAlert(alert);
+    setShowResolveDialog(true);
+  };
+
+  const handleResolveConfirm = () => {
+    if (selectedAlert) {
+      resolveAlertMutation.mutate(selectedAlert.id);
     }
   };
 
@@ -118,125 +102,181 @@ const Alerts = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Alerts</h1>
-          <p className="text-muted-foreground mt-1">Monitor system alerts and issues</p>
+          <p className="text-muted-foreground">Manage system alerts and warnings</p>
         </div>
-        
-        <div className="flex items-center gap-3">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="gap-2">
-                <Filter className="h-4 w-4" />
-                <span>Filter</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>Filter Alerts</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">Status</DropdownMenuLabel>
-              <DropdownMenuItem>All</DropdownMenuItem>
-              <DropdownMenuItem>Active</DropdownMenuItem>
-              <DropdownMenuItem>Resolved</DropdownMenuItem>
-              <DropdownMenuItem>Acknowledged</DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">Severity</DropdownMenuLabel>
-              <DropdownMenuItem>All</DropdownMenuItem>
-              <DropdownMenuItem>Critical</DropdownMenuItem>
-              <DropdownMenuItem>Warning</DropdownMenuItem>
-              <DropdownMenuItem>Info</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          
-          <Button 
-            variant="outline" 
-            size="icon"
-            className="h-10 w-10"
-            onClick={handleRefresh}
-            disabled={isLoading}
-          >
-            <RefreshCw className={isLoading ? "animate-spin h-4 w-4" : "h-4 w-4"} />
-          </Button>
-        </div>
+        <Button variant="outline" size="icon" onClick={handleRefresh}>
+          <RefreshCw className="h-4 w-4" />
+        </Button>
       </div>
-      
+
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle>System Alerts</CardTitle>
-          <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
-            <TabsList>
-              <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="active">Active</TabsTrigger>
-              <TabsTrigger value="resolved">Resolved</TabsTrigger>
-              <TabsTrigger value="acknowledged">Acknowledged</TabsTrigger>
-            </TabsList>
-          </Tabs>
+        <CardHeader>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <CardTitle>Alert History</CardTitle>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="search"
+                  placeholder="Search alerts..."
+                  className="pl-8 w-full sm:w-[250px]"
+                  value={searchQuery}
+                  onChange={handleSearchChange}
+                />
+              </div>
+              <Select value={filterStatus} onValueChange={handleStatusFilterChange}>
+                <SelectTrigger className="w-full sm:w-[150px]">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="resolved">Resolved</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={filterLevel} onValueChange={handleLevelFilterChange}>
+                <SelectTrigger className="w-full sm:w-[150px]">
+                  <SelectValue placeholder="Filter by level" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Levels</SelectItem>
+                  <SelectItem value="critical">Critical</SelectItem>
+                  <SelectItem value="warning">Warning</SelectItem>
+                  <SelectItem value="info">Info</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           {isLoading ? (
             <div className="flex justify-center py-8">
               <RefreshCw className="h-8 w-8 animate-spin text-primary/70" />
             </div>
-          ) : filteredAlerts && filteredAlerts.length > 0 ? (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5 }}
-              className="space-y-4"
-            >
-              {filteredAlerts.map((alert, index) => (
-                <motion.div
-                  key={alert.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: index * 0.05 }}
-                  className="border rounded-lg p-4"
-                >
-                  <div className="flex items-start gap-4">
-                    <div className={`flex-shrink-0 p-2 rounded-full ${getAlertColor(alert.level || '')}`}>
-                      {getAlertIcon(alert.level || '')}
-                    </div>
-                    
-                    <div className="flex-1 min-w-0">
-                      <div className="flex flex-wrap justify-between gap-2 mb-1">
-                        <span className="font-medium">{alert.title || ''}</span>
-                        <div className="flex gap-2 items-center">
-                          {getStatusBadge(alert.status || '')}
-                          <Badge variant="outline" className="font-normal">
-                            {format(new Date(alert.timestamp), 'MMM d, h:mm a')}
-                          </Badge>
+          ) : filteredAlerts.length > 0 ? (
+            <div className="rounded-md border overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date & Time</TableHead>
+                    <TableHead>Alert</TableHead>
+                    <TableHead>Level</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Details</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredAlerts.map((alert) => (
+                    <TableRow key={alert.id}>
+                      <TableCell className="font-medium">
+                        {format(new Date(alert.timestamp), 'MMM d, yyyy h:mm a')}
+                      </TableCell>
+                      <TableCell>
+                        <div className="font-medium">{alert.title}</div>
+                        {alert.message && (
+                          <div className="text-sm text-muted-foreground">{alert.message}</div>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={
+                            alert.level === 'critical' ? 'destructive' : 
+                            alert.level === 'warning' ? 'secondary' : 
+                            'default'
+                          }
+                        >
+                          {alert.level}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={alert.status === 'active' ? 'outline' : 'secondary'}
+                          className={alert.status === 'active' ? 'border-red-500 text-red-500' : ''}
+                        >
+                          {alert.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="space-y-1">
+                          {alert.printer && (
+                            <div className="text-sm">
+                              Printer: <span className="font-medium">{alert.printer.name}</span> (ID: {alert.printer.id})
+                            </div>
+                          )}
+                          {alert.user && (
+                            <div className="text-sm">
+                              User: <span className="font-medium">{alert.user.name}</span> (ID: {alert.user.id})
+                            </div>
+                          )}
                         </div>
-                      </div>
-                      
-                      <p className="text-sm text-muted-foreground">{alert.description || ''}</p>
-                      
-                      {alert.printer && (
-                        <div className="mt-2 text-xs text-muted-foreground">
-                          Printer: {typeof alert.printer === 'object' ? alert.printer.name : alert.printer}
-                        </div>
-                      )}
-                      
-                      {alert.user && (
-                        <div className="mt-1 text-xs text-muted-foreground">
-                          User: {typeof alert.user === 'object' ? alert.user.name : alert.user}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </motion.div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {alert.status === 'active' && (
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => handleResolveClick(alert)}
+                            className="h-8 gap-1"
+                          >
+                            <Check className="h-3.5 w-3.5" />
+                            Resolve
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           ) : (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <CheckCircle className="h-12 w-12 text-green-500 mb-4" />
-              <h3 className="text-lg font-medium mb-1">No alerts found</h3>
-              <p className="text-muted-foreground max-w-md">
-                {activeTab === 'all'
-                  ? "There are currently no alerts in the system."
-                  : `There are no ${activeTab} alerts at this time.`}
-              </p>
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">No alerts found matching your filters.</p>
             </div>
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={showResolveDialog} onOpenChange={setShowResolveDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Resolve Alert</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to mark this alert as resolved? This will remove it from the active alerts list.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            {selectedAlert && (
+              <div className="space-y-2">
+                <div>
+                  <span className="font-medium">Alert:</span> {selectedAlert.title}
+                </div>
+                <div>
+                  <span className="font-medium">Level:</span>{' '}
+                  <Badge
+                    variant={
+                      selectedAlert.level === 'critical' ? 'destructive' : 
+                      selectedAlert.level === 'warning' ? 'secondary' : 
+                      'default'
+                    }
+                  >
+                    {selectedAlert.level}
+                  </Badge>
+                </div>
+                {selectedAlert.message && (
+                  <div>
+                    <span className="font-medium">Message:</span> {selectedAlert.message}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowResolveDialog(false)}>Cancel</Button>
+            <Button onClick={handleResolveConfirm}>Resolve Alert</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

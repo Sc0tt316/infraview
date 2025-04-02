@@ -28,32 +28,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BarChart, LineChart } from "@/components/ui/chart";
-import { ActivityLogData } from '@/pages/Activity';
-import { AlertData } from '@/pages/Alerts';
-
-// Define analytics data interface
-interface AnalyticsData {
-  summary: {
-    totalPrinters: number;
-    totalUsers: number;
-    departmentVolume: {
-      department: string;
-      volume: number;
-    }[];
-  };
-  printerStatus: {
-    online: number;
-    offline: number;
-    error: number;
-    warning: number;
-    maintenance: number;
-  };
-}
-
-interface DepartmentVolume {
-  department: string;
-  volume: number;
-}
+import { AnalyticsData, ActivityLogData, AlertData, DepartmentVolume } from '@/types/analytics';
 
 const Index = () => {
   const { toast } = useToast();

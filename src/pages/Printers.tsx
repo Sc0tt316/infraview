@@ -242,7 +242,7 @@ const Printers = () => {
 
   const handleAddPrinter = (e: React.FormEvent) => {
     e.preventDefault();
-    addPrinterMutation.mutate({
+    const printerToAdd: Omit<PrinterData, "id" | "jobCount" | "lastActive"> = {
       name: formData.name,
       model: formData.model,
       location: formData.location,
@@ -251,7 +251,8 @@ const Printers = () => {
       paperLevel: Number(formData.paperLevel) || 100,
       ipAddress: formData.ipAddress,
       department: formData.department
-    });
+    };
+    addPrinterMutation.mutate(printerToAdd);
   };
 
   const handleDeletePrinter = () => {
@@ -264,7 +265,7 @@ const Printers = () => {
     e.preventDefault();
     if (!selectedPrinter) return;
 
-    updatePrinterMutation.mutate({
+    const updateData = {
       id: selectedPrinter.id,
       data: {
         name: formData.name,
@@ -276,7 +277,8 @@ const Printers = () => {
         ipAddress: formData.ipAddress,
         department: formData.department
       }
-    });
+    };
+    updatePrinterMutation.mutate(updateData);
   };
 
   return (
