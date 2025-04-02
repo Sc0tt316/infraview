@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { 
@@ -46,7 +45,6 @@ const Analytics = () => {
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const { toast } = useToast();
   
-  // Fetch analytics data
   const { 
     data: analyticsData,
     isLoading: isAnalyticsLoading,
@@ -57,7 +55,6 @@ const Analytics = () => {
     queryFn: analyticsService.getAnalyticsData
   });
   
-  // Fetch print volume data based on selected time range
   const { 
     data: printVolumeData = [],
     isLoading: isPrintVolumeLoading,
@@ -72,7 +69,6 @@ const Analytics = () => {
     },
   });
   
-  // Fetch statistics
   const { 
     data: statistics,
     isLoading: isStatisticsLoading,
@@ -82,7 +78,6 @@ const Analytics = () => {
     queryFn: analyticsService.getStatistics
   });
   
-  // Fetch printers to get departments
   const { 
     data: printers = [],
     isLoading: isPrintersLoading,
@@ -92,7 +87,6 @@ const Analytics = () => {
     queryFn: printerService.getAllPrinters
   });
   
-  // Generate department data from printers
   const generateDepartmentData = () => {
     const departmentCounts: Record<string, number> = {};
     
@@ -110,13 +104,11 @@ const Analytics = () => {
   
   const departmentData = generateDepartmentData();
   
-  // Handle time range change
   const handleTimeRangeChange = (value: string) => {
     setTimeRange(value);
     setDateRange(undefined);
   };
   
-  // Handle date range apply
   const handleDateRangeApply = () => {
     if (dateRange?.from && dateRange?.to) {
       setTimeRange("custom");
@@ -124,7 +116,6 @@ const Analytics = () => {
     }
   };
   
-  // Handle refresh
   const handleRefresh = () => {
     refetchAnalytics();
     refetchPrintVolume();

@@ -9,7 +9,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
-import { analyticsService } from "@/services/analyticsService";
+import { analyticsService, ActivityLogData } from "@/services/analyticsService";
 
 const Activity = () => {
   const [searchQuery, setSearchQuery] = useState("");

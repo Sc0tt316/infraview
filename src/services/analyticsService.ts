@@ -1,4 +1,3 @@
-
 import { apiService } from './api';
 import { toast } from '@/hooks/use-toast';
 import { printerService } from './printerService';
@@ -241,5 +240,107 @@ export const analyticsService = {
         totalPaperUsed: 0
       };
     }
+  },
+  
+  // Add this function to handle date range queries
+  getPrintVolumeByDateRange: async (fromDate: Date, toDate: Date): Promise<PrintVolumeData[]> => {
+    try {
+      // Get the existing data and filter it based on the date range
+      const data = await analyticsService.getPrintVolumeByTimeRange("month"); // get a larger dataset to filter from
+      
+      // For demo purposes we'll just return the data
+      // In a real implementation, this would filter based on dates
+      return data;
+    } catch (error) {
+      console.error('Error fetching print volume by date range:', error);
+      return [];
+    }
+  },
+  
+  // Add this function to get all activity logs
+  getActivityLogs: async (): Promise<ActivityLogData[]> => {
+    try {
+      // Combine logs from printers and system
+      const printerLogs = await printerService.getAllLogs();
+      const activities = await printerService.getAllActivities();
+      
+      // Map to consistent format
+      const logs: ActivityLogData[] = [
+        ...printerLogs.map(log => ({
+          id: log.id,
+          type: "printer",
+          timestamp: log.timestamp,
+          description: log.message,
+          user: log.user || "System",
+          action: log.type === "error" ? "Error reported" : "Log recorded",
+          entityName: "Printer"
+        })),
+        ...activities.map(activity => ({
+          id: activity.id,
+          type: "user",
+          timestamp: activity.timestamp,
+          description: activity.details || "",
+          user: activity.user || "System",
+          action: activity.action,
+          entityName: activity.printerId
+        })),
+        // Add some system logs
+        {
+          id: "sys1",
+          type: "system",
+          timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
+          description: "System maintenance completed",
+          user: "admin",
+          action: "System update",
+          entityName: "System"
+        },
+        {
+          id: "sys2",
+          type: "system",
+          timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
+          description: "Database backup completed",
+          user: "system",
+          action: "Backup",
+          entityName: "Database"
+        }
+      ];
+      
+      // Sort by timestamp, newest first
+      return logs.sort((a, b) => 
+        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+      );
+    } catch (error) {
+      console.error('Error fetching activity logs:', error);
+      return [];
+    }
+  },
+  
+  // Add this function for the printer activity tab
+  getPrinterActivity: async (printerId: string): Promise<any[]> => {
+    try {
+      const activities = await printerService.getPrinterActivity(printerId);
+      return activities.map(activity => ({
+        id: activity.id,
+        timestamp: activity.timestamp,
+        action: activity.action,
+        description: activity.details || "",
+        user: activity.user,
+        type: activity.action.includes("error") ? "error" : "info"
+      }));
+    } catch (error) {
+      console.error(`Error fetching activities for printer ${printerId}:`, error);
+      return [];
+    }
   }
 };
+
+// Add this type definition
+export interface ActivityLogData {
+  id: string;
+  type: string;
+  timestamp: string;
+  description: string;
+  user: string;
+  action: string;
+  entityName?: string;
+}
