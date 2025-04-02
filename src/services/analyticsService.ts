@@ -1,3 +1,4 @@
+
 import { apiService } from './api';
 import { toast } from 'sonner';
 import { 
@@ -56,6 +57,7 @@ const initializePrintVolumeData = async () => {
       const hour = String(i).padStart(2, '0');
       return {
         date: `${hour}:00`,
+        count: Math.floor(Math.random() * 50) + 10,
         volume: Math.floor(Math.random() * 500) + 100
       };
     });
@@ -65,6 +67,7 @@ const initializePrintVolumeData = async () => {
       date.setDate(today.getDate() - (6 - i));
       return {
         date: date.toLocaleDateString('en-US', { weekday: 'short' }),
+        count: Math.floor(Math.random() * 200) + 50,
         volume: Math.floor(Math.random() * 2000) + 500
       };
     });
@@ -74,6 +77,7 @@ const initializePrintVolumeData = async () => {
       date.setDate(today.getDate() - (29 - i));
       return {
         date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        count: Math.floor(Math.random() * 150) + 30,
         volume: Math.floor(Math.random() * 1500) + 300
       };
     });
@@ -83,6 +87,7 @@ const initializePrintVolumeData = async () => {
       date.setMonth(i);
       return {
         date: date.toLocaleDateString('en-US', { month: 'short' }),
+        count: Math.floor(Math.random() * 3000) + 1000,
         volume: Math.floor(Math.random() * 30000) + 10000
       };
     });
@@ -153,11 +158,11 @@ const initializeActivityLogs = async () => {
       const possibleDescriptions = typeToDescriptionMap[eventType] || ['Action performed'];
       const description = possibleDescriptions[Math.floor(Math.random() * possibleDescriptions.length)];
       
-      let type = 'info';
+      let type: "success" | "error" | "info" | "warning" = "info";
       if (eventType.includes('error') || eventType === 'printer_removed' || eventType === 'user_removed') {
-        type = Math.random() > 0.7 ? 'error' : 'warning';
+        type = Math.random() > 0.7 ? "error" : "warning";
       } else if (eventType === 'login' || eventType === 'print') {
-        type = 'success';
+        type = "success";
       }
       
       return {
@@ -270,8 +275,8 @@ const initializeAlerts = async () => {
         const userIndex = Math.floor(Math.random() * users.length);
         
         const resolved = typedLevel === 'info' ? Math.random() > 0.3 : 
-                        typedLevel === 'warning' ? Math.random() > 0.7 : 
-                        Math.random() > 0.9;
+                         typedLevel === 'warning' ? Math.random() > 0.7 : 
+                         Math.random() > 0.9;
         
         mockData.push({
           id: `alert-${mockData.length + 1}`,
@@ -353,6 +358,7 @@ export const analyticsService: AnalyticsServiceInterface = {
         
         customData.push({
           date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+          count: Math.floor(Math.random() * 150) + 30,
           volume: Math.floor(Math.random() * 1500) + 300
         });
       }

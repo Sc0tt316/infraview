@@ -18,11 +18,11 @@ export interface AnalyticsSummary {
   totalPrinters: number;
   totalUsers: number;
   departmentVolume: DepartmentVolume[];
-  totalVolume?: number;
-  activePrinters?: number;
-  activeJobs?: number;
-  completedJobs?: number;
-  failedJobs?: number;
+  totalVolume: number;
+  activePrinters: number;
+  activeJobs: number;
+  completedJobs: number;
+  failedJobs: number;
 }
 
 export interface AnalyticsData {
@@ -31,15 +31,21 @@ export interface AnalyticsData {
   departmentVolume?: DepartmentVolume[];
 }
 
+export interface PrintVolumeData {
+  date: string;
+  count: number;
+  volume: number;
+}
+
 export interface ActivityLogData {
   id: string;
   timestamp: string;
   entityId: string;
   entityType: string;
   type: "success" | "error" | "info" | "warning";
-  message?: string;
-  user?: string;
-  action?: string;
+  message: string;
+  user: string;
+  action: string;
   userName?: string;
   userId?: string;
   description?: string;
@@ -51,7 +57,7 @@ export interface AlertData {
   title: string;
   level: "critical" | "warning" | "info";
   status: "active" | "resolved";
-  message?: string;
+  message: string;
   description?: string;
   resolved?: boolean;
   timeAgo?: string;
@@ -66,12 +72,6 @@ export interface AlertData {
     id: string;
     name: string;
   };
-}
-
-export interface PrintVolumeData {
-  date: string;
-  count: number;
-  volume?: number;
 }
 
 // Extend analyticsService types
