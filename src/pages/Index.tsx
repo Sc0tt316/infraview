@@ -50,6 +50,11 @@ interface AnalyticsData {
   };
 }
 
+interface DepartmentVolume {
+  department: string;
+  volume: number;
+}
+
 const Index = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -108,6 +113,9 @@ const Index = () => {
     queryFn: () => analyticsService.getAnalyticsData(),
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
+  
+  // Create department volume data for charts
+  const departmentVolumeData = dashboardData?.summary?.departmentVolume || [];
   
   // Updated handleRefresh function to include all refetches
   const handleRefresh = () => {
@@ -185,7 +193,7 @@ const Index = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {dashboardData?.summary?.departmentVolume?.reduce((sum, item) => sum + item.volume, 0).toLocaleString() || 0}
+              {departmentVolumeData.reduce((sum, item) => sum + item.volume, 0).toLocaleString() || 0}
             </div>
             <p className="text-xs text-muted-foreground">
               pages printed
@@ -219,13 +227,14 @@ const Index = () => {
               <div className="flex items-center justify-center h-[300px]">
                 <RefreshCw className="h-8 w-8 animate-spin text-primary/70" />
               </div>
-            ) : dashboardData?.summary?.departmentVolume && dashboardData.summary.departmentVolume.length > 0 ? (
+            ) : departmentVolumeData && departmentVolumeData.length > 0 ? (
               <div className="h-[300px]">
                 <BarChart
-                  data={dashboardData.summary.departmentVolume}
+                  data={departmentVolumeData}
                   categories={['volume']}
                   index="department"
                   valueFormatter={(value) => `${value.toLocaleString()} pages`}
+                  colors={['blue']}
                 />
               </div>
             ) : (
@@ -263,6 +272,9 @@ const Index = () => {
                     { name: 'Maintenance', value: statusCounts.maintenance }
                   ].filter(item => item.value > 0);
                   
+                  // Calculate the total for percentages
+                  const total = Object.values(statusCounts).reduce((a, b) => Number(a) + Number(b), 0);
+                  
                   // Instead of pie chart, use a simple visualization
                   return (
                     <div className="flex flex-col h-[300px] justify-center space-y-4">
@@ -286,7 +298,7 @@ const Index = () => {
                                   item.name === 'Warning' ? 'bg-orange-400' : 
                                   'bg-blue-500'
                                 }`} 
-                                style={{ width: `${(item.value / Object.values(statusCounts).reduce((a, b) => a + b, 0)) * 100}%` }} 
+                                style={{ width: `${(item.value / total) * 100}%` }} 
                               />
                             </div>
                           </div>
@@ -300,23 +312,23 @@ const Index = () => {
                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mt-4">
                   <div className="flex items-center gap-2">
                     <div className="h-3 w-3 rounded-full bg-green-500"></div>
-                    <span className="text-sm text-muted-foreground">Online ({dashboardData?.printerStatus?.online || 0})</span>
+                    <span className="text-sm text-muted-foreground">Online ({dashboardData.printerStatus.online || 0})</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="h-3 w-3 rounded-full bg-gray-400"></div>
-                    <span className="text-sm text-muted-foreground">Offline ({dashboardData?.printerStatus?.offline || 0})</span>
+                    <span className="text-sm text-muted-foreground">Offline ({dashboardData.printerStatus.offline || 0})</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="h-3 w-3 rounded-full bg-red-500"></div>
-                    <span className="text-sm text-muted-foreground">Error ({dashboardData?.printerStatus?.error || 0})</span>
+                    <span className="text-sm text-muted-foreground">Error ({dashboardData.printerStatus.error || 0})</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="h-3 w-3 rounded-full bg-orange-400"></div>
-                    <span className="text-sm text-muted-foreground">Warning ({dashboardData?.printerStatus?.warning || 0})</span>
+                    <span className="text-sm text-muted-foreground">Warning ({dashboardData.printerStatus.warning || 0})</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="h-3 w-3 rounded-full bg-blue-500"></div>
-                    <span className="text-sm text-muted-foreground">Maintenance ({dashboardData?.printerStatus?.maintenance || 0})</span>
+                    <span className="text-sm text-muted-foreground">Maintenance ({dashboardData.printerStatus.maintenance || 0})</span>
                   </div>
                 </div>
               </div>

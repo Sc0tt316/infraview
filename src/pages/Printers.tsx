@@ -1,60 +1,50 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { format } from 'date-fns';
-import { motion } from 'framer-motion';
-import {
-  Printer,
-  Plus,
-  Edit,
-  Trash2,
-  Search,
-  RefreshCw,
-  AlertTriangle,
-  AlertCircle,
-  Info,
-  CheckCircle,
-  X
-} from 'lucide-react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { printerService, PrinterData } from '@/services/printerService';
 import { useToast } from '@/hooks/use-toast';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import PrinterDetailModal from '@/components/printers/PrinterDetailModal';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Button } from "@/components/ui/button"
 import {
   Table,
-  TableHeader,
   TableBody,
-  TableRow,
+  TableCaption,
   TableCell,
-  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table"
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Plus, Edit, Trash2, Eye } from 'lucide-react';
+import {
   Dialog,
+  DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
-  DialogContent,
-  DialogFooter,
   DialogTrigger,
-  DialogClose,
 } from "@/components/ui/dialog"
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form"
-import { z } from "zod"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Pagination } from '@/components/ui/pagination';
-import PrinterDetailModal from '@/components/printers/PrinterDetailModal';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form';
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
 
-const printerSchema = z.object({
+// Define a schema for the printer form
+const printerFormSchema = z.object({
   name: z.string().min(2, {
     message: "Printer name must be at least 2 characters.",
   }),
@@ -64,512 +54,386 @@ const printerSchema = z.object({
   location: z.string().min(2, {
     message: "Printer location must be at least 2 characters.",
   }),
-  status: z.enum(["online", "offline", "error", "maintenance", "warning"]),
-  inkLevel: z.number().min(0).max(100),
-  paperLevel: z.number().min(0).max(100),
+  status: z.enum(["online", "offline", "error", "maintenance", "warning"]).default("offline"),
+  inkLevel: z.number().min(0).max(100).default(100),
+  paperLevel: z.number().min(0).max(100).default(100),
   ipAddress: z.string().optional(),
   department: z.string().optional(),
 });
 
+// Define a type for the form values
+type PrinterFormValues = z.infer<typeof printerFormSchema>;
+
+// Function to filter printers based on search term
+const filterPrinters = (printers: PrinterData[], searchTerm: string): PrinterData[] => {
+  if (!searchTerm) {
+    return printers;
+  }
+  const lowerSearchTerm = searchTerm.toLowerCase();
+  return printers.filter(printer =>
+    printer.name.toLowerCase().includes(lowerSearchTerm) ||
+    printer.model.toLowerCase().includes(lowerSearchTerm) ||
+    printer.location.toLowerCase().includes(lowerSearchTerm)
+  );
+};
+
 const Printers = () => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedPrinter, setSelectedPrinter] = useState<string | null>(null);
-  const [page, setPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [isAdding, setIsAdding] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [printerToEdit, setPrinterToEdit] = useState<PrinterData | null>(null);
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-
-  const { data: printersData, isLoading, refetch } = useQuery({
-    queryKey: ['printers'],
-    queryFn: printerService.getAllPrinters,
-  });
-
-  const { data: printerDetails } = useQuery({
-    queryKey: ['printerDetails', selectedPrinter],
-    queryFn: () => selectedPrinter ? printerService.getPrinterById(selectedPrinter) : undefined,
-    enabled: !!selectedPrinter,
-  });
-
-  const addPrinterMutation = useMutation(printerService.addPrinter, {
-    onSuccess: () => {
-      toast({
-        title: "Printer Added",
-        description: "New printer has been added successfully.",
-      });
-      queryClient.invalidateQueries({ queryKey: ['printers'] });
-      setIsAdding(false);
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to add printer. Please try again.",
-        variant: "destructive"
-      });
-    },
-  });
-
-  const updatePrinterMutation = useMutation(
-    (data: { id: string; data: Partial<PrinterData> }) => printerService.updatePrinter(data.id, data.data),
-    {
-      onSuccess: () => {
-        toast({
-          title: "Printer Updated",
-          description: "Printer details have been updated successfully.",
-        });
-        queryClient.invalidateQueries({ queryKey: ['printers'] });
-        setIsEditing(false);
-        setPrinterToEdit(null);
-      },
-      onError: () => {
-        toast({
-          title: "Error",
-          description: "Failed to update printer. Please try again.",
-          variant: "destructive"
-        });
-      },
-    }
-  );
-
-  const deletePrinterMutation = useMutation(printerService.deletePrinter, {
-    onSuccess: () => {
-      toast({
-        title: "Printer Deleted",
-        description: "Printer has been deleted successfully.",
-      });
-      queryClient.invalidateQueries({ queryKey: ['printers'] });
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to delete printer. Please try again.",
-        variant: "destructive"
-      });
-    },
-  });
-
-  const handleDeletePrinter = (id: string) => {
-    deletePrinterMutation.mutate(id);
-  };
-
-  const handleEditPrinter = (printer: PrinterData) => {
-    setPrinterToEdit(printer);
-    setIsEditing(true);
-  };
-
-  const handleRefresh = () => {
-    refetch();
-    toast({
-      title: "Printers Refreshed",
-      description: "The printer list has been updated.",
-    });
-  };
-
-  const filteredPrinters = printersData?.filter(printer =>
-    printer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    printer.model.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    printer.location.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const paginatedPrinters = filteredPrinters?.slice((page - 1) * itemsPerPage, page * itemsPerPage);
-
-  const addForm = useForm<z.infer<typeof printerSchema>>({
-    resolver: zodResolver(printerSchema),
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filteredPrinters, setFilteredPrinters] = useState<PrinterData[]>([]);
+  const [showAddPrinterModal, setShowAddPrinterModal] = useState(false);
+  const [showEditPrinterModal, setShowEditPrinterModal] = useState(false);
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [selectedPrinter, setSelectedPrinter] = useState<PrinterData | null>(null);
+  const [selectedPrinterId, setSelectedPrinterId] = useState<string | null>(null);
+  
+  // React Hook Form setup
+  const form = useForm<PrinterFormValues>({
+    resolver: zodResolver(printerFormSchema),
     defaultValues: {
       name: "",
       model: "",
       location: "",
-      status: "online",
+      status: "offline",
       inkLevel: 100,
       paperLevel: 100,
       ipAddress: "",
       department: "",
     },
   });
-
-  const editForm = useForm<z.infer<typeof printerSchema>>({
-    resolver: zodResolver(printerSchema),
-    defaultValues: printerToEdit || {
+  
+  const { setValue, reset } = useForm<PrinterFormValues>();
+  
+  // Function to reset the form
+  const resetForm = () => {
+    reset({
       name: "",
       model: "",
       location: "",
-      status: "online",
+      status: "offline",
       inkLevel: 100,
       paperLevel: 100,
       ipAddress: "",
       department: "",
-    },
-    values: printerToEdit,
-    mode: "onChange"
+    });
+  };
+  
+  // State to hold form data
+  const [formData, setFormData] = useState<PrinterFormValues>({
+    name: "",
+    model: "",
+    location: "",
+    status: "offline",
+    inkLevel: 100,
+    paperLevel: 100,
+    ipAddress: "",
+    department: "",
   });
 
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  // Update filtered printers when printers data changes or search term changes
   useEffect(() => {
-    if (printerToEdit) {
-      editForm.reset(printerToEdit);
+    if (printers) {
+      const filtered = filterPrinters(printers, searchTerm);
+      setFilteredPrinters(filtered);
     }
-  }, [printerToEdit, editForm]);
+  }, [printers, searchTerm]);
 
-  const handleAddSubmit = (values: z.infer<typeof printerSchema>) => {
-    addPrinterMutation.mutate(values);
+  // Handle search term changes
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
   };
 
-  const handleEditSubmit = (values: z.infer<typeof printerSchema>) => {
-    if (printerToEdit) {
-      updatePrinterMutation.mutate({ id: printerToEdit.id, data: values });
+  // Handle opening the edit modal
+  const handleOpenEditModal = (printer: PrinterData) => {
+    setSelectedPrinter(printer);
+    setFormData({
+      name: printer.name,
+      model: printer.model,
+      location: printer.location,
+      status: printer.status,
+      inkLevel: printer.inkLevel,
+      paperLevel: printer.paperLevel,
+      ipAddress: printer.ipAddress || "",
+      department: printer.department || "",
+    });
+    setShowEditPrinterModal(true);
+  };
+
+  // Handle opening the delete confirmation
+  const handleOpenDeleteConfirmation = (printer: PrinterData) => {
+    setSelectedPrinter(printer);
+    setShowDeleteConfirmation(true);
+  };
+
+  // Handle form field changes
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prevData => ({
+      ...prevData,
+      [name]: value,
+    }));
+  };
+
+  // Handle status changes
+  const handleStatusChange = (value: "online" | "offline" | "error" | "maintenance" | "warning") => {
+    setFormData(prevData => ({
+      ...prevData,
+      status: value,
+    }));
+  };
+
+  // Query for fetching printers
+  const { data: printers, isLoading } = useQuery({
+    queryKey: ['printers'],
+    queryFn: () => printerService.getAllPrinters(),
+  });
+
+  // Mutation for adding a printer
+  const addPrinterMutation = useMutation({
+    mutationFn: (printerData: Omit<PrinterData, "id" | "jobCount" | "lastActive">) => 
+      printerService.addPrinter(printerData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['printers'] });
+      setShowAddPrinterModal(false);
+      resetForm();
+      toast({
+        title: "Printer Added",
+        description: "The printer has been added successfully.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to add printer. Please try again.",
+      });
+      console.error("Error adding printer:", error);
+    }
+  });
+
+  // Mutation for updating a printer
+  const updatePrinterMutation = useMutation({
+    mutationFn: ({id, data}: {id: string, data: Partial<PrinterData>}) => 
+      printerService.updatePrinter(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['printers'] });
+      setShowEditPrinterModal(false);
+      toast({
+        title: "Printer Updated",
+        description: "The printer has been updated successfully.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to update printer. Please try again.",
+      });
+      console.error("Error updating printer:", error);
+    }
+  });
+
+  // Mutation for deleting a printer
+  const deletePrinterMutation = useMutation({
+    mutationFn: (id: string) => printerService.deletePrinter(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['printers'] });
+      setShowDeleteConfirmation(false);
+      toast({
+        title: "Printer Deleted",
+        description: "The printer has been deleted successfully.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to delete printer. Please try again.",
+      });
+      console.error("Error deleting printer:", error);
+    }
+  });
+
+  // Handle form submission for adding a printer
+  const handleAddPrinter = (e: React.FormEvent) => {
+    e.preventDefault();
+    addPrinterMutation.mutate({
+      name: formData.name,
+      model: formData.model,
+      location: formData.location,
+      status: formData.status || "offline",
+      inkLevel: Number(formData.inkLevel) || 100,
+      paperLevel: Number(formData.paperLevel) || 100,
+      ipAddress: formData.ipAddress,
+      department: formData.department
+    });
+  };
+
+  // Handle printer deletion
+  const handleDeletePrinter = () => {
+    if (selectedPrinter) {
+      deletePrinterMutation.mutate(selectedPrinter.id);
     }
   };
 
-  const getStatusColor = (status: PrinterData["status"]) => {
-    switch (status) {
-      case "online":
-        return "bg-green-500/10 text-green-500 border-green-500/20";
-      case "offline":
-        return "bg-gray-500/10 text-gray-500 border-gray-500/20";
-      case "warning":
-        return "bg-yellow-500/10 text-yellow-500 border-yellow-500/20";
-      case "error":
-        return "bg-red-500/10 text-red-500 border-red-500/20";
-      case "maintenance":
-        return "bg-blue-500/10 text-blue-500 border-blue-500/20";
-      default:
-        return "bg-gray-100 text-gray-500";
-    }
+  // Handle printer update form submission
+  const handleUpdatePrinter = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedPrinter) return;
+
+    updatePrinterMutation.mutate({
+      id: selectedPrinter.id,
+      data: {
+        name: formData.name,
+        status: formData.status as PrinterData['status'],
+        model: formData.model,
+        location: formData.location,
+        inkLevel: Number(formData.inkLevel),
+        paperLevel: Number(formData.paperLevel),
+        ipAddress: formData.ipAddress,
+        department: formData.department
+      }
+    });
   };
 
+  // Fix the DetailModal props
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Printers</h1>
-          <p className="text-muted-foreground mt-1">Manage your organization's printers</p>
+          <p className="text-muted-foreground mt-1">Manage and monitor your printers</p>
         </div>
-
-        <div className="flex items-center gap-3">
+        <div className="flex items-center space-x-2">
           <Input
-            type="search"
+            type="text"
             placeholder="Search printers..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="max-w-md"
+            value={searchTerm}
+            onChange={handleSearchChange}
           />
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-10 w-10"
-            onClick={handleRefresh}
-            disabled={isLoading}
-          >
-            <RefreshCw className={isLoading ? "animate-spin h-4 w-4" : "h-4 w-4"} />
+          <Button onClick={() => setShowAddPrinterModal(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Add Printer
           </Button>
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Printer
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle>Add Printer</DialogTitle>
-                <DialogDescription>
-                  Add a new printer to the system.
-                </DialogDescription>
-              </DialogHeader>
-              <Form {...addForm}>
-                <form onSubmit={addForm.handleSubmit(handleAddSubmit)} className="space-y-4">
-                  <FormField
-                    control={addForm.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Printer Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter printer name" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={addForm.control}
-                    name="model"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Printer Model</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter printer model" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={addForm.control}
-                    name="location"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Printer Location</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter printer location" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={addForm.control}
-                    name="status"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Status</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select a status" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="online">Online</SelectItem>
-                            <SelectItem value="offline">Offline</SelectItem>
-                            <SelectItem value="error">Error</SelectItem>
-                            <SelectItem value="maintenance">Maintenance</SelectItem>
-                            <SelectItem value="warning">Warning</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={addForm.control}
-                    name="inkLevel"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Ink Level</FormLabel>
-                        <FormControl>
-                          <Input type="number" placeholder="Enter ink level" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={addForm.control}
-                    name="paperLevel"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Paper Level</FormLabel>
-                        <FormControl>
-                          <Input type="number" placeholder="Enter paper level" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={addForm.control}
-                    name="ipAddress"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>IP Address</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter IP Address" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={addForm.control}
-                    name="department"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Department</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter Department" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <DialogFooter>
-                    <DialogClose asChild>
-                      <Button type="button" variant="secondary">
-                        Cancel
-                      </Button>
-                    </DialogClose>
-                    <Button type="submit">Add</Button>
-                  </DialogFooter>
-                </form>
-              </Form>
-            </DialogContent>
-          </Dialog>
         </div>
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle>Printer List</CardTitle>
+          <CardDescription>
+            Here is a list of all your printers. You can manage them from here.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <RefreshCw className="h-8 w-8 animate-spin text-primary/70" />
-            </div>
-          ) : filteredPrinters && filteredPrinters.length > 0 ? (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5 }}
-            >
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableCell>Name</TableCell>
-                    <TableCell>Model</TableCell>
-                    <TableCell>Location</TableCell>
-                    <TableCell>Status</TableCell>
-                    <TableCell>Ink Level</TableCell>
-                    <TableCell>Paper Level</TableCell>
-                    <TableCell className="text-right">Actions</TableCell>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {paginatedPrinters.map(printer => (
-                    <TableRow key={printer.id}>
-                      <TableCell>{printer.name}</TableCell>
-                      <TableCell>{printer.model}</TableCell>
-                      <TableCell>{printer.location}</TableCell>
-                      <TableCell>
-                        <Badge className={getStatusColor(printer.status)}>
-                          {printer.status.charAt(0).toUpperCase() + printer.status.slice(1)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{printer.inkLevel}%</TableCell>
-                      <TableCell>{printer.paperLevel}%</TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="ghost" size="icon" onClick={() => setSelectedPrinter(printer.id)}>
-                          <Search className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleEditPrinter(printer)}>
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleDeletePrinter(printer.id)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-              <div className="flex justify-center mt-4">
-                <nav aria-label="Pagination" className="flex items-center space-x-1">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setPage(page - 1)}
-                    disabled={page === 1}
-                  >
-                    Previous
-                  </Button>
-                  {Array.from({ length: Math.ceil(filteredPrinters.length / itemsPerPage) }).map((_, i) => (
-                    <Button
-                      key={i}
-                      variant={page === i + 1 ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setPage(i + 1)}
-                    >
-                      {i + 1}
-                    </Button>
-                  ))}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setPage(page + 1)}
-                    disabled={page === Math.ceil(filteredPrinters.length / itemsPerPage)}
-                  >
-                    Next
-                  </Button>
-                </nav>
-              </div>
-            </motion.div>
+            <p>Loading printers...</p>
           ) : (
-            <div className="flex flex-col items-center justify-center py-8 text-center">
-              <AlertTriangle className="h-8 w-8 text-muted-foreground mb-2" />
-              <h3 className="text-lg font-medium">No printers found</h3>
-              <p className="text-muted-foreground mt-1">
-                No printers match your search criteria.
-              </p>
-            </div>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Model</TableHead>
+                  <TableHead>Location</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredPrinters.map((printer) => (
+                  <TableRow key={printer.id}>
+                    <TableCell>{printer.name}</TableCell>
+                    <TableCell>{printer.model}</TableCell>
+                    <TableCell>{printer.location}</TableCell>
+                    <TableCell>{printer.status}</TableCell>
+                    <TableCell className="text-right font-medium">
+                      <div className="flex justify-end space-x-2">
+                        <Button variant="ghost" size="icon" onClick={() => setSelectedPrinterId(printer.id)}>
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleOpenEditModal(printer)}>
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleOpenDeleteConfirmation(printer)}>
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {filteredPrinters.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center">No printers found.</TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
           )}
         </CardContent>
       </Card>
 
-      {selectedPrinter && printerDetails && (
-        <PrinterDetailModal
-          printer={printerDetails}
-          onClose={() => setSelectedPrinter(null)}
-        />
-      )}
-
-      <Dialog open={isEditing} onOpenChange={setIsEditing}>
+      {/* Add Printer Modal */}
+      <Dialog open={showAddPrinterModal} onOpenChange={() => setShowAddPrinterModal(false)}>
+        <DialogTrigger asChild>
+          <Button>Add Printer</Button>
+        </DialogTrigger>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Edit Printer</DialogTitle>
+            <DialogTitle>Add Printer</DialogTitle>
             <DialogDescription>
-              Edit the details of the selected printer.
+              Add a new printer to the system.
             </DialogDescription>
           </DialogHeader>
-          <Form {...editForm}>
-            <form onSubmit={editForm.handleSubmit(handleEditSubmit)} className="space-y-4">
+          <Form {...form}>
+            <form onSubmit={handleAddPrinter} className="space-y-4">
               <FormField
-                control={editForm.control}
+                control={form.control}
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Printer Name</FormLabel>
+                    <FormLabel>Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter printer name" {...field} />
+                      <Input placeholder="Printer Name" {...field} onChange={handleInputChange} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
               <FormField
-                control={editForm.control}
+                control={form.control}
                 name="model"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Printer Model</FormLabel>
+                    <FormLabel>Model</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter printer model" {...field} />
+                      <Input placeholder="Printer Model" {...field} onChange={handleInputChange} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
               <FormField
-                control={editForm.control}
+                control={form.control}
                 name="location"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Printer Location</FormLabel>
+                    <FormLabel>Location</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter printer location" {...field} />
+                      <Input placeholder="Printer Location" {...field} onChange={handleInputChange} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
               <FormField
-                control={editForm.control}
+                control={form.control}
                 name="status"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Status</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select a status" />
@@ -587,70 +451,117 @@ const Printers = () => {
                   </FormItem>
                 )}
               />
-              <FormField
-                control={editForm.control}
-                name="inkLevel"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Ink Level</FormLabel>
-                    <FormControl>
-                      <Input type="number" placeholder="Enter ink level" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={editForm.control}
-                name="paperLevel"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Paper Level</FormLabel>
-                    <FormControl>
-                      <Input type="number" placeholder="Enter paper level" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={editForm.control}
-                name="ipAddress"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>IP Address</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter IP Address" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={editForm.control}
-                name="department"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Department</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter Department" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <DialogFooter>
-                <DialogClose asChild>
-                  <Button type="button" variant="secondary">
-                    Cancel
-                  </Button>
-                </DialogClose>
-                <Button type="submit">Update</Button>
-              </DialogFooter>
+              <Button type="submit">Add Printer</Button>
             </form>
           </Form>
         </DialogContent>
       </Dialog>
+
+      {/* Edit Printer Modal */}
+      <Dialog open={showEditPrinterModal} onOpenChange={() => setShowEditPrinterModal(false)}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Edit Printer</DialogTitle>
+            <DialogDescription>
+              Edit the details of the selected printer.
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...form}>
+            <form onSubmit={handleUpdatePrinter} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Printer Name" {...field} value={formData.name} onChange={handleInputChange} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="model"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Model</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Printer Model" {...field} value={formData.model} onChange={handleInputChange} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="location"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Location</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Printer Location" {...field} value={formData.location} onChange={handleInputChange} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status</FormLabel>
+                    <Select value={formData.status} onValueChange={handleStatusChange}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a status" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="online">Online</SelectItem>
+                        <SelectItem value="offline">Offline</SelectItem>
+                        <SelectItem value="error">Error</SelectItem>
+                        <SelectItem value="maintenance">Maintenance</SelectItem>
+                        <SelectItem value="warning">Warning</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button type="submit">Update Printer</Button>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Modal */}
+      <Dialog open={showDeleteConfirmation} onOpenChange={() => setShowDeleteConfirmation(false)}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Delete Printer</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this printer? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-6">
+            <p>Are you sure you want to delete <strong>{selectedPrinter?.name}</strong>?</p>
+          </div>
+          <div className="flex justify-end space-x-2">
+            <Button variant="secondary" onClick={() => setShowDeleteConfirmation(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={handleDeletePrinter}>Delete</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      
+      {selectedPrinterId && (
+        <PrinterDetailModal
+          printerId={selectedPrinterId}
+          onClose={() => setSelectedPrinterId(null)}
+        />
+      )}
     </div>
   );
 };

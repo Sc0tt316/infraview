@@ -18,7 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
 
-// Define activity log interface if it's not already defined elsewhere
+// Define activity log interface with all required fields
 export interface ActivityLogData {
   id: string;
   timestamp: string;
@@ -41,7 +41,7 @@ const Activity = () => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('all');
   
-  // Fetch activity logs
+  // Fetch activity logs with proper queryFn
   const { data: activityLogs, isLoading, refetch } = useQuery({
     queryKey: ['activityLogs'],
     queryFn: () => analyticsService.getActivityLogs(activityQueryParams)
@@ -155,7 +155,7 @@ const Activity = () => {
                     
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-wrap justify-between gap-2 mb-1">
-                        <span className="font-medium">{log.entityType || ''} {log.action || log.entityId || ''}</span>
+                        <span className="font-medium">{log.entityType || ''} {log.entityId || ''}</span>
                         <Badge variant="outline" className="font-normal">
                           {format(new Date(log.timestamp), 'MMM d, h:mm a')}
                         </Badge>

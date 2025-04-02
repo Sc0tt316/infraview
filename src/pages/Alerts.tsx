@@ -19,7 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
 
-// Define alert data interface
+// Define alert data interface with all required fields
 export interface AlertData {
   id: string;
   timestamp: string;
@@ -50,7 +50,7 @@ const Alerts = () => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('all');
   
-  // Fetch alerts
+  // Fetch alerts with proper queryFn
   const { data: alerts, isLoading, refetch } = useQuery({
     queryKey: ['alerts'],
     queryFn: () => analyticsService.getAlerts(alertQueryParams)
