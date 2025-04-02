@@ -38,12 +38,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 
-// Define a schema for the printer form
 const printerFormSchema = z.object({
   name: z.string().min(2, {
     message: "Printer name must be at least 2 characters.",
@@ -61,10 +60,8 @@ const printerFormSchema = z.object({
   department: z.string().optional(),
 });
 
-// Define a type for the form values
 type PrinterFormValues = z.infer<typeof printerFormSchema>;
 
-// Function to filter printers based on search term
 const filterPrinters = (printers: PrinterData[], searchTerm: string): PrinterData[] => {
   if (!searchTerm) {
     return printers;
@@ -86,7 +83,6 @@ const Printers = () => {
   const [selectedPrinter, setSelectedPrinter] = useState<PrinterData | null>(null);
   const [selectedPrinterId, setSelectedPrinterId] = useState<string | null>(null);
   
-  // React Hook Form setup
   const form = useForm<PrinterFormValues>({
     resolver: zodResolver(printerFormSchema),
     defaultValues: {
@@ -103,7 +99,6 @@ const Printers = () => {
   
   const { setValue, reset } = useForm<PrinterFormValues>();
   
-  // Function to reset the form
   const resetForm = () => {
     reset({
       name: "",
@@ -117,7 +112,6 @@ const Printers = () => {
     });
   };
   
-  // State to hold form data
   const [formData, setFormData] = useState<PrinterFormValues>({
     name: "",
     model: "",
@@ -132,65 +126,11 @@ const Printers = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  // Update filtered printers when printers data changes or search term changes
-  useEffect(() => {
-    if (printers) {
-      const filtered = filterPrinters(printers, searchTerm);
-      setFilteredPrinters(filtered);
-    }
-  }, [printers, searchTerm]);
-
-  // Handle search term changes
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
-  };
-
-  // Handle opening the edit modal
-  const handleOpenEditModal = (printer: PrinterData) => {
-    setSelectedPrinter(printer);
-    setFormData({
-      name: printer.name,
-      model: printer.model,
-      location: printer.location,
-      status: printer.status,
-      inkLevel: printer.inkLevel,
-      paperLevel: printer.paperLevel,
-      ipAddress: printer.ipAddress || "",
-      department: printer.department || "",
-    });
-    setShowEditPrinterModal(true);
-  };
-
-  // Handle opening the delete confirmation
-  const handleOpenDeleteConfirmation = (printer: PrinterData) => {
-    setSelectedPrinter(printer);
-    setShowDeleteConfirmation(true);
-  };
-
-  // Handle form field changes
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prevData => ({
-      ...prevData,
-      [name]: value,
-    }));
-  };
-
-  // Handle status changes
-  const handleStatusChange = (value: "online" | "offline" | "error" | "maintenance" | "warning") => {
-    setFormData(prevData => ({
-      ...prevData,
-      status: value,
-    }));
-  };
-
-  // Query for fetching printers
   const { data: printers, isLoading } = useQuery({
     queryKey: ['printers'],
     queryFn: () => printerService.getAllPrinters(),
   });
 
-  // Mutation for adding a printer
   const addPrinterMutation = useMutation({
     mutationFn: (printerData: Omit<PrinterData, "id" | "jobCount" | "lastActive">) => 
       printerService.addPrinter(printerData),
@@ -213,7 +153,6 @@ const Printers = () => {
     }
   });
 
-  // Mutation for updating a printer
   const updatePrinterMutation = useMutation({
     mutationFn: ({id, data}: {id: string, data: Partial<PrinterData>}) => 
       printerService.updatePrinter(id, data),
@@ -235,7 +174,6 @@ const Printers = () => {
     }
   });
 
-  // Mutation for deleting a printer
   const deletePrinterMutation = useMutation({
     mutationFn: (id: string) => printerService.deletePrinter(id),
     onSuccess: () => {
@@ -256,7 +194,52 @@ const Printers = () => {
     }
   });
 
-  // Handle form submission for adding a printer
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+  };
+
+  const handleOpenEditModal = (printer: PrinterData) => {
+    setSelectedPrinter(printer);
+    setFormData({
+      name: printer.name,
+      model: printer.model,
+      location: printer.location,
+      status: printer.status,
+      inkLevel: printer.inkLevel,
+      paperLevel: printer.paperLevel,
+      ipAddress: printer.ipAddress || "",
+      department: printer.department || "",
+    });
+    setShowEditPrinterModal(true);
+  };
+
+  const handleOpenDeleteConfirmation = (printer: PrinterData) => {
+    setSelectedPrinter(printer);
+    setShowDeleteConfirmation(true);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prevData => ({
+      ...prevData,
+      [name]: value,
+    }));
+  };
+
+  const handleStatusChange = (value: "online" | "offline" | "error" | "maintenance" | "warning") => {
+    setFormData(prevData => ({
+      ...prevData,
+      status: value,
+    }));
+  };
+
+  useEffect(() => {
+    if (printers) {
+      const filtered = filterPrinters(printers, searchTerm);
+      setFilteredPrinters(filtered);
+    }
+  }, [printers, searchTerm]);
+
   const handleAddPrinter = (e: React.FormEvent) => {
     e.preventDefault();
     addPrinterMutation.mutate({
@@ -271,14 +254,12 @@ const Printers = () => {
     });
   };
 
-  // Handle printer deletion
   const handleDeletePrinter = () => {
     if (selectedPrinter) {
       deletePrinterMutation.mutate(selectedPrinter.id);
     }
   };
 
-  // Handle printer update form submission
   const handleUpdatePrinter = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedPrinter) return;
@@ -298,7 +279,6 @@ const Printers = () => {
     });
   };
 
-  // Fix the DetailModal props
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -374,7 +354,6 @@ const Printers = () => {
         </CardContent>
       </Card>
 
-      {/* Add Printer Modal */}
       <Dialog open={showAddPrinterModal} onOpenChange={() => setShowAddPrinterModal(false)}>
         <DialogTrigger asChild>
           <Button>Add Printer</Button>
@@ -457,7 +436,6 @@ const Printers = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Printer Modal */}
       <Dialog open={showEditPrinterModal} onOpenChange={() => setShowEditPrinterModal(false)}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
@@ -537,7 +515,6 @@ const Printers = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Modal */}
       <Dialog open={showDeleteConfirmation} onOpenChange={() => setShowDeleteConfirmation(false)}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
