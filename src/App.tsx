@@ -12,6 +12,7 @@ import Index from "./pages/Index";
 import Printers from "./pages/Printers";
 import Users from "./pages/Users";
 import Analytics from "./pages/Analytics";
+import Activity from "./pages/Activity";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
@@ -76,6 +77,14 @@ const AppRoutes = () => {
         <ProtectedRoute>
           <Layout>
             <Analytics />
+          </Layout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/activity" element={
+        <ProtectedRoute>
+          <Layout>
+            <Activity />
           </Layout>
         </ProtectedRoute>
       } />

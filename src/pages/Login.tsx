@@ -55,9 +55,9 @@ const Login = () => {
         <p className="text-center text-muted-foreground mb-8">Manage your printers efficiently</p>
         
         <Card className="dark:bg-gray-800 dark:border-gray-700">
-          <CardHeader>
-            <CardTitle>Login</CardTitle>
-            <CardDescription>Enter your credentials to access your account</CardDescription>
+          <CardHeader className="text-center">
+            <CardTitle className="text-center">Login</CardTitle>
+            <CardDescription className="text-center">Enter your credentials to access your account</CardDescription>
           </CardHeader>
           
           <CardContent>

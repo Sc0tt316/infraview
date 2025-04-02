@@ -1,7 +1,7 @@
 
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { Printer, Plus, Search, Filter, MoreHorizontal, AlertTriangle, RefreshCw, Trash2, Edit, Check } from "lucide-react";
+import { Printer, Plus, Search, Filter, MoreHorizontal, AlertTriangle, RefreshCw, Trash2, Edit, Check, Tool } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
@@ -14,6 +14,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
 import { printerService, PrinterData } from "@/services/printerService";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import PrinterDetailModal from "@/components/printers/PrinterDetailModal";
+import { useAuth } from "@/context/AuthContext";
 
 const Printers = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -26,11 +28,16 @@ const Printers = () => {
     name: "",
     model: "",
     location: "",
-    ipAddress: ""
+    ipAddress: "",
+    department: ""
   });
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedPrinterId, setSelectedPrinterId] = useState<string | null>(null);
   
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
   
   // Fetch printers with React Query
   const { data: printers = [], isLoading, isError, refetch } = useQuery({
@@ -46,6 +53,10 @@ const Printers = () => {
       queryClient.invalidateQueries({ queryKey: ['printers'] });
       setShowAddDialog(false);
       resetForm();
+      toast({
+        title: "Success",
+        description: "Printer has been added successfully.",
+      });
     }
   });
   
@@ -58,6 +69,10 @@ const Printers = () => {
       setShowEditDialog(false);
       setSelectedPrinter(null);
       resetForm();
+      toast({
+        title: "Success",
+        description: "Printer has been updated successfully.",
+      });
     }
   });
   
@@ -66,6 +81,10 @@ const Printers = () => {
     mutationFn: (id: string) => printerService.deletePrinter(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['printers'] });
+      toast({
+        title: "Success",
+        description: "Printer has been deleted successfully.",
+      });
     }
   });
   
@@ -75,6 +94,10 @@ const Printers = () => {
       printerService.changeStatus(id, status),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['printers'] });
+      toast({
+        title: "Status Updated",
+        description: "Printer status has been updated successfully.",
+      });
     }
   });
   
@@ -90,7 +113,8 @@ const Printers = () => {
       name: "",
       model: "",
       location: "",
-      ipAddress: ""
+      ipAddress: "",
+      department: ""
     });
     setIsSubmitting(false);
   };
@@ -100,7 +124,7 @@ const Printers = () => {
     e.preventDefault();
     setIsSubmitting(true);
     
-    const { name, model, location, ipAddress } = formData;
+    const { name, model, location, ipAddress, department } = formData;
     
     if (!name || !model || !location) {
       toast({
@@ -117,6 +141,7 @@ const Printers = () => {
       model, 
       location,
       ipAddress,
+      department,
       status: "offline" as const,
       inkLevel: 100,
       paperLevel: 100
@@ -132,7 +157,7 @@ const Printers = () => {
     if (!selectedPrinter) return;
     setIsSubmitting(true);
     
-    const { name, model, location, ipAddress } = formData;
+    const { name, model, location, ipAddress, department } = formData;
     
     if (!name || !model || !location) {
       toast({
@@ -146,7 +171,7 @@ const Printers = () => {
     
     updatePrinterMutation.mutate({
       id: selectedPrinter.id,
-      data: { name, model, location, ipAddress }
+      data: { name, model, location, ipAddress, department }
     });
   };
   
@@ -157,7 +182,8 @@ const Printers = () => {
       name: printer.name,
       model: printer.model,
       location: printer.location,
-      ipAddress: printer.ipAddress || ""
+      ipAddress: printer.ipAddress || "",
+      department: printer.department || ""
     });
     setShowEditDialog(true);
   };
@@ -174,6 +200,21 @@ const Printers = () => {
     changeStatusMutation.mutate({ id, status });
   };
   
+  // Open printer detail modal
+  const openPrinterDetail = (id: string) => {
+    setSelectedPrinterId(id);
+    setShowDetailModal(true);
+  };
+
+  // Handle refresh
+  const handleRefresh = () => {
+    refetch();
+    toast({
+      title: "Refreshed",
+      description: "Printer data has been refreshed.",
+    });
+  };
+  
   // Filter printers based on search and tabs
   const getFilteredPrinters = () => {
     let filtered = printers;
@@ -182,7 +223,8 @@ const Printers = () => {
       filtered = filtered.filter(printer => 
         printer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         printer.model.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        printer.location.toLowerCase().includes(searchQuery.toLowerCase())
+        printer.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (printer.department && printer.department.toLowerCase().includes(searchQuery.toLowerCase()))
       );
     }
     
@@ -256,80 +298,93 @@ const Printers = () => {
           <Button 
             variant="outline" 
             size="icon" 
-            onClick={() => refetch()} 
+            onClick={handleRefresh} 
             className="h-10 w-10"
             disabled={isLoading}
           >
             <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
           </Button>
           
-          <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-            <DialogTrigger asChild>
-              <Button className="gap-2">
-                <Plus size={16} />
-                <span>Add Printer</span>
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-lg dark:bg-gray-800">
-              <DialogHeader>
-                <DialogTitle>Add New Printer</DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleAddPrinter}>
-                <div className="grid gap-4 py-4">
-                  <div className="grid gap-2">
-                    <label htmlFor="name" className="text-sm font-medium">Printer Name*</label>
-                    <Input 
-                      id="name" 
-                      name="name"
-                      value={formData.name}
-                      onChange={handleInputChange}
-                      placeholder="Enter printer name" 
-                      className="dark:bg-gray-700 dark:border-gray-600"
-                    />
+          {isAdmin && (
+            <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+              <DialogTrigger asChild>
+                <Button className="gap-2">
+                  <Plus size={16} />
+                  <span>Add Printer</span>
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-lg dark:bg-gray-800">
+                <DialogHeader>
+                  <DialogTitle>Add New Printer</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleAddPrinter}>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid gap-2">
+                      <label htmlFor="name" className="text-sm font-medium">Printer Name*</label>
+                      <Input 
+                        id="name" 
+                        name="name"
+                        value={formData.name}
+                        onChange={handleInputChange}
+                        placeholder="Enter printer name" 
+                        className="dark:bg-gray-700 dark:border-gray-600"
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <label htmlFor="model" className="text-sm font-medium">Model*</label>
+                      <Input 
+                        id="model" 
+                        name="model"
+                        value={formData.model}
+                        onChange={handleInputChange}
+                        placeholder="Enter printer model" 
+                        className="dark:bg-gray-700 dark:border-gray-600"
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <label htmlFor="location" className="text-sm font-medium">Location*</label>
+                      <Input 
+                        id="location" 
+                        name="location"
+                        value={formData.location}
+                        onChange={handleInputChange}
+                        placeholder="Enter printer location" 
+                        className="dark:bg-gray-700 dark:border-gray-600"
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <label htmlFor="department" className="text-sm font-medium">Department</label>
+                      <Input 
+                        id="department" 
+                        name="department"
+                        value={formData.department}
+                        onChange={handleInputChange}
+                        placeholder="Enter department" 
+                        className="dark:bg-gray-700 dark:border-gray-600"
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <label htmlFor="ipAddress" className="text-sm font-medium">IP Address</label>
+                      <Input 
+                        id="ipAddress" 
+                        name="ipAddress"
+                        value={formData.ipAddress}
+                        onChange={handleInputChange}
+                        placeholder="Enter IP address" 
+                        className="dark:bg-gray-700 dark:border-gray-600"
+                      />
+                    </div>
                   </div>
-                  <div className="grid gap-2">
-                    <label htmlFor="model" className="text-sm font-medium">Model*</label>
-                    <Input 
-                      id="model" 
-                      name="model"
-                      value={formData.model}
-                      onChange={handleInputChange}
-                      placeholder="Enter printer model" 
-                      className="dark:bg-gray-700 dark:border-gray-600"
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <label htmlFor="location" className="text-sm font-medium">Location*</label>
-                    <Input 
-                      id="location" 
-                      name="location"
-                      value={formData.location}
-                      onChange={handleInputChange}
-                      placeholder="Enter printer location" 
-                      className="dark:bg-gray-700 dark:border-gray-600"
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <label htmlFor="ipAddress" className="text-sm font-medium">IP Address</label>
-                    <Input 
-                      id="ipAddress" 
-                      name="ipAddress"
-                      value={formData.ipAddress}
-                      onChange={handleInputChange}
-                      placeholder="Enter IP address" 
-                      className="dark:bg-gray-700 dark:border-gray-600"
-                    />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button type="button" variant="outline" onClick={() => setShowAddDialog(false)}>Cancel</Button>
-                  <Button type="submit" disabled={isSubmitting}>
-                    {isSubmitting ? 'Adding...' : 'Add Printer'}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
+                  <DialogFooter>
+                    <Button type="button" variant="outline" onClick={() => setShowAddDialog(false)}>Cancel</Button>
+                    <Button type="submit" disabled={isSubmitting}>
+                      {isSubmitting ? 'Adding...' : 'Add Printer'}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+          )}
           
           <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
             <DialogContent className="sm:max-w-lg dark:bg-gray-800">
@@ -368,6 +423,17 @@ const Printers = () => {
                       value={formData.location}
                       onChange={handleInputChange}
                       placeholder="Enter printer location" 
+                      className="dark:bg-gray-700 dark:border-gray-600"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <label htmlFor="edit-department" className="text-sm font-medium">Department</label>
+                    <Input 
+                      id="edit-department" 
+                      name="department"
+                      value={formData.department}
+                      onChange={handleInputChange}
+                      placeholder="Enter department" 
                       className="dark:bg-gray-700 dark:border-gray-600"
                     />
                   </div>
@@ -418,6 +484,7 @@ const Printers = () => {
               <TabsTrigger value="online">Online</TabsTrigger>
               <TabsTrigger value="offline">Offline</TabsTrigger>
               <TabsTrigger value="error">Error</TabsTrigger>
+              <TabsTrigger value="maintenance">Maintenance</TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
@@ -449,7 +516,8 @@ const Printers = () => {
               key={printer.id}
               variants={itemVariants}
               whileHover={{ y: -4, transition: { duration: 0.2 } }}
-              className="bg-white dark:bg-gray-800 border border-border/40 dark:border-gray-700 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden"
+              className="bg-white dark:bg-gray-800 border border-border/40 dark:border-gray-700 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden cursor-pointer"
+              onClick={() => openPrinterDetail(printer.id)}
             >
               <div className="p-5">
                 <div className="flex justify-between items-start mb-3">
@@ -490,45 +558,63 @@ const Printers = () => {
                   <span>Location: {printer.location}</span>
                   <span>Jobs: {printer.jobCount}</span>
                 </div>
+                {printer.department && (
+                  <div className="text-sm text-muted-foreground mt-1 dark:text-gray-400">
+                    Department: {printer.department}
+                  </div>
+                )}
               </div>
               
               <div className="bg-muted/30 dark:bg-gray-900/50 px-5 py-3 flex justify-between items-center">
                 <span className="text-xs text-muted-foreground dark:text-gray-500">Last active: {printer.lastActive}</span>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="dark:bg-gray-800 dark:border-gray-700">
-                    <DropdownMenuItem onClick={() => openEditDialog(printer)} className="dark:hover:bg-gray-700 dark:focus:bg-gray-700">
-                      <Edit className="mr-2 h-4 w-4" />
-                      <span>Edit</span>
-                    </DropdownMenuItem>
-                    
-                    {printer.status !== "online" && (
-                      <DropdownMenuItem onClick={() => handleStatusChange(printer.id, "online")} className="dark:hover:bg-gray-700 dark:focus:bg-gray-700">
-                        <Check className="mr-2 h-4 w-4 text-green-600 dark:text-green-400" />
-                        <span>Set online</span>
-                      </DropdownMenuItem>
-                    )}
-                    
-                    {printer.status !== "offline" && (
-                      <DropdownMenuItem onClick={() => handleStatusChange(printer.id, "offline")} className="dark:hover:bg-gray-700 dark:focus:bg-gray-700">
-                        <AlertTriangle className="mr-2 h-4 w-4 text-gray-600 dark:text-gray-400" />
-                        <span>Set offline</span>
-                      </DropdownMenuItem>
-                    )}
-                    
-                    <DropdownMenuItem 
-                      className="text-red-600 dark:text-red-400 dark:hover:bg-gray-700 dark:focus:bg-gray-700" 
-                      onClick={() => handleDeletePrinter(printer.id)}
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      <span>Delete</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <div onClick={(e) => e.stopPropagation()}>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="dark:bg-gray-800 dark:border-gray-700">
+                      {isAdmin && (
+                        <DropdownMenuItem onClick={() => openEditDialog(printer)} className="dark:hover:bg-gray-700 dark:focus:bg-gray-700">
+                          <Edit className="mr-2 h-4 w-4" />
+                          <span>Edit</span>
+                        </DropdownMenuItem>
+                      )}
+                      
+                      {isAdmin && printer.status !== "online" && (
+                        <DropdownMenuItem onClick={() => handleStatusChange(printer.id, "online")} className="dark:hover:bg-gray-700 dark:focus:bg-gray-700">
+                          <Check className="mr-2 h-4 w-4 text-green-600 dark:text-green-400" />
+                          <span>Set online</span>
+                        </DropdownMenuItem>
+                      )}
+                      
+                      {isAdmin && printer.status !== "offline" && (
+                        <DropdownMenuItem onClick={() => handleStatusChange(printer.id, "offline")} className="dark:hover:bg-gray-700 dark:focus:bg-gray-700">
+                          <AlertTriangle className="mr-2 h-4 w-4 text-gray-600 dark:text-gray-400" />
+                          <span>Set offline</span>
+                        </DropdownMenuItem>
+                      )}
+                      
+                      {isAdmin && printer.status !== "maintenance" && (
+                        <DropdownMenuItem onClick={() => handleStatusChange(printer.id, "maintenance")} className="dark:hover:bg-gray-700 dark:focus:bg-gray-700">
+                          <Tool className="mr-2 h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+                          <span>Set maintenance</span>
+                        </DropdownMenuItem>
+                      )}
+                      
+                      {isAdmin && (
+                        <DropdownMenuItem 
+                          className="text-red-600 dark:text-red-400 dark:hover:bg-gray-700 dark:focus:bg-gray-700" 
+                          onClick={() => handleDeletePrinter(printer.id)}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          <span>Delete</span>
+                        </DropdownMenuItem>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               </div>
             </motion.div>
           ))}
@@ -554,6 +640,12 @@ const Printers = () => {
           </Button>
         </div>
       )}
+      
+      <PrinterDetailModal 
+        isOpen={showDetailModal}
+        onClose={() => setShowDetailModal(false)}
+        printerId={selectedPrinterId}
+      />
     </div>
   );
 };
