@@ -14,6 +14,27 @@ export interface PrinterData {
   jobCount: number;
   lastActive: string;
   ipAddress?: string;
+  department?: string;
+}
+
+// Define log types 
+export interface PrinterLog {
+  id: string;
+  printerId: string;
+  timestamp: string;
+  message: string;
+  type: "info" | "warning" | "error";
+  user?: string;
+}
+
+// Define activity types
+export interface PrinterActivity {
+  id: string;
+  printerId: string;
+  timestamp: string;
+  action: string;
+  user?: string;
+  details?: string;
 }
 
 // Initialize with mock data if none exists
@@ -31,7 +52,8 @@ const initializePrinters = async () => {
         paperLevel: 30,
         jobCount: 145,
         lastActive: "2 minutes ago",
-        ipAddress: "192.168.1.101"
+        ipAddress: "192.168.1.101",
+        department: "Administration"
       },
       {
         id: "p2",
@@ -43,7 +65,8 @@ const initializePrinters = async () => {
         paperLevel: 60,
         jobCount: 89,
         lastActive: "2 days ago",
-        ipAddress: "192.168.1.102"
+        ipAddress: "192.168.1.102",
+        department: "Executive"
       },
       {
         id: "p3",
@@ -55,7 +78,8 @@ const initializePrinters = async () => {
         paperLevel: 75,
         jobCount: 254,
         lastActive: "5 minutes ago",
-        ipAddress: "192.168.1.103"
+        ipAddress: "192.168.1.103",
+        department: "Marketing"
       },
       {
         id: "p4",
@@ -67,7 +91,8 @@ const initializePrinters = async () => {
         paperLevel: 100,
         jobCount: 67,
         lastActive: "1 hour ago",
-        ipAddress: "192.168.1.104"
+        ipAddress: "192.168.1.104",
+        department: "Facilities"
       },
       {
         id: "p5",
@@ -79,13 +104,115 @@ const initializePrinters = async () => {
         paperLevel: 85,
         jobCount: 321,
         lastActive: "15 minutes ago",
-        ipAddress: "192.168.1.105"
+        ipAddress: "192.168.1.105",
+        department: "Accounting"
       },
     ];
     await apiService.post('printers', mockPrinters);
     return mockPrinters;
   }
   return existingPrinters;
+};
+
+// Initialize logs if none exist
+const initializeLogs = async () => {
+  const existingLogs = await apiService.get<PrinterLog[]>('printerLogs');
+  if (!existingLogs) {
+    const mockLogs: PrinterLog[] = [
+      {
+        id: "l1",
+        printerId: "p1",
+        timestamp: "2023-06-01T10:30:00",
+        message: "Print job completed successfully",
+        type: "info",
+        user: "john.doe"
+      },
+      {
+        id: "l2",
+        printerId: "p1",
+        timestamp: "2023-06-01T11:45:00",
+        message: "Low ink warning",
+        type: "warning"
+      },
+      {
+        id: "l3",
+        printerId: "p2",
+        timestamp: "2023-06-02T09:15:00",
+        message: "Paper jam detected",
+        type: "error"
+      },
+      {
+        id: "l4",
+        printerId: "p3",
+        timestamp: "2023-06-02T14:20:00",
+        message: "Printer went offline unexpectedly",
+        type: "error"
+      },
+      {
+        id: "l5",
+        printerId: "p4",
+        timestamp: "2023-06-03T10:00:00",
+        message: "Maintenance completed",
+        type: "info",
+        user: "tech.support"
+      }
+    ];
+    await apiService.post('printerLogs', mockLogs);
+    return mockLogs;
+  }
+  return existingLogs;
+};
+
+// Initialize activity if none exists
+const initializeActivity = async () => {
+  const existingActivity = await apiService.get<PrinterActivity[]>('printerActivity');
+  if (!existingActivity) {
+    const mockActivity: PrinterActivity[] = [
+      {
+        id: "a1",
+        printerId: "p1",
+        timestamp: "2023-06-01T10:00:00",
+        action: "Print job",
+        user: "john.doe",
+        details: "Invoice-123.pdf, 5 pages, color"
+      },
+      {
+        id: "a2",
+        printerId: "p2",
+        timestamp: "2023-06-01T11:30:00",
+        action: "Configuration change",
+        user: "admin",
+        details: "Changed default paper size to A4"
+      },
+      {
+        id: "a3",
+        printerId: "p3",
+        timestamp: "2023-06-02T09:00:00",
+        action: "Print job",
+        user: "jane.smith",
+        details: "Report-Q2.pdf, 12 pages, black & white"
+      },
+      {
+        id: "a4",
+        printerId: "p4",
+        timestamp: "2023-06-02T14:00:00",
+        action: "Status change",
+        user: "admin",
+        details: "Changed status to maintenance"
+      },
+      {
+        id: "a5",
+        printerId: "p5",
+        timestamp: "2023-06-03T09:45:00",
+        action: "Print job",
+        user: "bob.johnson",
+        details: "Presentation.pdf, 24 pages, color"
+      }
+    ];
+    await apiService.post('printerActivity', mockActivity);
+    return mockActivity;
+  }
+  return existingActivity;
 };
 
 // Printer service functions
@@ -138,6 +265,16 @@ export const printerService = {
       const updatedPrinters = [...printers, newPrinter];
       await apiService.post('printers', updatedPrinters);
       
+      // Add activity record
+      const activity: Omit<PrinterActivity, 'id'> = {
+        printerId: newPrinter.id,
+        timestamp: new Date().toISOString(),
+        action: "Printer added",
+        user: "admin",
+        details: `Added printer ${newPrinter.name} (${newPrinter.model})`
+      };
+      printerService.addActivity(activity);
+      
       toast({
         title: "Success",
         description: `Printer "${newPrinter.name}" has been added.`,
@@ -179,6 +316,16 @@ export const printerService = {
       printers[printerIndex] = updatedPrinter;
       await apiService.post('printers', printers);
       
+      // Add activity record
+      const activity: Omit<PrinterActivity, 'id'> = {
+        printerId: id,
+        timestamp: new Date().toISOString(),
+        action: "Printer updated",
+        user: "admin",
+        details: `Updated printer ${updatedPrinter.name}`
+      };
+      printerService.addActivity(activity);
+      
       toast({
         title: "Success",
         description: `Printer "${updatedPrinter.name}" has been updated.`,
@@ -215,6 +362,16 @@ export const printerService = {
       const updatedPrinters = printers.filter(printer => printer.id !== id);
       await apiService.post('printers', updatedPrinters);
       
+      // Add activity record for the deletion
+      const activity: Omit<PrinterActivity, 'id'> = {
+        printerId: id,
+        timestamp: new Date().toISOString(),
+        action: "Printer deleted",
+        user: "admin",
+        details: `Deleted printer ${printerName}`
+      };
+      printerService.addActivity(activity);
+      
       toast({
         title: "Success",
         description: `Printer "${printerName}" has been deleted.`,
@@ -234,6 +391,136 @@ export const printerService = {
   
   // Change printer status
   changeStatus: async (id: string, status: PrinterData['status']): Promise<PrinterData | null> => {
-    return printerService.updatePrinter(id, { status });
+    const result = await printerService.updatePrinter(id, { status });
+    
+    if (result) {
+      // Add log record
+      const log: Omit<PrinterLog, 'id'> = {
+        printerId: id,
+        timestamp: new Date().toISOString(),
+        message: `Status changed to ${status}`,
+        type: status === 'error' ? 'error' : 'info',
+        user: 'admin'
+      };
+      printerService.addLog(log);
+    }
+    
+    return result;
   },
+  
+  // Get printer logs
+  getPrinterLogs: async (printerId: string): Promise<PrinterLog[]> => {
+    try {
+      await initializeLogs();
+      const logs = await apiService.get<PrinterLog[]>('printerLogs');
+      return logs?.filter(log => log.printerId === printerId) || [];
+    } catch (error) {
+      console.error(`Error fetching logs for printer ${printerId}:`, error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch printer logs. Please try again.",
+        variant: "destructive"
+      });
+      return [];
+    }
+  },
+  
+  // Add a new log
+  addLog: async (logData: Omit<PrinterLog, 'id'>): Promise<PrinterLog> => {
+    try {
+      await initializeLogs();
+      const logs = await apiService.get<PrinterLog[]>('printerLogs') || [];
+      
+      const newLog: PrinterLog = {
+        ...logData,
+        id: `l${Date.now()}`
+      };
+      
+      const updatedLogs = [...logs, newLog];
+      await apiService.post('printerLogs', updatedLogs);
+      
+      return newLog;
+    } catch (error) {
+      console.error('Error adding log:', error);
+      return {
+        id: `l${Date.now()}`,
+        ...logData
+      };
+    }
+  },
+  
+  // Get printer activity
+  getPrinterActivity: async (printerId: string): Promise<PrinterActivity[]> => {
+    try {
+      await initializeActivity();
+      const activities = await apiService.get<PrinterActivity[]>('printerActivity');
+      return activities?.filter(activity => activity.printerId === printerId) || [];
+    } catch (error) {
+      console.error(`Error fetching activity for printer ${printerId}:`, error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch printer activity. Please try again.",
+        variant: "destructive"
+      });
+      return [];
+    }
+  },
+  
+  // Add a new activity
+  addActivity: async (activityData: Omit<PrinterActivity, 'id'>): Promise<PrinterActivity> => {
+    try {
+      await initializeActivity();
+      const activities = await apiService.get<PrinterActivity[]>('printerActivity') || [];
+      
+      const newActivity: PrinterActivity = {
+        ...activityData,
+        id: `a${Date.now()}`
+      };
+      
+      const updatedActivities = [...activities, newActivity];
+      await apiService.post('printerActivity', updatedActivities);
+      
+      return newActivity;
+    } catch (error) {
+      console.error('Error adding activity:', error);
+      return {
+        id: `a${Date.now()}`,
+        ...activityData
+      };
+    }
+  },
+  
+  // Get all logs (for activity page)
+  getAllLogs: async (): Promise<PrinterLog[]> => {
+    try {
+      await initializeLogs();
+      const logs = await apiService.get<PrinterLog[]>('printerLogs');
+      return logs || [];
+    } catch (error) {
+      console.error('Error fetching all logs:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch logs. Please try again.",
+        variant: "destructive"
+      });
+      return [];
+    }
+  },
+  
+  // Get all activities (for activity page)
+  getAllActivities: async (): Promise<PrinterActivity[]> => {
+    try {
+      await initializeActivity();
+      const activities = await apiService.get<PrinterActivity[]>('printerActivity');
+      return activities || [];
+    } catch (error) {
+      console.error('Error fetching all activities:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch activities. Please try again.",
+        variant: "destructive"
+      });
+      return [];
+    }
+  }
 };

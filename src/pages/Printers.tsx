@@ -1,7 +1,6 @@
-
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { Printer, Plus, Search, Filter, MoreHorizontal, AlertTriangle, RefreshCw, Trash2, Edit, Check, Tool } from "lucide-react";
+import { Printer, Plus, Search, Filter, MoreHorizontal, AlertTriangle, RefreshCw, Trash2, Edit, Check, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
@@ -39,13 +38,11 @@ const Printers = () => {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
   
-  // Fetch printers with React Query
   const { data: printers = [], isLoading, isError, refetch } = useQuery({
     queryKey: ['printers'],
     queryFn: printerService.getAllPrinters
   });
   
-  // Add printer mutation
   const addPrinterMutation = useMutation({
     mutationFn: (data: Omit<PrinterData, 'id' | 'jobCount' | 'lastActive'>) => 
       printerService.addPrinter(data),
@@ -60,7 +57,6 @@ const Printers = () => {
     }
   });
   
-  // Update printer mutation
   const updatePrinterMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<PrinterData> }) => 
       printerService.updatePrinter(id, data),
@@ -76,7 +72,6 @@ const Printers = () => {
     }
   });
   
-  // Delete printer mutation
   const deletePrinterMutation = useMutation({
     mutationFn: (id: string) => printerService.deletePrinter(id),
     onSuccess: () => {
@@ -88,7 +83,6 @@ const Printers = () => {
     }
   });
   
-  // Change printer status mutation
   const changeStatusMutation = useMutation({
     mutationFn: ({ id, status }: { id: string; status: PrinterData['status'] }) => 
       printerService.changeStatus(id, status),
@@ -101,13 +95,11 @@ const Printers = () => {
     }
   });
   
-  // Handle form input changes
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
   
-  // Reset form data
   const resetForm = () => {
     setFormData({
       name: "",
@@ -119,7 +111,6 @@ const Printers = () => {
     setIsSubmitting(false);
   };
   
-  // Handle add printer submission
   const handleAddPrinter = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -150,7 +141,6 @@ const Printers = () => {
     addPrinterMutation.mutate(newPrinter);
   };
   
-  // Handle edit printer submission
   const handleEditPrinter = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -175,7 +165,6 @@ const Printers = () => {
     });
   };
   
-  // Open edit dialog with selected printer data
   const openEditDialog = (printer: PrinterData) => {
     setSelectedPrinter(printer);
     setFormData({
@@ -188,25 +177,21 @@ const Printers = () => {
     setShowEditDialog(true);
   };
   
-  // Handle delete printer
   const handleDeletePrinter = (id: string) => {
     if (window.confirm("Are you sure you want to delete this printer?")) {
       deletePrinterMutation.mutate(id);
     }
   };
   
-  // Handle status change
   const handleStatusChange = (id: string, status: PrinterData['status']) => {
     changeStatusMutation.mutate({ id, status });
   };
   
-  // Open printer detail modal
   const openPrinterDetail = (id: string) => {
     setSelectedPrinterId(id);
     setShowDetailModal(true);
   };
 
-  // Handle refresh
   const handleRefresh = () => {
     refetch();
     toast({
@@ -215,7 +200,6 @@ const Printers = () => {
     });
   };
   
-  // Filter printers based on search and tabs
   const getFilteredPrinters = () => {
     let filtered = printers;
     
@@ -598,7 +582,7 @@ const Printers = () => {
                       
                       {isAdmin && printer.status !== "maintenance" && (
                         <DropdownMenuItem onClick={() => handleStatusChange(printer.id, "maintenance")} className="dark:hover:bg-gray-700 dark:focus:bg-gray-700">
-                          <Tool className="mr-2 h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+                          <Wrench className="mr-2 h-4 w-4 text-yellow-600 dark:text-yellow-400" />
                           <span>Set maintenance</span>
                         </DropdownMenuItem>
                       )}
