@@ -1,52 +1,12 @@
 import { apiService } from './api';
 import { toast } from 'sonner';
-
-export interface AnalyticsData {
-  summary: {
-    totalPrinters: number;
-    activePrinters: number;
-    totalVolume: number;
-    activeJobs: number;
-    completedJobs: number;
-    failedJobs: number;
-    totalUsers: number;
-  };
-  departmentVolume: {
-    department: string;
-    volume: number;
-  }[];
-}
-
-export interface PrintVolumeData {
-  date: string;
-  volume: number;
-}
-
-export interface ActivityLogData {
-  id: string;
-  timestamp: string;
-  userId: string;
-  userName: string;
-  eventType: string;
-  type: string; // 'info', 'warning', 'error', 'success'
-  entityType: string;
-  entityId: string;
-  entityName: string;
-  description: string;
-}
-
-export interface AlertData {
-  id: string;
-  timestamp: string;
-  level: 'critical' | 'warning' | 'info';
-  title: string;
-  description: string;
-  entityId: string;
-  entityType: string;
-  entityName: string;
-  resolved: boolean;
-  timeAgo: string;
-}
+import { 
+  AnalyticsData, 
+  PrintVolumeData, 
+  ActivityLogData, 
+  AlertData,
+  AnalyticsServiceInterface
+} from '@/types/analytics';
 
 // Initialize with mock data if none exists
 const initializeAnalyticsData = async () => {
@@ -60,18 +20,25 @@ const initializeAnalyticsData = async () => {
         activeJobs: 7,
         completedJobs: 2347,
         failedJobs: 23,
-        totalUsers: 132
+        totalUsers: 132,
+        departmentVolume: [
+          { department: "Marketing", volume: 34582 },
+          { department: "Finance", volume: 27843 },
+          { department: "HR", volume: 14950 },
+          { department: "IT", volume: 42801 },
+          { department: "Operations", volume: 38762 },
+          { department: "Sales", volume: 31250 },
+          { department: "Legal", volume: 19837 },
+          { department: "Executive", volume: 8950 }
+        ]
       },
-      departmentVolume: [
-        { department: "Marketing", volume: 34582 },
-        { department: "Finance", volume: 27843 },
-        { department: "HR", volume: 14950 },
-        { department: "IT", volume: 42801 },
-        { department: "Operations", volume: 38762 },
-        { department: "Sales", volume: 31250 },
-        { department: "Legal", volume: 19837 },
-        { department: "Executive", volume: 8950 }
-      ]
+      printerStatus: {
+        online: 29,
+        offline: 2,
+        error: 1,
+        warning: 2,
+        maintenance: 0
+      }
     };
     await apiService.post('analytics', mockData);
     return mockData;
@@ -83,10 +50,8 @@ const initializeAnalyticsData = async () => {
 const initializePrintVolumeData = async () => {
   const existingData = await apiService.get<Record<string, PrintVolumeData[]>>('printVolume');
   if (!existingData) {
-    // Generate mock data for different time ranges
     const today = new Date();
     
-    // Daily data (24 hour intervals)
     const dailyData: PrintVolumeData[] = Array.from({ length: 24 }, (_, i) => {
       const hour = String(i).padStart(2, '0');
       return {
@@ -95,7 +60,6 @@ const initializePrintVolumeData = async () => {
       };
     });
     
-    // Weekly data (last 7 days)
     const weeklyData: PrintVolumeData[] = Array.from({ length: 7 }, (_, i) => {
       const date = new Date();
       date.setDate(today.getDate() - (6 - i));
@@ -105,7 +69,6 @@ const initializePrintVolumeData = async () => {
       };
     });
     
-    // Monthly data (last 30 days)
     const monthlyData: PrintVolumeData[] = Array.from({ length: 30 }, (_, i) => {
       const date = new Date();
       date.setDate(today.getDate() - (29 - i));
@@ -115,7 +78,6 @@ const initializePrintVolumeData = async () => {
       };
     });
     
-    // Yearly data (12 months)
     const yearlyData: PrintVolumeData[] = Array.from({ length: 12 }, (_, i) => {
       const date = new Date();
       date.setMonth(i);
@@ -201,13 +163,14 @@ const initializeActivityLogs = async () => {
       return {
         id: `act-${i + 1}`,
         timestamp: today.toISOString(),
-        userId: user.id,
-        userName: user.name,
-        eventType,
-        type,
+        user: user.name,
+        action: eventType,
         entityType,
         entityId: `ent-${Math.floor(Math.random() * 1000) + 1}`,
-        entityName,
+        type,
+        message: description,
+        userId: user.id,
+        userName: user.name,
         description
       };
     }).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
@@ -279,9 +242,14 @@ const initializeAlerts = async () => {
       'Lexmark CX517de'
     ];
     
+    const users = [
+      { id: 'u1', name: 'Alex Johnson' },
+      { id: 'u2', name: 'Sarah Miller' },
+      { id: 'u3', name: 'Michael Chen' }
+    ];
+    
     const mockData: AlertData[] = [];
     
-    // Generate 10 random alerts of each type
     Object.keys(alertTitles).forEach((level, levelIndex) => {
       const typedLevel = level as keyof typeof alertTitles;
       const titles = alertTitles[typedLevel];
@@ -289,7 +257,6 @@ const initializeAlerts = async () => {
       
       for (let i = 0; i < 10; i++) {
         const today = new Date();
-        // Distribute alerts over the last 7 days, with critical ones being more recent
         const daysAgo = Math.floor(Math.random() * (7 - levelIndex * 2));
         const hoursAgo = Math.floor(Math.random() * 24);
         const minutesAgo = Math.floor(Math.random() * 60);
@@ -300,28 +267,37 @@ const initializeAlerts = async () => {
         
         const titleIndex = Math.floor(Math.random() * titles.length);
         const printerIndex = Math.floor(Math.random() * printerNames.length);
+        const userIndex = Math.floor(Math.random() * users.length);
         
-        // For info alerts, 70% are resolved
         const resolved = typedLevel === 'info' ? Math.random() > 0.3 : 
                         typedLevel === 'warning' ? Math.random() > 0.7 : 
-                        Math.random() > 0.9; // Critical alerts rarely resolved
+                        Math.random() > 0.9;
         
         mockData.push({
           id: `alert-${mockData.length + 1}`,
           timestamp: today.toISOString(),
           level: typedLevel,
           title: titles[titleIndex],
+          status: resolved ? 'resolved' : 'active',
           description: descriptions[titleIndex],
+          message: descriptions[titleIndex],
           entityId: `printer-${printerIndex + 1}`,
           entityType: 'printer',
           entityName: printerNames[printerIndex],
           resolved,
-          timeAgo: getTimeAgo(today)
+          timeAgo: getTimeAgo(today),
+          printer: {
+            id: `printer-${printerIndex + 1}`,
+            name: printerNames[printerIndex]
+          },
+          user: Math.random() > 0.5 ? {
+            id: users[userIndex].id,
+            name: users[userIndex].name
+          } : undefined
         });
       }
     });
     
-    // Sort by timestamp (newest first)
     mockData.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
     
     await apiService.post('alerts', mockData);
@@ -344,8 +320,7 @@ function getTimeAgo(date: Date): string {
 }
 
 // Analytics service functions
-export const analyticsService = {
-  // Get all analytics data
+export const analyticsService: AnalyticsServiceInterface = {
   getAnalyticsData: async (): Promise<AnalyticsData> => {
     try {
       return await initializeAnalyticsData();
@@ -356,7 +331,6 @@ export const analyticsService = {
     }
   },
   
-  // Get print volume data by time range
   getPrintVolumeByTimeRange: async (timeRange: 'day' | 'week' | 'month' | 'year'): Promise<PrintVolumeData[]> => {
     try {
       const volumeData = await initializePrintVolumeData();
@@ -368,10 +342,8 @@ export const analyticsService = {
     }
   },
   
-  // Get print volume data by custom date range
   getPrintVolumeByDateRange: async ({ from, to }: { from: Date; to: Date }): Promise<PrintVolumeData[]> => {
     try {
-      // For demo purposes, generate custom range data
       const daysDiff = Math.ceil((to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24));
       const customData: PrintVolumeData[] = [];
       
@@ -393,13 +365,11 @@ export const analyticsService = {
     }
   },
   
-  // Get activity logs
   getActivityLogs: async (options: { limit?: number, sortBy?: string, sortOrder?: 'asc' | 'desc' } = {}): Promise<ActivityLogData[]> => {
     try {
       const { limit = 100, sortBy = 'timestamp', sortOrder = 'desc' } = options;
       const logs = await initializeActivityLogs();
       
-      // Sort logs
       let sortedLogs = [...logs];
       if (sortBy === 'timestamp') {
         sortedLogs.sort((a, b) => {
@@ -422,20 +392,12 @@ export const analyticsService = {
     }
   },
   
-  // Get alerts
   getAlerts: async (options: { limit?: number, status?: 'all' | 'active' | 'resolved', level?: 'all' | 'critical' | 'warning' | 'info', sortBy?: string, sortOrder?: 'asc' | 'desc' } = {}): Promise<AlertData[]> => {
     try {
       const { limit = 100, status = 'all', level = 'all', sortBy = 'timestamp', sortOrder = 'desc' } = options;
       const alerts = await initializeAlerts();
       
-      // Map resolved property to status for compatibility
-      const mappedAlerts: AlertData[] = alerts.map(alert => ({
-        ...alert,
-        status: alert.resolved ? 'resolved' : 'active'
-      }));
-      
-      // Filter alerts
-      let filteredAlerts = [...mappedAlerts];
+      let filteredAlerts = [...alerts];
       
       if (status !== 'all') {
         filteredAlerts = filteredAlerts.filter(alert => alert.status === status);
@@ -445,14 +407,12 @@ export const analyticsService = {
         filteredAlerts = filteredAlerts.filter(alert => alert.level === level);
       }
       
-      // Sort alerts
       if (sortBy === 'timestamp') {
         filteredAlerts.sort((a, b) => {
           const comparison = new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
           return sortOrder === 'desc' ? -comparison : comparison;
         });
       } else if (sortBy === 'level') {
-        // Custom level sorting: critical > warning > info
         const levelValues = { critical: 3, warning: 2, info: 1 };
         filteredAlerts.sort((a, b) => {
           // @ts-ignore
@@ -475,7 +435,6 @@ export const analyticsService = {
     }
   },
   
-  // Resolve alert
   resolveAlert: async (alertId: string): Promise<boolean> => {
     try {
       const allAlerts = await initializeAlerts();
@@ -486,10 +445,9 @@ export const analyticsService = {
         return false;
       }
       
-      // Update the alert status
       allAlerts[alertIndex].resolved = true;
+      allAlerts[alertIndex].status = 'resolved';
       
-      // Save the updated alerts
       await apiService.post('alerts', allAlerts);
       
       toast.success("Alert resolved successfully");

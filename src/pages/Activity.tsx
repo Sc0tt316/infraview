@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
@@ -11,13 +12,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { RefreshCw, Search } from 'lucide-react';
 import { ActivityLogData } from '@/types/analytics';
-
-// Overriding ActivityLogData type to include missing fields
-// This will be used until we can update the analytics service
-interface FullActivityLogData extends ActivityLogData {
-  user?: string;
-  action?: string;
-}
 
 const Activity = () => {
   const [searchQuery, setSearchQuery] = useState('');
