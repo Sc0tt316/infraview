@@ -1,4 +1,3 @@
-
 import { apiService } from './api';
 import { toast } from 'sonner';
 
@@ -429,13 +428,17 @@ export const analyticsService = {
       const { limit = 100, status = 'all', level = 'all', sortBy = 'timestamp', sortOrder = 'desc' } = options;
       const alerts = await initializeAlerts();
       
+      // Map resolved property to status for compatibility
+      const mappedAlerts: AlertData[] = alerts.map(alert => ({
+        ...alert,
+        status: alert.resolved ? 'resolved' : 'active'
+      }));
+      
       // Filter alerts
-      let filteredAlerts = [...alerts];
+      let filteredAlerts = [...mappedAlerts];
       
       if (status !== 'all') {
-        filteredAlerts = filteredAlerts.filter(alert => 
-          status === 'active' ? !alert.resolved : alert.resolved
-        );
+        filteredAlerts = filteredAlerts.filter(alert => alert.status === status);
       }
       
       if (level !== 'all') {
@@ -469,6 +472,32 @@ export const analyticsService = {
       console.error('Error fetching alerts:', error);
       toast.error("Failed to fetch alerts. Please try again.");
       return [];
+    }
+  },
+  
+  // Resolve alert
+  resolveAlert: async (alertId: string): Promise<boolean> => {
+    try {
+      const allAlerts = await initializeAlerts();
+      const alertIndex = allAlerts.findIndex(alert => alert.id === alertId);
+      
+      if (alertIndex === -1) {
+        toast.error("Alert not found");
+        return false;
+      }
+      
+      // Update the alert status
+      allAlerts[alertIndex].resolved = true;
+      
+      // Save the updated alerts
+      await apiService.post('alerts', allAlerts);
+      
+      toast.success("Alert resolved successfully");
+      return true;
+    } catch (error) {
+      console.error('Error resolving alert:', error);
+      toast.error("Failed to resolve alert. Please try again.");
+      return false;
     }
   }
 };
