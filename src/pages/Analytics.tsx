@@ -141,7 +141,7 @@ const Analytics = () => {
             </TabsList>
           </Tabs>
         </CardHeader>
-        <CardContent className="p-0 pt-4">
+        <CardContent className="p-6">
           {isVolumeLoading ? (
             <div className="flex items-center justify-center h-80">
               <RefreshCw className="h-8 w-8 animate-spin text-primary/70" />
@@ -151,7 +151,7 @@ const Analytics = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5 }}
-              className="h-80 px-6 pb-6"
+              style={{ height: '320px', width: '100%' }}
             >
               <LineChart
                 data={volumeData}
@@ -160,6 +160,7 @@ const Analytics = () => {
                 colors={['#7166F9']}
                 valueFormatter={(value) => `${value.toLocaleString()} pages`}
                 showAnimation={true}
+                className="h-full w-full"
               />
             </motion.div>
           ) : (
@@ -180,7 +181,7 @@ const Analytics = () => {
         <CardHeader>
           <CardTitle>Print Volume by Department</CardTitle>
         </CardHeader>
-        <CardContent className="p-0 pt-4">
+        <CardContent className="p-6">
           {isAnalyticsLoading ? (
             <div className="flex items-center justify-center h-80">
               <RefreshCw className="h-8 w-8 animate-spin text-primary/70" />
@@ -190,7 +191,7 @@ const Analytics = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5 }}
-              className="h-80 px-6 pb-6"
+              style={{ height: '320px', width: '100%' }}
             >
               <BarChart
                 data={analyticsData.departmentVolume}
@@ -199,6 +200,7 @@ const Analytics = () => {
                 colors={['#7166F9']}
                 valueFormatter={(value) => `${value.toLocaleString()} pages`}
                 showAnimation={true}
+                className="h-full w-full"
               />
             </motion.div>
           ) : (

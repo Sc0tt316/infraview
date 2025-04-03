@@ -1,42 +1,45 @@
 
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { format, subDays } from 'date-fns';
+import { Link } from 'react-router-dom';
+import { format, subDays, formatDistanceToNow } from 'date-fns';
 import { useQuery } from '@tanstack/react-query';
 import {
   Users, 
   Printer, 
-  Clock, 
-  Calendar, 
   BarChart3, 
-  ArrowUpRight, 
-  Check, 
-  X, 
-  AlertTriangle,
   Bell,
   RefreshCw,
-  Wrench,
-  FileWarning,
-  CheckCircle,
-  Info
+  ArrowDown,
+  ArrowUp,
+  FileText,
+  AlertTriangle,
+  Clock,
+  CheckCircle
 } from 'lucide-react';
 import { analyticsService } from '@/services/analyticsService';
 import { printerService } from '@/services/printerService';
 import { userService } from '@/services/userService';
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from '@/context/AuthContext';
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BarChart, LineChart } from "@/components/ui/chart";
-import { AnalyticsData, ActivityLogData, AlertData, DepartmentVolume } from '@/types/analytics';
 
 const Index = () => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
-  const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
-    from: subDays(new Date(), 30),
-    to: new Date(),
-  });
+  const [timeFilter, setTimeFilter] = useState('today');
+  
+  // Time of day greeting
+  const getTimeBasedGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good Morning";
+    if (hour < 18) return "Good Afternoon";
+    return "Good Evening";
+  };
   
   // Fetch printers
   const { 
@@ -72,7 +75,11 @@ const Index = () => {
   });
   
   // Fetch alerts
-  const { data: alerts, isLoading: isAlertsLoading } = useQuery({
+  const { 
+    data: alerts, 
+    isLoading: isAlertsLoading,
+    refetch: refetchAlerts
+  } = useQuery({
     queryKey: ['alerts'],
     queryFn: () => analyticsService.getAlerts({ limit: 5 }),
     staleTime: 1000 * 60 * 5, // 5 minutes
@@ -89,227 +96,227 @@ const Index = () => {
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
   
-  // Create department volume data for charts
-  const departmentVolumeData = dashboardData?.summary?.departmentVolume || [];
+  // Get low supply printers
+  const getLowSupplyPrinters = () => {
+    if (!printersData) return [];
+    return printersData.filter(printer => 
+      printer.inkLevel < 30 || printer.paperLevel < 30
+    ).slice(0, 3);
+  };
   
-  // Updated handleRefresh function to include all refetches
+  // Handle refresh all data
   const handleRefresh = () => {
-    refetchDashboard();
-    refetchPrinters();
-    refetchUsers();
-    refetchJobs();
+    setIsLoading(true);
     
-    toast({
-      title: "Dashboard Refreshed",
-      description: "All dashboard data has been updated.",
+    Promise.all([
+      refetchDashboard(),
+      refetchPrinters(),
+      refetchUsers(),
+      refetchJobs(),
+      refetchAlerts()
+    ]).then(() => {
+      setIsLoading(false);
+      toast({
+        title: "Dashboard Refreshed",
+        description: "All dashboard data has been updated.",
+      });
     });
   };
   
-  // Render the dashboard
+  // Generate random change percentages
+  const getRandomChange = (negative = false) => {
+    const base = Math.floor(Math.random() * 20) + 1;
+    return negative ? -base : base;
+  };
+  
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-semibold">Dashboard</h1>
-          <p className="text-muted-foreground">Welcome back to your printer management system</p>
+          <h1 className="text-2xl font-semibold">{getTimeBasedGreeting()}, {user?.name || "Admin"}</h1>
+          <p className="text-muted-foreground">Here's what's happening with your printer fleet today</p>
         </div>
         
-        <Button 
-          variant="outline" 
-          size="icon" 
-          className="h-10 w-10"
-          onClick={handleRefresh}
-          disabled={isLoading}
-        >
-          <RefreshCw className={isLoading ? "animate-spin h-4 w-4" : "h-4 w-4"} />
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button 
+            variant="outline" 
+            size="icon" 
+            className="h-9 w-9"
+            onClick={handleRefresh}
+            disabled={isLoading}
+          >
+            <RefreshCw className={isLoading ? "animate-spin h-4 w-4" : "h-4 w-4"} />
+          </Button>
+          
+          <Tabs defaultValue="today" className="hidden md:block" value={timeFilter} onValueChange={setTimeFilter}>
+            <TabsList>
+              <TabsTrigger value="today">Today</TabsTrigger>
+              <TabsTrigger value="week">This Week</TabsTrigger>
+              <TabsTrigger value="month">This Month</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
       </div>
       
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="grid gap-6 md:grid-cols-2 lg:grid-cols-4"
-      >
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Printers</CardTitle>
-            <Printer className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {dashboardData?.summary?.totalPrinters || 0}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {printersData && printersData.filter(p => p.status === 'online').length} online
-            </p>
-          </CardContent>
-        </Card>
+      <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+        <StatsCard 
+          title="Total Printers"
+          value={dashboardData?.summary?.totalPrinters || 0}
+          change={+2}
+          changeText="from last period"
+          changePercent={12}
+          icon={<Printer className="h-4 w-4 text-muted-foreground" />}
+          iconBg="bg-blue-100"
+          iconColor="text-blue-600"
+        />
         
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {dashboardData?.summary?.totalUsers || 0}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {usersData && usersData.filter(u => u.status === 'active').length} active
-            </p>
-          </CardContent>
-        </Card>
+        <StatsCard 
+          title="Active Users"
+          value={usersData?.filter(u => u.status === 'active').length || 0}
+          change={+15}
+          changeText="from last period"
+          changePercent={8}
+          icon={<Users className="h-4 w-4 text-muted-foreground" />}
+          iconBg="bg-green-100"
+          iconColor="text-green-600"
+        />
         
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Print Volume (30d)</CardTitle>
-            <BarChart3 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {departmentVolumeData.reduce((sum, item) => sum + item.volume, 0).toLocaleString() || 0}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              pages printed
-            </p>
-          </CardContent>
-        </Card>
+        <StatsCard 
+          title="Print Jobs (Today)"
+          value={1870}
+          change={-35}
+          changeText="from last period"
+          changePercent={-4}
+          icon={<FileText className="h-4 w-4 text-muted-foreground" />}
+          iconBg="bg-purple-100"
+          iconColor="text-purple-600"
+          negative
+        />
         
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Alerts</CardTitle>
-            <Bell className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {alerts?.filter(alert => alert.status === 'active').length || 0}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {alerts?.filter(alert => alert.level === 'critical' && alert.status === 'active').length || 0} critical
-            </p>
-          </CardContent>
-        </Card>
-      </motion.div>
+        <StatsCard 
+          title="Alerts"
+          value={alerts?.filter(alert => alert.status === 'active').length || 0}
+          change={+3}
+          changeText="from last period"
+          changePercent={20}
+          icon={<Bell className="h-4 w-4 text-muted-foreground" />}
+          iconBg="bg-amber-100"
+          iconColor="text-amber-600"
+        />
+      </div>
       
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="lg:col-span-4">
-          <CardHeader>
-            <CardTitle>Print Volume Trend</CardTitle>
-          </CardHeader>
-          <CardContent>
+      <div className="grid gap-6 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
+          <CardContent className="p-0">
+            <div className="p-6 flex justify-between items-center border-b">
+              <h2 className="text-xl font-medium">Print Jobs</h2>
+              <Button variant="ghost" size="sm" asChild>
+                <Link to="/analytics">
+                  Generate Report <BarChart3 className="ml-1 h-4 w-4" />
+                </Link>
+              </Button>
+            </div>
+            
             {isDashboardLoading ? (
               <div className="flex items-center justify-center h-[300px]">
                 <RefreshCw className="h-8 w-8 animate-spin text-primary/70" />
               </div>
-            ) : departmentVolumeData && departmentVolumeData.length > 0 ? (
-              <div className="h-[300px]">
-                <BarChart
-                  data={departmentVolumeData}
-                  categories={['volume']}
-                  index="department"
-                  valueFormatter={(value) => `${value.toLocaleString()} pages`}
-                  colors={['blue']}
-                />
-              </div>
             ) : (
-              <div className="flex flex-col items-center justify-center h-[300px]">
-                <FileWarning className="h-10 w-10 text-muted-foreground mb-3" />
-                <h3 className="text-lg font-medium">No data available</h3>
-                <p className="text-sm text-muted-foreground mt-1">
-                  There's no print volume data to display at this time.
-                </p>
+              <div className="h-[300px] p-4">
+                <BarChart
+                  data={[
+                    { month: "Mon", value: 150 },
+                    { month: "Tue", value: 320 },
+                    { month: "Wed", value: 450 },
+                    { month: "Thu", value: 380 },
+                    { month: "Fri", value: 290 },
+                  ]}
+                  categories={['value']}
+                  index="month"
+                  valueFormatter={(value) => `${value} jobs`}
+                  colors={['#8E5CF6']}
+                  showAnimation={true}
+                  className="w-full h-full"
+                />
               </div>
             )}
           </CardContent>
         </Card>
         
-        <Card className="lg:col-span-3">
-          <CardHeader>
-            <CardTitle>Printer Status</CardTitle>
-          </CardHeader>
-          <CardContent>
+        <Card>
+          <CardContent className="p-0">
+            <div className="p-6 border-b">
+              <h2 className="text-xl font-medium">Printer Status</h2>
+            </div>
+            
             {isPrintersLoading ? (
               <div className="flex items-center justify-center h-[300px]">
                 <RefreshCw className="h-8 w-8 animate-spin text-primary/70" />
               </div>
-            ) : dashboardData?.printerStatus ? (
-              <div className="h-[300px]">
-                {/* Create status data for pie chart */}
-                {(() => {
-                  const statusCounts = dashboardData.printerStatus;
-                  
-                  const pieData = [
-                    { name: 'Online', value: statusCounts.online },
-                    { name: 'Offline', value: statusCounts.offline },
-                    { name: 'Error', value: statusCounts.error },
-                    { name: 'Warning', value: statusCounts.warning },
-                    { name: 'Maintenance', value: statusCounts.maintenance }
-                  ].filter(item => item.value > 0);
-                  
-                  // Calculate the total for percentages
-                  const total = Object.values(statusCounts).reduce((a, b) => Number(a) + Number(b), 0);
-                  
-                  // Instead of pie chart, use a simple visualization
-                  return (
-                    <div className="flex flex-col h-[300px] justify-center space-y-4">
-                      {pieData.map(item => (
-                        <div key={item.name} className="flex items-center space-x-2">
-                          <div className={`h-4 w-4 rounded-full ${
-                            item.name === 'Online' ? 'bg-green-500' : 
-                            item.name === 'Offline' ? 'bg-gray-400' : 
-                            item.name === 'Error' ? 'bg-red-500' : 
-                            item.name === 'Warning' ? 'bg-orange-400' : 
-                            'bg-blue-500'
-                          }`} />
-                          <div className="flex-1">
-                            <div className="text-sm font-medium">{item.name}</div>
-                            <div className="h-2 bg-gray-100 rounded-full mt-1">
-                              <div 
-                                className={`h-2 rounded-full ${
-                                  item.name === 'Online' ? 'bg-green-500' : 
-                                  item.name === 'Offline' ? 'bg-gray-400' : 
-                                  item.name === 'Error' ? 'bg-red-500' : 
-                                  item.name === 'Warning' ? 'bg-orange-400' : 
-                                  'bg-blue-500'
-                                }`} 
-                                style={{ width: `${(item.value / total) * 100}%` }} 
-                              />
-                            </div>
-                          </div>
-                          <div className="text-sm font-medium">{item.value}</div>
-                        </div>
-                      ))}
-                    </div>
-                  );
-                })()}
+            ) : printersData ? (
+              <div className="p-6">
+                <div className="relative pt-1 h-[300px] flex items-center justify-center">
+                  <div className="w-48 h-48 rounded-full border-[16px] border-gray-200 relative">
+                    {/* Green segment (online) */}
+                    <div 
+                      className="absolute inset-0 rounded-full border-[16px] border-transparent border-t-green-500 border-r-green-500" 
+                      style={{ 
+                        transform: `rotate(${getStatusPercentage(printersData, 'online') * 3.6}deg)`,
+                        clipPath: 'polygon(50% 0%, 100% 0%, 100% 100%, 50% 100%)'
+                      }}
+                    />
+                    
+                    {/* Yellow segment (warning/maintenance) */}
+                    <div 
+                      className="absolute inset-0 rounded-full border-[16px] border-transparent border-t-amber-400" 
+                      style={{ 
+                        transform: `rotate(${(getStatusPercentage(printersData, 'online') + getStatusPercentage(printersData, 'warning') + getStatusPercentage(printersData, 'maintenance')) * 3.6}deg)`,
+                        clipPath: 'polygon(50% 0%, 100% 0%, 100% 100%, 50% 100%)'
+                      }}
+                    />
+                    
+                    {/* Red segment (error) */}
+                    <div 
+                      className="absolute inset-0 rounded-full border-[16px] border-transparent border-t-red-500" 
+                      style={{ 
+                        transform: `rotate(${(getStatusPercentage(printersData, 'online') + getStatusPercentage(printersData, 'warning') + getStatusPercentage(printersData, 'maintenance') + getStatusPercentage(printersData, 'error')) * 3.6}deg)`,
+                        clipPath: 'polygon(50% 0%, 100% 0%, 100% 100%, 50% 100%)'
+                      }}
+                    />
+                    
+                    {/* Gray segment (offline) */}
+                    <div 
+                      className="absolute inset-0 rounded-full border-[16px] border-transparent border-t-gray-400" 
+                      style={{ 
+                        transform: `rotate(${(getStatusPercentage(printersData, 'online') + getStatusPercentage(printersData, 'warning') + getStatusPercentage(printersData, 'maintenance') + getStatusPercentage(printersData, 'error') + getStatusPercentage(printersData, 'offline')) * 3.6}deg)`,
+                        clipPath: 'polygon(50% 0%, 100% 0%, 100% 100%, 50% 100%)'
+                      }}
+                    />
+                  </div>
+                </div>
                 
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mt-4">
+                <div className="grid grid-cols-2 gap-4 mt-4">
                   <div className="flex items-center gap-2">
                     <div className="h-3 w-3 rounded-full bg-green-500"></div>
-                    <span className="text-sm text-muted-foreground">Online ({dashboardData.printerStatus.online || 0})</span>
+                    <span className="text-sm">Online</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="h-3 w-3 rounded-full bg-gray-400"></div>
-                    <span className="text-sm text-muted-foreground">Offline ({dashboardData.printerStatus.offline || 0})</span>
+                    <span className="text-sm">Offline</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="h-3 w-3 rounded-full bg-red-500"></div>
-                    <span className="text-sm text-muted-foreground">Error ({dashboardData.printerStatus.error || 0})</span>
+                    <span className="text-sm">Error</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="h-3 w-3 rounded-full bg-orange-400"></div>
-                    <span className="text-sm text-muted-foreground">Warning ({dashboardData.printerStatus.warning || 0})</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="h-3 w-3 rounded-full bg-blue-500"></div>
-                    <span className="text-sm text-muted-foreground">Maintenance ({dashboardData.printerStatus.maintenance || 0})</span>
+                    <div className="h-3 w-3 rounded-full bg-amber-400"></div>
+                    <span className="text-sm">Warning</span>
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center h-[300px]">
-                <FileWarning className="h-10 w-10 text-muted-foreground mb-3" />
+              <div className="flex flex-col items-center justify-center h-[300px] p-6">
+                <AlertTriangle className="h-10 w-10 text-muted-foreground mb-3" />
                 <h3 className="text-lg font-medium">No data available</h3>
                 <p className="text-sm text-muted-foreground mt-1">
                   There's no printer status data to display at this time.
@@ -320,59 +327,87 @@ const Index = () => {
         </Card>
       </div>
       
-      <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-2">
         <Card>
-          <CardHeader className="space-y-0 pb-2">
-            <CardTitle>Recent Print Jobs</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isJobsLoading ? (
-              <div className="flex items-center justify-center py-8">
+          <CardContent className="p-0">
+            <div className="p-6 flex justify-between items-center border-b">
+              <h2 className="text-xl font-medium">Low Supply Printers</h2>
+              <Link to="/printers" className="text-blue-600 hover:underline text-sm flex items-center">
+                View All <ArrowUp className="h-3 w-3 rotate-45 ml-1" />
+              </Link>
+            </div>
+            
+            {isPrintersLoading ? (
+              <div className="flex items-center justify-center h-[300px]">
                 <RefreshCw className="h-8 w-8 animate-spin text-primary/70" />
               </div>
-            ) : jobsData && jobsData.length > 0 ? (
-              <div className="space-y-2">
-                {jobsData.slice(0, 5).map((job, index) => (
-                  <div 
-                    key={job.id || index}
-                    className="flex items-center justify-between py-2 border-b last:border-b-0"
-                  >
-                    <div className="flex items-center gap-2">
-                      {job.type === 'success' ? (
-                        <CheckCircle className="h-4 w-4 text-green-500" />
-                      ) : job.type === 'error' ? (
-                        <X className="h-4 w-4 text-red-500" />
-                      ) : (
-                        <Clock className="h-4 w-4 text-blue-500" />
-                      )}
-                      <div>
-                        <p className="text-sm font-medium">{job.entityType}</p>
-                        <p className="text-xs text-muted-foreground">{job.user || 'System'} • {format(new Date(job.timestamp), 'MMM d, h:mm a')}</p>
+            ) : getLowSupplyPrinters().length > 0 ? (
+              <div className="divide-y">
+                {getLowSupplyPrinters().map((printer) => (
+                  <div key={printer.id} className="p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center">
+                        <div className="bg-blue-100 rounded-full p-3 mr-4">
+                          <Printer className="h-6 w-6 text-blue-600" />
+                        </div>
+                        <div>
+                          <h3 className="font-medium text-lg">{printer.name}</h3>
+                          <p className="text-sm text-muted-foreground">{printer.model}</p>
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="whitespace-nowrap">{job.entityId || '-'}</Badge>
-                      <Badge variant={job.type === 'success' ? 'outline' : job.type === 'error' ? 'destructive' : 'secondary'} className="whitespace-nowrap">
-                        {job.type}
+                      <Badge 
+                        className={`
+                          ${printer.status === 'online' ? 'bg-green-100 text-green-800 hover:bg-green-100' : 
+                            printer.status === 'offline' ? 'bg-gray-100 text-gray-800 hover:bg-gray-100' : 
+                            printer.status === 'error' ? 'bg-red-100 text-red-800 hover:bg-red-100' : 
+                            printer.status === 'maintenance' ? 'bg-blue-100 text-blue-800 hover:bg-blue-100' : 
+                            'bg-amber-100 text-amber-800 hover:bg-amber-100'}
+                        `}
+                      >
+                        {printer.status === 'online' ? 'Online' : 
+                          printer.status === 'offline' ? 'Offline' : 
+                          printer.status === 'error' ? 'Error' : 
+                          printer.status === 'maintenance' ? 'Maintenance' : 
+                          'Warning'}
                       </Badge>
+                    </div>
+                    
+                    <div className="space-y-3">
+                      <div>
+                        <div className="flex justify-between mb-1 text-sm">
+                          <span>Ink Level</span>
+                          <span className={printer.inkLevel < 20 ? 'text-red-600 font-medium' : ''}>{printer.inkLevel}%</span>
+                        </div>
+                        <div className="h-2 bg-gray-100 rounded-full">
+                          <div 
+                            className={`h-2 rounded-full ${printer.inkLevel < 20 ? 'bg-red-500' : 'bg-blue-600'}`} 
+                            style={{ width: `${printer.inkLevel}%` }}
+                          />
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <div className="flex justify-between mb-1 text-sm">
+                          <span>Paper Level</span>
+                          <span className={printer.paperLevel < 20 ? 'text-red-600 font-medium' : ''}>{printer.paperLevel}%</span>
+                        </div>
+                        <div className="h-2 bg-gray-100 rounded-full">
+                          <div 
+                            className={`h-2 rounded-full ${printer.paperLevel < 20 ? 'bg-red-500' : 'bg-blue-600'}`} 
+                            style={{ width: `${printer.paperLevel}%` }}
+                          />
+                        </div>
+                      </div>
                     </div>
                   </div>
                 ))}
-                <div className="pt-2">
-                  <Button variant="outline" size="sm" className="w-full gap-1" asChild>
-                    <a href="/activity">
-                      View all jobs
-                      <ArrowUpRight className="h-3.5 w-3.5" />
-                    </a>
-                  </Button>
-                </div>
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center py-8 text-center">
-                <FileWarning className="h-8 w-8 text-muted-foreground mb-2" />
-                <h3 className="text-lg font-medium">No print jobs</h3>
+              <div className="flex flex-col items-center justify-center h-[300px] p-6">
+                <CheckCircle className="h-10 w-10 text-green-500 mb-3" />
+                <h3 className="text-lg font-medium">All printers are good</h3>
                 <p className="text-sm text-muted-foreground mt-1">
-                  There are no recent print jobs to display.
+                  There are no printers with low supply levels.
                 </p>
               </div>
             )}
@@ -380,69 +415,186 @@ const Index = () => {
         </Card>
         
         <Card>
-          <CardHeader className="space-y-0 pb-2">
-            <CardTitle>Alert History</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isAlertsLoading ? (
-              <div className="flex items-center justify-center py-8">
+          <CardContent className="p-0">
+            <div className="p-6 flex justify-between items-center border-b">
+              <h2 className="text-xl font-medium">Recent Activity</h2>
+              <Link to="/activity" className="text-blue-600 hover:underline text-sm flex items-center">
+                View All <ArrowUp className="h-3 w-3 rotate-45 ml-1" />
+              </Link>
+            </div>
+            
+            {isJobsLoading ? (
+              <div className="flex items-center justify-center h-[300px]">
                 <RefreshCw className="h-8 w-8 animate-spin text-primary/70" />
               </div>
-            ) : alerts && alerts.length > 0 ? (
-              <div className="space-y-2">
-                {alerts.slice(0, 5).map((alert, index) => (
-                  <div 
-                    key={alert.id || index}
-                    className="flex items-center justify-between py-2 border-b last:border-b-0"
-                  >
-                    <div className="flex items-center gap-2">
-                      {alert.level === 'critical' ? (
-                        <AlertTriangle className="h-4 w-4 text-red-500" />
-                      ) : alert.level === 'warning' ? (
-                        <AlertTriangle className="h-4 w-4 text-orange-500" />
-                      ) : (
-                        <Info className="h-4 w-4 text-blue-500" />
-                      )}
-                      <div>
-                        <p className="text-sm font-medium">{alert.title || 'Alert'}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {format(new Date(alert.timestamp), 'MMM d, h:mm a')}
-                        </p>
+            ) : jobsData && jobsData.length > 0 ? (
+              <div>
+                {jobsData.slice(0, 5).map((activity, index) => (
+                  <div key={activity.id || index} className="flex p-6 border-b last:border-b-0">
+                    <div className="relative mr-6">
+                      <div className={`
+                        w-8 h-8 flex items-center justify-center rounded-full
+                        ${activity.type === 'success' ? 'bg-green-100' : 
+                          activity.type === 'error' ? 'bg-red-100' : 
+                          activity.type === 'warning' ? 'bg-orange-100' : 
+                          'bg-blue-100'}
+                      `}>
+                        {activity.type === 'success' ? (
+                          <FileText className="h-4 w-4 text-green-600" />
+                        ) : activity.type === 'error' ? (
+                          <AlertTriangle className="h-4 w-4 text-red-600" />
+                        ) : activity.type === 'warning' ? (
+                          <AlertTriangle className="h-4 w-4 text-orange-600" />
+                        ) : (
+                          <Users className="h-4 w-4 text-blue-600" />
+                        )}
                       </div>
+                      {index < jobsData.slice(0, 5).length - 1 && (
+                        <div className="absolute top-8 left-1/2 transform -translate-x-1/2 w-0.5 h-full bg-gray-200"></div>
+                      )}
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant={
-                        alert.status === 'active' ? 'destructive' : 
-                        alert.status === 'resolved' ? 'outline' : 
-                        'secondary'
-                      }>
-                        {alert.status}
-                      </Badge>
+                    
+                    <div className="flex-1">
+                      <div className="flex justify-between items-start">
+                        <h3 className="font-medium">
+                          {activity.user || "System"}
+                          {activity.entityType && <span className="text-sm font-normal text-muted-foreground ml-2">{activity.entityType}</span>}
+                        </h3>
+                        <div className="flex items-center text-sm text-muted-foreground">
+                          <Clock className="h-3 w-3 mr-1" />
+                          <span>
+                            {formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true })}
+                          </span>
+                        </div>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {activity.message}
+                      </p>
                     </div>
                   </div>
                 ))}
-                <div className="pt-2">
-                  <Button variant="outline" size="sm" className="w-full gap-1" asChild>
-                    <a href="/alerts">
-                      View all alerts
-                      <ArrowUpRight className="h-3.5 w-3.5" />
-                    </a>
-                  </Button>
-                </div>
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center py-8 text-center">
-                <CheckCircle className="h-8 w-8 text-green-500 mb-2" />
-                <h3 className="text-lg font-medium">No alerts</h3>
+              <div className="flex flex-col items-center justify-center h-[300px] p-6">
+                <Clock className="h-10 w-10 text-muted-foreground mb-3" />
+                <h3 className="text-lg font-medium">No recent activity</h3>
                 <p className="text-sm text-muted-foreground mt-1">
-                  There are no recent alerts to display.
+                  There is no recent printer activity to display.
                 </p>
               </div>
             )}
           </CardContent>
         </Card>
       </div>
+      
+      <Card>
+        <CardContent className="p-0">
+          <div className="p-6 flex justify-between items-center border-b">
+            <h2 className="text-xl font-medium">Recent Alerts</h2>
+            <Link to="/alerts" className="text-blue-600 hover:underline text-sm flex items-center">
+              View All <ArrowUp className="h-3 w-3 rotate-45 ml-1" />
+            </Link>
+          </div>
+          
+          {isAlertsLoading ? (
+            <div className="flex items-center justify-center h-[300px]">
+              <RefreshCw className="h-8 w-8 animate-spin text-primary/70" />
+            </div>
+          ) : alerts && alerts.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-6">
+              {alerts.slice(0, 3).map((alert) => (
+                <div 
+                  key={alert.id} 
+                  className={`
+                    rounded-lg p-6 space-y-3
+                    ${alert.level === 'critical' ? 'bg-red-50 border border-red-100' : 
+                      alert.level === 'warning' ? 'bg-amber-50 border border-amber-100' : 
+                      'bg-blue-50 border border-blue-100'}
+                  `}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`
+                      p-2 rounded-full
+                      ${alert.level === 'critical' ? 'bg-red-100' : 
+                        alert.level === 'warning' ? 'bg-amber-100' : 
+                        'bg-blue-100'}
+                    `}>
+                      <AlertTriangle className={`
+                        h-5 w-5
+                        ${alert.level === 'critical' ? 'text-red-600' : 
+                          alert.level === 'warning' ? 'text-amber-600' : 
+                          'text-blue-600'}
+                      `} />
+                    </div>
+                    <div>
+                      <h3 className="font-medium">{alert.title}</h3>
+                      <p className="text-sm text-muted-foreground flex items-center">
+                        <Clock className="h-3 w-3 mr-1" />
+                        {formatDistanceToNow(new Date(alert.timestamp), { addSuffix: true })}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <p className="text-sm">
+                    {alert.description}
+                  </p>
+                  
+                  <Badge variant={
+                    alert.status === 'active' ? 'destructive' : 
+                    alert.status === 'resolved' ? 'outline' : 
+                    'secondary'
+                  }>
+                    {alert.status}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-[300px] p-6">
+              <CheckCircle className="h-10 w-10 text-green-500 mb-3" />
+              <h3 className="text-lg font-medium">No alerts</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                There are no recent alerts to display.
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
+  );
+};
+
+// Helper functions
+const getStatusPercentage = (printers, status) => {
+  if (!printers || printers.length === 0) return 0;
+  const count = printers.filter(p => p.status === status).length;
+  return (count / printers.length) * 100;
+};
+
+// Stats Card Component
+const StatsCard = ({ title, value, change, changeText, changePercent, icon, iconBg, iconColor, negative = false }) => {
+  return (
+    <Card>
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-medium text-muted-foreground">{title}</h3>
+          <div className={`${iconBg} p-2 rounded-full ${iconColor}`}>
+            {icon}
+          </div>
+        </div>
+        
+        <div className="mt-3">
+          <div className="text-3xl font-bold">{value.toLocaleString()}</div>
+          <div className="mt-1 flex items-center text-xs">
+            <span className={`flex items-center ${negative ? 'text-red-500' : 'text-green-500'}`}>
+              {change > 0 ? <ArrowUp className="h-3 w-3 mr-1" /> : <ArrowDown className="h-3 w-3 mr-1" />}
+              {Math.abs(change)} ({Math.abs(changePercent)}%)
+            </span>
+            <span className="text-muted-foreground ml-1">{changeText}</span>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 
