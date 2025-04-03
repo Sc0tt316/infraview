@@ -1,283 +1,258 @@
 
-import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { format } from 'date-fns';
-import { AlertTriangle, Check, Filter, RefreshCw, Search, X } from 'lucide-react';
-import { analyticsService } from '@/services/analyticsService';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
+import React, { useState, useEffect } from 'react';
+import { RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Alert, AlertFilter, AlertSeverity } from '@/types/alerts';
+import AlertFilters from '@/components/alerts/AlertFilters';
+import AlertsTable from '@/components/alerts/AlertsTable';
+import AlertDetailsDialog from '@/components/alerts/AlertDetailsDialog';
+import EmptyAlertState from '@/components/alerts/EmptyAlertState';
+import { printerService } from '@/services/printer';
 import { useToast } from '@/hooks/use-toast';
-import { AlertData } from '@/types/analytics';
 
 const Alerts = () => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [filteredAlerts, setFilteredAlerts] = useState<Alert[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<AlertFilter>('all');
+  const [severityFilter, setSeverityFilter] = useState<AlertSeverity | 'all'>('all');
+  const [selectedAlert, setSelectedAlert] = useState<Alert | null>(null);
+  const [showDetailDialog, setShowDetailDialog] = useState(false);
+  
   const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'resolved'>('all');
-  const [filterLevel, setFilterLevel] = useState<'all' | 'critical' | 'warning' | 'info'>('all');
-  const [selectedAlert, setSelectedAlert] = useState<AlertData | null>(null);
-  const [showResolveDialog, setShowResolveDialog] = useState(false);
-
-  const getAlertsWithParams = async () => {
-    return await analyticsService.getAlerts({
-      status: filterStatus, 
-      level: filterLevel
-    });
-  };
-
-  const { data: alerts, isLoading, refetch } = useQuery({
-    queryKey: ['alerts', filterStatus, filterLevel],
-    queryFn: getAlertsWithParams
-  });
-
-  const resolveAlertMutation = useMutation({
-    mutationFn: (alertId: string) => analyticsService.resolveAlert(alertId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['alerts'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboardStats'] });
-      toast({ title: "Alert resolved", description: "The alert has been marked as resolved." });
-      setShowResolveDialog(false);
-    },
-    onError: (error) => {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to resolve alert. Please try again.",
-      });
-      console.error("Error resolving alert:", error);
-    }
-  });
-
-  const filteredAlerts = React.useMemo(() => {
-    if (!alerts) return [];
-
-    let filtered = [...alerts];
-
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(alert => 
-        alert.title.toLowerCase().includes(query) || 
-        (alert.message && alert.message.toLowerCase().includes(query)) ||
-        (alert.printer && alert.printer.name.toLowerCase().includes(query)) ||
-        (alert.user && alert.user.name.toLowerCase().includes(query))
+  
+  // Mock data generation
+  useEffect(() => {
+    const generateMockAlerts = async () => {
+      setIsLoading(true);
+      try {
+        // Get printers for the mock data
+        const printers = await printerService.getAllPrinters();
+        
+        // Generate mock alerts
+        const mockAlerts: Alert[] = [
+          {
+            id: "a1",
+            title: "Paper jam detected",
+            description: "Paper jam detected in the main tray. Please check and clear any jammed paper.",
+            timestamp: new Date().toISOString(),
+            severity: "medium",
+            printer: printers[2] ? {
+              id: printers[2].id,
+              name: printers[2].name,
+              location: printers[2].location
+            } : undefined,
+            isResolved: false
+          },
+          {
+            id: "a2",
+            title: "Toner critically low",
+            description: "Black toner cartridge is at 5% remaining. Please replace soon to avoid disruption.",
+            timestamp: new Date(Date.now() - 3600000).toISOString(),
+            severity: "high",
+            printer: printers[1] ? {
+              id: printers[1].id,
+              name: printers[1].name,
+              location: printers[1].location
+            } : undefined,
+            isResolved: false
+          },
+          {
+            id: "a3",
+            title: "Connection lost",
+            description: "Printer went offline unexpectedly. Check network connection and power.",
+            timestamp: new Date(Date.now() - 7200000).toISOString(),
+            severity: "low",
+            printer: printers[3] ? {
+              id: printers[3].id,
+              name: printers[3].name,
+              location: printers[3].location
+            } : undefined,
+            isResolved: false
+          },
+          {
+            id: "a4",
+            title: "System update required",
+            description: "A critical firmware update is available for this printer. Please update as soon as possible.",
+            timestamp: new Date(Date.now() - 86400000).toISOString(),
+            severity: "critical",
+            printer: printers[0] ? {
+              id: printers[0].id,
+              name: printers[0].name,
+              location: printers[0].location
+            } : undefined,
+            isResolved: true,
+            resolvedAt: new Date(Date.now() - 43200000).toISOString(),
+            resolvedBy: "John Admin"
+          },
+          {
+            id: "a5",
+            title: "Low memory warning",
+            description: "Printer is experiencing low memory. Large print jobs may fail.",
+            timestamp: new Date(Date.now() - 172800000).toISOString(),
+            severity: "medium",
+            printer: printers[4] ? {
+              id: printers[4].id,
+              name: printers[4].name,
+              location: printers[4].location
+            } : undefined,
+            isResolved: true,
+            resolvedAt: new Date(Date.now() - 129600000).toISOString(),
+            resolvedBy: "System"
+          }
+        ];
+        
+        setAlerts(mockAlerts);
+        setFilteredAlerts(mockAlerts);
+      } catch (error) {
+        console.error("Error generating mock alerts:", error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to load alerts. Please try again."
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    generateMockAlerts();
+  }, [toast]);
+  
+  // Apply filters whenever any filter changes
+  useEffect(() => {
+    let result = [...alerts];
+    
+    // Apply search filter
+    if (searchTerm) {
+      const lowerSearchTerm = searchTerm.toLowerCase();
+      result = result.filter(alert => 
+        alert.title.toLowerCase().includes(lowerSearchTerm) ||
+        alert.description.toLowerCase().includes(lowerSearchTerm) ||
+        (alert.printer?.name.toLowerCase().includes(lowerSearchTerm))
       );
     }
-
-    return filtered;
-  }, [alerts, searchQuery]);
-
-  const handleRefresh = () => {
-    refetch();
-  };
-
+    
+    // Apply status filter
+    if (statusFilter !== 'all') {
+      result = result.filter(alert => 
+        (statusFilter === 'active' && !alert.isResolved) || 
+        (statusFilter === 'resolved' && alert.isResolved)
+      );
+    }
+    
+    // Apply severity filter
+    if (severityFilter !== 'all') {
+      result = result.filter(alert => alert.severity === severityFilter);
+    }
+    
+    setFilteredAlerts(result);
+  }, [alerts, searchTerm, statusFilter, severityFilter]);
+  
+  // Event handlers
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
+    setSearchTerm(e.target.value);
   };
-
-  const handleStatusFilterChange = (value: 'all' | 'active' | 'resolved') => {
-    setFilterStatus(value);
+  
+  const handleStatusFilterChange = (status: AlertFilter) => {
+    setStatusFilter(status);
   };
-
-  const handleLevelFilterChange = (value: 'all' | 'critical' | 'warning' | 'info') => {
-    setFilterLevel(value);
+  
+  const handleSeverityFilterChange = (severity: AlertSeverity | 'all') => {
+    setSeverityFilter(severity);
   };
-
-  const handleResolveClick = (alert: AlertData) => {
+  
+  const handleViewDetails = (alert: Alert) => {
     setSelectedAlert(alert);
-    setShowResolveDialog(true);
+    setShowDetailDialog(true);
   };
-
-  const handleResolveConfirm = () => {
-    if (selectedAlert) {
-      resolveAlertMutation.mutate(selectedAlert.id);
+  
+  const handleCloseDetails = () => {
+    setShowDetailDialog(false);
+  };
+  
+  const handleResolveAlert = (alertId: string) => {
+    setAlerts(prevAlerts => 
+      prevAlerts.map(alert => 
+        alert.id === alertId
+          ? {
+              ...alert,
+              isResolved: true,
+              resolvedAt: new Date().toISOString(),
+              resolvedBy: "Admin User"
+            }
+          : alert
+      )
+    );
+    
+    toast({
+      title: "Alert Resolved",
+      description: "The alert has been marked as resolved."
+    });
+    
+    // Close detail dialog if open
+    if (showDetailDialog && selectedAlert?.id === alertId) {
+      setShowDetailDialog(false);
     }
   };
-
+  
+  const handleRefresh = () => {
+    // In a real app, this would refetch the alerts
+    toast({
+      title: "Refreshed",
+      description: "Alert data has been refreshed."
+    });
+  };
+  
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Alerts</h1>
-          <p className="text-muted-foreground">Manage system alerts and warnings</p>
+          <p className="text-muted-foreground mt-1">
+            View and manage system alerts
+          </p>
         </div>
-        <Button variant="outline" size="icon" onClick={handleRefresh}>
-          <RefreshCw className="h-4 w-4" />
+        <Button 
+          variant="outline" 
+          size="icon"
+          onClick={handleRefresh}
+          disabled={isLoading}
+        >
+          <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
         </Button>
       </div>
-
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <CardTitle>Alert History</CardTitle>
-            <div className="flex flex-col sm:flex-row gap-2">
-              <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="search"
-                  placeholder="Search alerts..."
-                  className="pl-8 w-full sm:w-[250px]"
-                  value={searchQuery}
-                  onChange={handleSearchChange}
-                />
-              </div>
-              <Select value={filterStatus} onValueChange={handleStatusFilterChange}>
-                <SelectTrigger className="w-full sm:w-[150px]">
-                  <SelectValue placeholder="Filter by status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="resolved">Resolved</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={filterLevel} onValueChange={handleLevelFilterChange}>
-                <SelectTrigger className="w-full sm:w-[150px]">
-                  <SelectValue placeholder="Filter by level" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Levels</SelectItem>
-                  <SelectItem value="critical">Critical</SelectItem>
-                  <SelectItem value="warning">Warning</SelectItem>
-                  <SelectItem value="info">Info</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="flex justify-center py-8">
-              <RefreshCw className="h-8 w-8 animate-spin text-primary/70" />
-            </div>
-          ) : filteredAlerts.length > 0 ? (
-            <div className="rounded-md border overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date & Time</TableHead>
-                    <TableHead>Alert</TableHead>
-                    <TableHead>Level</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Details</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredAlerts.map((alert) => (
-                    <TableRow key={alert.id}>
-                      <TableCell className="font-medium">
-                        {format(new Date(alert.timestamp), 'MMM d, yyyy h:mm a')}
-                      </TableCell>
-                      <TableCell>
-                        <div className="font-medium">{alert.title}</div>
-                        {alert.message && (
-                          <div className="text-sm text-muted-foreground">{alert.message}</div>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={
-                            alert.level === 'critical' ? 'destructive' : 
-                            alert.level === 'warning' ? 'secondary' : 
-                            'default'
-                          }
-                        >
-                          {alert.level}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={alert.status === 'active' ? 'outline' : 'secondary'}
-                          className={alert.status === 'active' ? 'border-red-500 text-red-500' : ''}
-                        >
-                          {alert.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="space-y-1">
-                          {alert.printer && (
-                            <div className="text-sm">
-                              Printer: <span className="font-medium">{alert.printer.name}</span> (ID: {alert.printer.id})
-                            </div>
-                          )}
-                          {alert.user && (
-                            <div className="text-sm">
-                              User: <span className="font-medium">{alert.user.name}</span> (ID: {alert.user.id})
-                            </div>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {alert.status === 'active' && (
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => handleResolveClick(alert)}
-                            className="h-8 gap-1"
-                          >
-                            <Check className="h-3.5 w-3.5" />
-                            Resolve
-                          </Button>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">No alerts found matching your filters.</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <Dialog open={showResolveDialog} onOpenChange={setShowResolveDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Resolve Alert</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to mark this alert as resolved? This will remove it from the active alerts list.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            {selectedAlert && (
-              <div className="space-y-2">
-                <div>
-                  <span className="font-medium">Alert:</span> {selectedAlert.title}
-                </div>
-                <div>
-                  <span className="font-medium">Level:</span>{' '}
-                  <Badge
-                    variant={
-                      selectedAlert.level === 'critical' ? 'destructive' : 
-                      selectedAlert.level === 'warning' ? 'secondary' : 
-                      'default'
-                    }
-                  >
-                    {selectedAlert.level}
-                  </Badge>
-                </div>
-                {selectedAlert.message && (
-                  <div>
-                    <span className="font-medium">Message:</span> {selectedAlert.message}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowResolveDialog(false)}>Cancel</Button>
-            <Button onClick={handleResolveConfirm}>Resolve Alert</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      
+      <AlertFilters
+        searchTerm={searchTerm}
+        onSearchChange={handleSearchChange}
+        statusFilter={statusFilter}
+        onStatusFilterChange={handleStatusFilterChange}
+        severityFilter={severityFilter}
+        onSeverityFilterChange={handleSeverityFilterChange}
+      />
+      
+      {isLoading ? (
+        <div className="flex justify-center items-center h-64">
+          <RefreshCw className="h-8 w-8 animate-spin text-primary/70" />
+        </div>
+      ) : filteredAlerts.length > 0 ? (
+        <AlertsTable
+          alerts={filteredAlerts}
+          onResolveAlert={handleResolveAlert}
+          onViewDetails={handleViewDetails}
+        />
+      ) : (
+        <EmptyAlertState />
+      )}
+      
+      <AlertDetailsDialog
+        alert={selectedAlert}
+        isOpen={showDetailDialog}
+        onClose={handleCloseDetails}
+        onResolve={handleResolveAlert}
+      />
     </div>
   );
 };
