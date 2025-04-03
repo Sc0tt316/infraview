@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { printerService, PrinterData } from '@/services/printerService';
@@ -29,7 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Plus, Edit, Trash2, Eye } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, SearchIcon, RefreshCw } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -41,6 +42,7 @@ import {
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { Badge } from "@/components/ui/badge";
 import * as z from "zod";
 
 const printerFormSchema = z.object({
@@ -97,7 +99,7 @@ const Printers = () => {
     },
   });
   
-  const { setValue, reset } = useForm<PrinterFormValues>();
+  const { setValue, reset } = form;
   
   const resetForm = () => {
     reset({
@@ -126,7 +128,7 @@ const Printers = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const { data: printers, isLoading } = useQuery({
+  const { data: printers, isLoading, refetch } = useQuery({
     queryKey: ['printers'],
     queryFn: () => printerService.getAllPrinters(),
   });
@@ -281,6 +283,23 @@ const Printers = () => {
     updatePrinterMutation.mutate(updateData);
   };
 
+  const getStatusBadge = (status: string) => {
+    switch(status) {
+      case 'online':
+        return <Badge className="bg-green-500">Online</Badge>;
+      case 'offline':
+        return <Badge variant="outline" className="text-gray-500">Offline</Badge>;
+      case 'error':
+        return <Badge variant="destructive">Error</Badge>;
+      case 'maintenance':
+        return <Badge className="bg-blue-500">Maintenance</Badge>;
+      case 'warning':
+        return <Badge className="bg-orange-500">Warning</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -288,13 +307,20 @@ const Printers = () => {
           <h1 className="text-2xl font-semibold">Printers</h1>
           <p className="text-muted-foreground mt-1">Manage and monitor your printers</p>
         </div>
-        <div className="flex items-center space-x-2">
-          <Input
-            type="text"
-            placeholder="Search printers..."
-            value={searchTerm}
-            onChange={handleSearchChange}
-          />
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Search printers..."
+              value={searchTerm}
+              onChange={handleSearchChange}
+              className="pl-9 w-60"
+            />
+          </div>
+          <Button onClick={() => refetch()} variant="outline" size="icon" className="h-10 w-10">
+            <RefreshCw className="h-4 w-4" />
+          </Button>
           <Button onClick={() => setShowAddPrinterModal(true)}>
             <Plus className="w-4 h-4 mr-2" />
             Add Printer
@@ -302,19 +328,21 @@ const Printers = () => {
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
+      <Card className="shadow-md overflow-hidden">
+        <CardHeader className="bg-muted/50">
           <CardTitle>Printer List</CardTitle>
           <CardDescription>
             Here is a list of all your printers. You can manage them from here.
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0">
           {isLoading ? (
-            <p>Loading printers...</p>
+            <div className="flex justify-center items-center h-40">
+              <RefreshCw className="h-8 w-8 animate-spin text-primary/70" />
+            </div>
           ) : (
             <Table>
-              <TableHeader>
+              <TableHeader className="bg-muted/20">
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Model</TableHead>
@@ -325,12 +353,12 @@ const Printers = () => {
               </TableHeader>
               <TableBody>
                 {filteredPrinters.map((printer) => (
-                  <TableRow key={printer.id}>
-                    <TableCell>{printer.name}</TableCell>
+                  <TableRow key={printer.id} className="hover:bg-muted/30 transition-colors">
+                    <TableCell className="font-medium">{printer.name}</TableCell>
                     <TableCell>{printer.model}</TableCell>
                     <TableCell>{printer.location}</TableCell>
-                    <TableCell>{printer.status}</TableCell>
-                    <TableCell className="text-right font-medium">
+                    <TableCell>{getStatusBadge(printer.status)}</TableCell>
+                    <TableCell className="text-right">
                       <div className="flex justify-end space-x-2">
                         <Button variant="ghost" size="icon" onClick={() => setSelectedPrinterId(printer.id)}>
                           <Eye className="w-4 h-4" />
@@ -339,7 +367,7 @@ const Printers = () => {
                           <Edit className="w-4 h-4" />
                         </Button>
                         <Button variant="ghost" size="icon" onClick={() => handleOpenDeleteConfirmation(printer)}>
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-4 h-4 text-destructive" />
                         </Button>
                       </div>
                     </TableCell>
@@ -347,7 +375,13 @@ const Printers = () => {
                 ))}
                 {filteredPrinters.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center">No printers found.</TableCell>
+                    <TableCell colSpan={5} className="text-center py-8">
+                      <div className="flex flex-col items-center justify-center text-muted-foreground">
+                        <SearchIcon className="h-8 w-8 mb-2" />
+                        <p>No printers found.</p>
+                        <p className="text-sm">Try adjusting your search or add a new printer.</p>
+                      </div>
+                    </TableCell>
                   </TableRow>
                 )}
               </TableBody>
@@ -356,10 +390,7 @@ const Printers = () => {
         </CardContent>
       </Card>
 
-      <Dialog open={showAddPrinterModal} onOpenChange={() => setShowAddPrinterModal(false)}>
-        <DialogTrigger asChild>
-          <Button>Add Printer</Button>
-        </DialogTrigger>
+      <Dialog open={showAddPrinterModal} onOpenChange={setShowAddPrinterModal}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Add Printer</DialogTitle>
@@ -432,13 +463,18 @@ const Printers = () => {
                   </FormItem>
                 )}
               />
-              <Button type="submit">Add Printer</Button>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button type="button" variant="outline" onClick={() => setShowAddPrinterModal(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit">Add Printer</Button>
+              </div>
             </form>
           </Form>
         </DialogContent>
       </Dialog>
 
-      <Dialog open={showEditPrinterModal} onOpenChange={() => setShowEditPrinterModal(false)}>
+      <Dialog open={showEditPrinterModal} onOpenChange={setShowEditPrinterModal}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Edit Printer</DialogTitle>
@@ -511,16 +547,21 @@ const Printers = () => {
                   </FormItem>
                 )}
               />
-              <Button type="submit">Update Printer</Button>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button type="button" variant="outline" onClick={() => setShowEditPrinterModal(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit">Update Printer</Button>
+              </div>
             </form>
           </Form>
         </DialogContent>
       </Dialog>
 
-      <Dialog open={showDeleteConfirmation} onOpenChange={() => setShowDeleteConfirmation(false)}>
+      <Dialog open={showDeleteConfirmation} onOpenChange={setShowDeleteConfirmation}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Delete Printer</DialogTitle>
+            <DialogTitle className="text-destructive">Delete Printer</DialogTitle>
             <DialogDescription>
               Are you sure you want to delete this printer? This action cannot be undone.
             </DialogDescription>
@@ -529,7 +570,7 @@ const Printers = () => {
             <p>Are you sure you want to delete <strong>{selectedPrinter?.name}</strong>?</p>
           </div>
           <div className="flex justify-end space-x-2">
-            <Button variant="secondary" onClick={() => setShowDeleteConfirmation(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setShowDeleteConfirmation(false)}>Cancel</Button>
             <Button variant="destructive" onClick={handleDeletePrinter}>Delete</Button>
           </div>
         </DialogContent>

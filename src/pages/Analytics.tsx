@@ -97,8 +97,10 @@ const Analytics = () => {
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {analyticsData && analyticsData.summary && Object.entries(analyticsData.summary).map(([key, value]) => (
-          <Card key={key}>
+        {analyticsData && analyticsData.summary && Object.entries(analyticsData.summary)
+          .filter(([key]) => !key.includes('departmentVolume'))
+          .map(([key, value]) => (
+          <Card key={key} className="shadow-sm hover:shadow-md transition-shadow duration-200">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 {key === 'totalPrinters' ? 'Total Printers' : 
@@ -121,7 +123,7 @@ const Analytics = () => {
         ))}
       </div>
       
-      <Card>
+      <Card className="shadow-md overflow-hidden">
         <CardHeader>
           <CardTitle>Print Volume Trends</CardTitle>
           <Tabs
@@ -130,7 +132,7 @@ const Analytics = () => {
             onValueChange={(value) => setTimeRange(value as 'day' | 'week' | 'month' | 'year' | 'custom')}
             className="w-full"
           >
-            <TabsList>
+            <TabsList className="grid w-full grid-cols-5 lg:w-auto">
               <TabsTrigger value="day">Day</TabsTrigger>
               <TabsTrigger value="week">Week</TabsTrigger>
               <TabsTrigger value="month">Month</TabsTrigger>
@@ -139,7 +141,7 @@ const Analytics = () => {
             </TabsList>
           </Tabs>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0 pt-4">
           {isVolumeLoading ? (
             <div className="flex items-center justify-center h-80">
               <RefreshCw className="h-8 w-8 animate-spin text-primary/70" />
@@ -149,7 +151,7 @@ const Analytics = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5 }}
-              className="h-80"
+              className="h-80 px-6 pb-6"
             >
               <LineChart
                 data={volumeData}
@@ -174,11 +176,11 @@ const Analytics = () => {
         </CardContent>
       </Card>
       
-      <Card>
+      <Card className="shadow-md overflow-hidden">
         <CardHeader>
           <CardTitle>Print Volume by Department</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0 pt-4">
           {isAnalyticsLoading ? (
             <div className="flex items-center justify-center h-80">
               <RefreshCw className="h-8 w-8 animate-spin text-primary/70" />
@@ -188,7 +190,7 @@ const Analytics = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5 }}
-              className="h-80"
+              className="h-80 px-6 pb-6"
             >
               <BarChart
                 data={analyticsData.departmentVolume}
