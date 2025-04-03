@@ -2,18 +2,14 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { 
-  Printer, FileText, RefreshCw, AlertTriangle, 
-  Ban, Zap, CheckCircle, RotateCw
-} from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import { printerService } from '@/services/printer';
 import { PrinterActivity } from '@/types/printers';
-import StatsCard from '@/components/dashboard/StatsCard';
-import PrinterStatusSummary from '@/components/dashboard/PrinterStatusSummary';
-import RecentActivity from '@/components/dashboard/RecentActivity';
-import AlertsOverview from '@/components/dashboard/AlertsOverview';
-import LowSuppliesWarning from '@/components/dashboard/LowSuppliesWarning';
+
+// Import our new components
+import StatsOverview from '@/components/dashboard/StatsOverview';
+import MainDashboard from '@/components/dashboard/MainDashboard';
+import SystemStatus from '@/components/dashboard/SystemStatus';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -72,13 +68,6 @@ const Index = () => {
     loadActivities();
   }, []);
   
-  // Calculate stats
-  const totalPrinters = printers.length;
-  const onlinePrinters = printers.filter(p => p.status === 'online').length;
-  const errorPrinters = printers.filter(p => p.status === 'error').length;
-  const offlinePrinters = printers.filter(p => p.status === 'offline').length;
-  const maintenancePrinters = printers.filter(p => p.status === 'maintenance').length;
-  
   // Calculate alerts
   const activeAlerts = alerts.filter(alert => !alert.isResolved).length;
   
@@ -103,98 +92,23 @@ const Index = () => {
       ) : (
         <>
           {/* Stats overview */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatsCard
-              title="Total Printers"
-              value={totalPrinters}
-              icon={Printer}
-            />
-            <StatsCard
-              title="Online Printers"
-              value={onlinePrinters}
-              icon={CheckCircle}
-            />
-            <StatsCard
-              title="Print Jobs Today"
-              value={178}
-              icon={FileText}
-              description="Completed and pending"
-            />
-            <StatsCard
-              title="Active Alerts"
-              value={activeAlerts}
-              icon={AlertTriangle}
-              trend={activeAlerts > 1 ? { value: 12, isPositive: false } : undefined}
-            />
-          </div>
+          <StatsOverview 
+            printers={printers} 
+            activeAlerts={activeAlerts} 
+          />
 
           {/* Main Dashboard Content */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {/* Status and activity */}
-            <PrinterStatusSummary
-              printers={printers}
-              onViewAllPrinters={handleViewAllPrinters}
-            />
-            
-            <RecentActivity
-              activities={recentActivities}
-              onViewAllActivity={handleViewAllActivity}
-            />
-            
-            <AlertsOverview
-              alerts={alerts}
-              onViewAllAlerts={handleViewAllAlerts}
-            />
-            
-            <LowSuppliesWarning printers={printers} />
-          </div>
+          <MainDashboard 
+            printers={printers}
+            recentActivities={recentActivities}
+            alerts={alerts}
+            onViewAllPrinters={handleViewAllPrinters}
+            onViewAllActivity={handleViewAllActivity}
+            onViewAllAlerts={handleViewAllAlerts}
+          />
 
           {/* System Status */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base font-medium">System Status</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="flex items-center">
-                  <div className="h-10 w-10 bg-green-50 flex items-center justify-center rounded-full mr-3">
-                    <Zap className="h-5 w-5 text-green-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">Print Server</p>
-                    <p className="text-xs text-muted-foreground">Online</p>
-                  </div>
-                </div>
-                <div className="flex items-center">
-                  <div className="h-10 w-10 bg-green-50 flex items-center justify-center rounded-full mr-3">
-                    <RefreshCw className="h-5 w-5 text-green-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">Print Queue</p>
-                    <p className="text-xs text-muted-foreground">Operational</p>
-                  </div>
-                </div>
-                <div className="flex items-center">
-                  <div className="h-10 w-10 bg-green-50 flex items-center justify-center rounded-full mr-3">
-                    <Ban className="h-5 w-5 text-green-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">Error Rate</p>
-                    <p className="text-xs text-muted-foreground">Normal (2.3%)</p>
-                  </div>
-                </div>
-                <div className="flex items-center">
-                  <div className="h-10 w-10 bg-green-50 flex items-center justify-center rounded-full mr-3">
-                    <RotateCw className="h-5 w-5 text-green-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">Last Sync</p>
-                    <p className="text-xs text-muted-foreground">5 minutes ago</p>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <SystemStatus />
         </>
       )}
     </div>

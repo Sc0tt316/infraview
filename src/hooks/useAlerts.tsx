@@ -1,0 +1,189 @@
+
+import { useState, useEffect } from 'react';
+import { printerService } from '@/services/printer';
+import { useToast } from '@/hooks/use-toast';
+import { Alert, AlertFilter, AlertSeverity } from '@/types/alerts';
+
+export const useAlerts = () => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [filteredAlerts, setFilteredAlerts] = useState<Alert[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<AlertFilter>('all');
+  const [severityFilter, setSeverityFilter] = useState<AlertSeverity | 'all'>('all');
+  
+  const { toast } = useToast();
+  
+  // Generate mock alerts function
+  const generateMockAlerts = async () => {
+    setIsLoading(true);
+    try {
+      // Get printers for the mock data
+      const printers = await printerService.getAllPrinters();
+      
+      // Generate mock alerts
+      const mockAlerts: Alert[] = [
+        {
+          id: "a1",
+          title: "Paper jam detected",
+          description: "Paper jam detected in the main tray. Please check and clear any jammed paper.",
+          timestamp: new Date().toISOString(),
+          severity: "medium",
+          printer: printers[2] ? {
+            id: printers[2].id,
+            name: printers[2].name,
+            location: printers[2].location
+          } : undefined,
+          isResolved: false
+        },
+        {
+          id: "a2",
+          title: "Toner critically low",
+          description: "Black toner cartridge is at 5% remaining. Please replace soon to avoid disruption.",
+          timestamp: new Date(Date.now() - 3600000).toISOString(),
+          severity: "high",
+          printer: printers[1] ? {
+            id: printers[1].id,
+            name: printers[1].name,
+            location: printers[1].location
+          } : undefined,
+          isResolved: false
+        },
+        {
+          id: "a3",
+          title: "Connection lost",
+          description: "Printer went offline unexpectedly. Check network connection and power.",
+          timestamp: new Date(Date.now() - 7200000).toISOString(),
+          severity: "low",
+          printer: printers[3] ? {
+            id: printers[3].id,
+            name: printers[3].name,
+            location: printers[3].location
+          } : undefined,
+          isResolved: false
+        },
+        {
+          id: "a4",
+          title: "System update required",
+          description: "A critical firmware update is available for this printer. Please update as soon as possible.",
+          timestamp: new Date(Date.now() - 86400000).toISOString(),
+          severity: "critical",
+          printer: printers[0] ? {
+            id: printers[0].id,
+            name: printers[0].name,
+            location: printers[0].location
+          } : undefined,
+          isResolved: true,
+          resolvedAt: new Date(Date.now() - 43200000).toISOString(),
+          resolvedBy: "John Admin"
+        },
+        {
+          id: "a5",
+          title: "Low memory warning",
+          description: "Printer is experiencing low memory. Large print jobs may fail.",
+          timestamp: new Date(Date.now() - 172800000).toISOString(),
+          severity: "medium",
+          printer: printers[4] ? {
+            id: printers[4].id,
+            name: printers[4].name,
+            location: printers[4].location
+          } : undefined,
+          isResolved: true,
+          resolvedAt: new Date(Date.now() - 129600000).toISOString(),
+          resolvedBy: "System"
+        }
+      ];
+      
+      setAlerts(mockAlerts);
+      setFilteredAlerts(mockAlerts);
+    } catch (error) {
+      console.error("Error generating mock alerts:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to load alerts. Please try again."
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  // Load data initially
+  useEffect(() => {
+    generateMockAlerts();
+  }, []);
+  
+  // Apply filters whenever any filter changes
+  useEffect(() => {
+    let result = [...alerts];
+    
+    // Apply search filter
+    if (searchTerm) {
+      const lowerSearchTerm = searchTerm.toLowerCase();
+      result = result.filter(alert => 
+        alert.title.toLowerCase().includes(lowerSearchTerm) ||
+        alert.description.toLowerCase().includes(lowerSearchTerm) ||
+        (alert.printer?.name.toLowerCase().includes(lowerSearchTerm))
+      );
+    }
+    
+    // Apply status filter
+    if (statusFilter !== 'all') {
+      result = result.filter(alert => 
+        (statusFilter === 'active' && !alert.isResolved) || 
+        (statusFilter === 'resolved' && alert.isResolved)
+      );
+    }
+    
+    // Apply severity filter
+    if (severityFilter !== 'all') {
+      result = result.filter(alert => alert.severity === severityFilter);
+    }
+    
+    setFilteredAlerts(result);
+  }, [alerts, searchTerm, statusFilter, severityFilter]);
+  
+  // Resolve alert
+  const resolveAlert = (alertId: string) => {
+    setAlerts(prevAlerts => 
+      prevAlerts.map(alert => 
+        alert.id === alertId
+          ? {
+              ...alert,
+              isResolved: true,
+              resolvedAt: new Date().toISOString(),
+              resolvedBy: "Admin User"
+            }
+          : alert
+      )
+    );
+    
+    toast({
+      title: "Alert Resolved",
+      description: "The alert has been marked as resolved."
+    });
+  };
+  
+  // Refresh alerts
+  const refreshAlerts = () => {
+    toast({
+      title: "Refreshed",
+      description: "Alert data has been refreshed."
+    });
+    generateMockAlerts();
+  };
+  
+  return {
+    isLoading,
+    alerts,
+    filteredAlerts,
+    searchTerm,
+    setSearchTerm,
+    statusFilter,
+    setStatusFilter,
+    severityFilter,
+    setSeverityFilter,
+    resolveAlert,
+    refreshAlerts
+  };
+};

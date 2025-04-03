@@ -1,19 +1,19 @@
 
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { toast } from '@/hooks/use-toast';
 import { printerService } from '@/services/printer';
-import { Printer } from 'lucide-react';
 
-// Import our new components
+// Import our components
 import PrinterOverview from './printer-detail/PrinterOverview';
 import PrintLogs from './printer-detail/PrintLogs';
 import ActivityList from './printer-detail/ActivityList';
 import LoadingSpinner from './printer-detail/LoadingSpinner';
 import PrinterNotFound from './printer-detail/PrinterNotFound';
-import { getStatusBadge } from './printer-detail/StatusUtils';
+import ModalHeader from './printer-detail/ModalHeader';
+import TabsNavigation from './printer-detail/TabsNavigation';
 
 // Define props for the component
 export interface PrinterDetailModalProps {
@@ -72,28 +72,14 @@ const PrinterDetailModal = ({ printerId, onClose }: PrinterDetailModalProps) => 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto p-0">
-        <DialogHeader className="px-6 pt-6 pb-2">
-          <DialogTitle className="flex items-center">
-            <Printer className="mr-2 h-5 w-5" />
-            {isLoading ? 'Loading Printer Details...' : printer?.name || 'Printer Details'}
-            <div className="ml-2">
-              {!isLoading && printer && getStatusBadge(printer.status)}
-            </div>
-          </DialogTitle>
-        </DialogHeader>
+        <ModalHeader printer={printer} isLoading={isLoading} />
 
         {isLoading ? (
           <LoadingSpinner />
         ) : printer ? (
           <>
             <Tabs defaultValue="overview" value={activeTab} onValueChange={handleTabChange} className="w-full">
-              <div className="px-6">
-                <TabsList className="w-full">
-                  <TabsTrigger value="overview" className="flex-1">Overview</TabsTrigger>
-                  <TabsTrigger value="logs" className="flex-1">Print Logs</TabsTrigger>
-                  <TabsTrigger value="activity" className="flex-1">Activity</TabsTrigger>
-                </TabsList>
-              </div>
+              <TabsNavigation activeTab={activeTab} onTabChange={handleTabChange} />
 
               <div className="px-6 pb-6 pt-4">
                 <TabsContent value="overview" className="mt-0">
