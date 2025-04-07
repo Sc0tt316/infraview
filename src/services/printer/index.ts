@@ -1,14 +1,6 @@
 
 import { PrinterData, PrinterLog, PrinterActivity } from '@/types/printers';
-import { 
-  getAllPrinters, 
-  getPrinterById, 
-  addPrinter, 
-  updatePrinter, 
-  deletePrinter,
-  changeStatus,
-  restartPrinter
-} from './printerManagementService';
+import * as printerManagement from './management';
 import { 
   getPrinterLogs, 
   addLog, 
@@ -23,19 +15,12 @@ export type {
   PrinterData, 
   PrinterLog, 
   PrinterActivity,
-  // Re-export other types from printers.ts
 };
 
 // Export the printer service with all functions
 export const printerService = {
   // Printer management
-  getAllPrinters,
-  getPrinterById,
-  addPrinter,
-  updatePrinter,
-  deletePrinter,
-  changeStatus,
-  restartPrinter,
+  ...printerManagement,
   
   // Logs and activity
   getPrinterLogs,
