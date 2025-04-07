@@ -1,12 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { format, subDays } from 'date-fns';
-import { analyticsService } from '@/services/analyticsService';
+import { analyticsService } from '@/services/analytics';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
 import { DateRange } from 'react-day-picker';
 
-// Import our new components
+// Import our components
 import AnalyticsHeader from '@/components/analytics/AnalyticsHeader';
 import StatsSummaryCards from '@/components/analytics/StatsSummaryCards';
 import PrintVolumeChart from '@/components/analytics/PrintVolumeChart';
