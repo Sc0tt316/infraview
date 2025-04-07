@@ -362,6 +362,7 @@ interface ChartProps {
   colors: string[];
   valueFormatter?: (value: number) => string;
   showAnimation?: boolean;
+  className?: string; // Add className to the interface
 }
 
 const BarChart: React.FC<ChartProps> = ({ 
@@ -371,6 +372,7 @@ const BarChart: React.FC<ChartProps> = ({
   colors, 
   valueFormatter = (value: number) => `${value}`,
   showAnimation = false,
+  className,
 }) => {
   const config: ChartConfig = React.useMemo(() => {
     return categories.reduce((acc, category, i) => {
@@ -380,7 +382,7 @@ const BarChart: React.FC<ChartProps> = ({
   }, [categories, colors]);
 
   return (
-    <ChartContainer config={config}>
+    <ChartContainer config={config} className={className}>
       <RechartsPrimitive.BarChart data={data}>
         <RechartsPrimitive.CartesianGrid strokeDasharray="3 3" vertical={false} />
         <RechartsPrimitive.XAxis 
@@ -430,6 +432,7 @@ const LineChart: React.FC<ChartProps> = ({
   colors, 
   valueFormatter = (value: number) => `${value}`,
   showAnimation = false,
+  className,
 }) => {
   const config: ChartConfig = React.useMemo(() => {
     return categories.reduce((acc, category, i) => {
@@ -439,7 +442,7 @@ const LineChart: React.FC<ChartProps> = ({
   }, [categories, colors]);
 
   return (
-    <ChartContainer config={config}>
+    <ChartContainer config={config} className={className}>
       <RechartsPrimitive.LineChart data={data}>
         <RechartsPrimitive.CartesianGrid strokeDasharray="3 3" vertical={false} />
         <RechartsPrimitive.XAxis 
