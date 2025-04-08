@@ -8,8 +8,8 @@ import { AnalyticsServiceInterface } from '@/types/analytics';
 
 // Combine all services into a single analyticsService object
 export const analyticsService: AnalyticsServiceInterface = {
-  ...analyticsDataService,
-  ...printVolumeService,
-  ...activityLogService,
-  ...alertService
+  getAnalyticsData: analyticsDataService.getAnalyticsData,
+  getPrintVolumeData: printVolumeService.getPrintVolumeData,
+  getActivityLogs: activityLogService.getActivityLogs,
+  getAlertMetrics: alertService.getAlertMetrics
 };

@@ -35,7 +35,7 @@ export const useActivityLogs = () => {
     if (!activityLogs?.length) return [];
 
     let filtered = [...activityLogs];
-
+    
     // Apply search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
@@ -46,16 +46,21 @@ export const useActivityLogs = () => {
         log.message?.toLowerCase().includes(query)
       );
     }
-
+    
     // Apply type filter
     if (filterType !== 'all') {
       filtered = filtered.filter(log => {
         if (filterType === 'login') {
-          return log.action?.toLowerCase().includes('login') || log.message?.toLowerCase().includes('login');
+          return log.action?.toLowerCase().includes('login') || 
+                 log.message?.toLowerCase().includes('login') || 
+                 log.type === 'login';
         } else if (filterType === 'print') {
-          return log.action?.toLowerCase().includes('print') || log.message?.toLowerCase().includes('print');
+          return log.action?.toLowerCase().includes('print') || 
+                 log.message?.toLowerCase().includes('print') || 
+                 log.type === 'print';
         } else if (filterType === 'config') {
-          return log.action?.toLowerCase().includes('config') || log.message?.toLowerCase().includes('config');
+          return log.action?.toLowerCase().includes('config') || 
+                 log.message?.toLowerCase().includes('config');
         } else if (filterType === 'error') {
           return log.type === 'error';
         }

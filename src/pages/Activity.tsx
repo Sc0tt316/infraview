@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { RefreshCw, Search, User, Clock, FileText } from 'lucide-react';
+import { RefreshCw, Search, Activity as ActivityIcon, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
 import { useActivityLogs } from '@/hooks/useActivityLogs';
 import { Button } from '@/components/ui/button';

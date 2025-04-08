@@ -1,31 +1,37 @@
 
-import { apiService } from '../../api';
-import { toast } from '@/hooks/use-toast';
 import { PrinterData } from '@/types/printers';
-import { getAllPrinters } from './getAllPrinters';
-import { updatePrinterLevels } from './autoPrinterLevels';
+import { apiService } from '@/services/api';
 
-// Get a single printer by ID
-export const getPrinter = async (id: string): Promise<PrinterData | undefined> => {
+export const getPrinter = async (id: string): Promise<PrinterData> => {
   try {
-    const printers = await getAllPrinters();
-    let printer = printers.find(p => p.id === id);
+    // Try to get printer from local storage
+    const allPrinters: PrinterData[] | null = await apiService.get('printers');
     
-    if (!printer) {
-      return undefined;
+    // Find printer by id
+    const printer = allPrinters?.find((p) => p.id === id);
+    
+    if (printer) {
+      // Add default values if they don't exist
+      return {
+        id: printer.id,
+        name: printer.name,
+        model: printer.model,
+        location: printer.location,
+        status: printer.status,
+        inkLevel: printer.inkLevel,
+        paperLevel: printer.paperLevel,
+        ipAddress: printer.ipAddress,
+        department: printer.department,
+        jobCount: printer.jobCount || 0,
+        lastActive: printer.lastActive || new Date().toISOString()
+      };
     }
-    
-    // Auto-detect and update ink and paper levels
-    const updatedPrinter = await updatePrinterLevels(printer);
-    
-    return updatedPrinter as PrinterData;
+
+    // If printer not found, throw error
+    throw new Error(`Printer with ID ${id} not found`);
   } catch (error) {
-    console.error(`Error fetching printer ${id}:`, error);
-    toast({
-      title: "Error",
-      description: "Failed to load printer details. Please try again.",
-      variant: "destructive"
-    });
-    return undefined;
+    console.error(`Error fetching printer with ID ${id}:`, error);
+    // Return default printer data (this should be handled better in a real application)
+    throw error;
   }
 };
