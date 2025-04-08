@@ -3,8 +3,8 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { 
-  Menu, X, Home, Printer, Settings, Users as UsersIcon, 
-  BarChart2, LogOut, Activity as ActivityIcon, BellRing
+  Menu, X, Home, Printer, Users as UsersIcon, 
+  BarChart2, LogOut, Activity as ActivityIcon, BellRing, Settings
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
@@ -32,7 +32,6 @@ const sidebarLinks = [
   { path: "/analytics", label: "Analytics", icon: BarChart2 },
   { path: "/activity", label: "Activity", icon: ActivityIcon },
   { path: "/alerts", label: "Alerts", icon: BellRing },
-  { path: "/settings", label: "Settings", icon: Settings },
 ];
 
 const Layout = ({ children }: LayoutProps) => {
@@ -197,13 +196,25 @@ const Layout = ({ children }: LayoutProps) => {
               </Button>
             </div>
             
-            <button
-              onClick={handleLogout}
-              className="w-full mt-3 flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-            >
-              <LogOut size={16} />
-              <span>Logout</span>
-            </button>
+            <div className="flex items-center justify-between mt-3">
+              <Button
+                variant="ghost"
+                className="flex-1 flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
+                onClick={() => navigate('/settings')}
+              >
+                <Settings size={16} />
+                <span>Settings</span>
+              </Button>
+              
+              <Button
+                variant="ghost"
+                className="flex-1 flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                onClick={handleLogout}
+              >
+                <LogOut size={16} />
+                <span>Logout</span>
+              </Button>
+            </div>
           </div>
         </div>
       </motion.aside>

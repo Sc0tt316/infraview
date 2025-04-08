@@ -1,15 +1,14 @@
 
-// Simulated API response delay
+// Base API service with error handling
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-// API base service with error handling
-export const apiService = {
+export const baseApiService = {
   async get<T>(url: string): Promise<T> {
     try {
       // Simulate network delay
       await delay(800);
       
-      // For now, we'll use localStorage as our "database"
+      // Use localStorage as our "database"
       const data = localStorage.getItem(url);
       if (data) {
         return JSON.parse(data) as T;

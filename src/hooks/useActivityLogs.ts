@@ -1,5 +1,5 @@
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { analyticsService } from '@/services/analytics';
 import { ActivityLogData } from '@/types/analytics';
@@ -10,24 +10,29 @@ export const useActivityLogs = () => {
   const [sortBy, setSortBy] = useState('timestamp');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
-  // Get activity logs with parameters
-  const getActivityLogsWithParams = async () => {
+  // Create a memoized query function to prevent unnecessary rerenders
+  const getActivityLogsWithParams = useCallback(async () => {
     return await analyticsService.getActivityLogs({
       limit: 100,
       sortBy,
       sortOrder
     });
-  };
+  }, [sortBy, sortOrder]);
 
-  // Fetch activity logs
-  const { data: activityLogs, isLoading, refetch } = useQuery({
+  // Fetch activity logs with improved caching
+  const { 
+    data: activityLogs = [], 
+    isLoading, 
+    refetch 
+  } = useQuery({
     queryKey: ['activityLogs', sortBy, sortOrder],
-    queryFn: getActivityLogsWithParams
+    queryFn: getActivityLogsWithParams,
+    staleTime: 1000 * 60 * 2, // 2 minutes
   });
 
-  // Filter logs based on search query and filter type
+  // Filter logs with memoization to prevent unnecessary calculations
   const filteredLogs = useMemo(() => {
-    if (!activityLogs) return [];
+    if (!activityLogs?.length) return [];
 
     let filtered = [...activityLogs];
 
@@ -50,26 +55,26 @@ export const useActivityLogs = () => {
     return filtered;
   }, [activityLogs, searchQuery, filterType]);
 
-  // Event handlers
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Event handlers with useCallback to prevent unnecessary rerenders
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
-  };
+  }, []);
 
-  const handleFilterChange = (value: string) => {
+  const handleFilterChange = useCallback((value: string) => {
     setFilterType(value);
-  };
+  }, []);
 
-  const handleSortChange = (value: string) => {
+  const handleSortChange = useCallback((value: string) => {
     setSortBy(value);
-  };
+  }, []);
 
-  const handleSortOrderChange = (value: 'asc' | 'desc') => {
+  const handleSortOrderChange = useCallback((value: 'asc' | 'desc') => {
     setSortOrder(value);
-  };
+  }, []);
 
-  const handleRefresh = () => {
+  const handleRefresh = useCallback(() => {
     refetch();
-  };
+  }, [refetch]);
 
   return {
     filteredLogs,

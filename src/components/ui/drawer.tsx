@@ -1,14 +1,22 @@
+
 import * as React from "react"
 import { Drawer as DrawerPrimitive } from "vaul"
 
 import { cn } from "@/lib/utils"
 
 const Drawer = ({
-  shouldScaleBackground = true,
+  shouldScaleBackground = false, // Setting default to false for better performance
   ...props
 }: React.ComponentProps<typeof DrawerPrimitive.Root>) => (
   <DrawerPrimitive.Root
     shouldScaleBackground={shouldScaleBackground}
+    // Adding a small delay to improve frame rate during animations
+    onOpenChange={(open) => {
+      if (props.onOpenChange) {
+        // Use a small timeout to prevent blocking the main thread
+        setTimeout(() => props.onOpenChange?.(open), 0);
+      }
+    }}
     {...props}
   />
 )
@@ -26,7 +34,10 @@ const DrawerOverlay = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DrawerPrimitive.Overlay
     ref={ref}
-    className={cn("fixed inset-0 z-50 bg-black/80", className)}
+    className={cn(
+      "fixed inset-0 z-50 bg-black/80 backdrop-blur-sm",  // Added backdrop-blur for better performance
+      className
+    )}
     {...props}
   />
 ))
@@ -41,7 +52,7 @@ const DrawerContent = React.forwardRef<
     <DrawerPrimitive.Content
       ref={ref}
       className={cn(
-        "fixed inset-x-0 bottom-0 z-50 mt-24 flex h-auto flex-col rounded-t-[10px] border bg-background",
+        "fixed inset-x-0 bottom-0 z-50 mt-24 flex h-auto flex-col rounded-t-[10px] border bg-background will-change-transform", // Added will-change-transform for smoother animations
         className
       )}
       {...props}
