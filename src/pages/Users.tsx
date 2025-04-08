@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -55,6 +55,11 @@ const Users = () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       setShowAddDialog(false);
       resetForm();
+      toast("User added successfully");
+    },
+    onError: () => {
+      toast("Failed to add user. Please try again.");
+      setIsSubmitting(false);
     }
   });
   
@@ -67,6 +72,11 @@ const Users = () => {
       setShowEditDialog(false);
       setSelectedUser(null);
       resetForm();
+      toast("User updated successfully");
+    },
+    onError: () => {
+      toast("Failed to update user. Please try again.");
+      setIsSubmitting(false);
     }
   });
   
@@ -75,6 +85,10 @@ const Users = () => {
     mutationFn: (id: string) => userService.deleteUser(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
+      toast("User deleted successfully");
+    },
+    onError: () => {
+      toast("Failed to delete user. Please try again.");
     }
   });
   
@@ -84,6 +98,10 @@ const Users = () => {
       userService.changeStatus(id, status),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
+      toast("User status updated");
+    },
+    onError: () => {
+      toast("Failed to change user status. Please try again.");
     }
   });
   
@@ -119,7 +137,7 @@ const Users = () => {
     const { name, email, phone, department, role, password } = formData;
     
     if (!name || !email || !department || !password) {
-      toast.error("Please fill in all required fields.");
+      toast("Please fill in all required fields.");
       setIsSubmitting(false);
       return;
     }
@@ -147,7 +165,7 @@ const Users = () => {
     const { name, email, phone, department, role } = formData;
     
     if (!name || !email || !department) {
-      toast.error("Please fill in all required fields.");
+      toast("Please fill in all required fields.");
       setIsSubmitting(false);
       return;
     }
@@ -288,16 +306,20 @@ const Users = () => {
     );
   }
 
-  // Fix for dialog not closing
+  // Fix for dialog not closing by using setTimeout
   const handleCloseAddDialog = () => {
-    setShowAddDialog(false);
-    resetForm();
+    setTimeout(() => {
+      setShowAddDialog(false);
+      resetForm();
+    }, 0);
   };
 
   const handleCloseEditDialog = () => {
-    setShowEditDialog(false);
-    setSelectedUser(null);
-    resetForm();
+    setTimeout(() => {
+      setShowEditDialog(false);
+      setSelectedUser(null);
+      resetForm();
+    }, 0);
   };
 
   return (

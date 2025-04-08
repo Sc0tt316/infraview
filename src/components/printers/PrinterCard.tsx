@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { PrinterData } from '@/services/printerService';
+import { PrinterData } from '@/services/printer';
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,7 @@ interface PrinterCardProps {
   onOpenEdit: (printer: PrinterData) => void;
   onOpenDelete: (printer: PrinterData) => void;
   onRestart: (id: string) => void;
+  isAdmin?: boolean;
 }
 
 const PrinterCard: React.FC<PrinterCardProps> = ({
@@ -32,7 +33,8 @@ const PrinterCard: React.FC<PrinterCardProps> = ({
   onOpenDetails,
   onOpenEdit,
   onOpenDelete,
-  onRestart
+  onRestart,
+  isAdmin = false
 }) => {
   return (
     <Card key={printer.id} className="overflow-hidden">
@@ -78,21 +80,26 @@ const PrinterCard: React.FC<PrinterCardProps> = ({
                     <Info className="mr-2 h-4 w-4" />
                     <span>View Details</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => onOpenEdit(printer)}>
-                    <Pencil className="mr-2 h-4 w-4" />
-                    <span>Edit</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => onRestart(printer.id)}>
-                    <RotateCw className="mr-2 h-4 w-4" />
-                    <span>Restart</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem 
-                    onClick={() => onOpenDelete(printer)}
-                    className="text-red-600 focus:text-red-600"
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    <span>Delete</span>
-                  </DropdownMenuItem>
+                  
+                  {isAdmin && (
+                    <>
+                      <DropdownMenuItem onClick={() => onOpenEdit(printer)}>
+                        <Pencil className="mr-2 h-4 w-4" />
+                        <span>Edit</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => onRestart(printer.id)}>
+                        <RotateCw className="mr-2 h-4 w-4" />
+                        <span>Restart</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => onOpenDelete(printer)}
+                        className="text-red-600 focus:text-red-600"
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        <span>Delete</span>
+                      </DropdownMenuItem>
+                    </>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>

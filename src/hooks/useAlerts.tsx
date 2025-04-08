@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { printerService } from '@/services/printer';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertFilter, AlertSeverity } from '@/types/alerts';
+import { apiService } from '@/services/api';
 
 export const useAlerts = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -14,9 +15,33 @@ export const useAlerts = () => {
   
   const { toast } = useToast();
   
+  // Load alerts from local storage or generate mock data
+  const loadAlerts = async () => {
+    setIsLoading(true);
+    try {
+      // Try to get alerts from API service (localStorage)
+      const storedAlerts = await apiService.get<Alert[]>('alerts');
+      
+      if (storedAlerts && storedAlerts.length > 0) {
+        setAlerts(storedAlerts);
+      } else {
+        // Generate mock alerts if none exist
+        await generateMockAlerts();
+      }
+    } catch (error) {
+      console.error("Error loading alerts:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to load alerts. Please try again."
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
   // Generate mock alerts function
   const generateMockAlerts = async () => {
-    setIsLoading(true);
     try {
       // Get printers for the mock data
       const printers = await printerService.getAllPrinters();
@@ -95,22 +120,21 @@ export const useAlerts = () => {
       ];
       
       setAlerts(mockAlerts);
-      setFilteredAlerts(mockAlerts);
+      // Save the mock alerts to localStorage via apiService
+      await apiService.post('alerts', mockAlerts);
     } catch (error) {
       console.error("Error generating mock alerts:", error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to load alerts. Please try again."
+        description: "Failed to generate mock alerts."
       });
-    } finally {
-      setIsLoading(false);
     }
   };
   
   // Load data initially
   useEffect(() => {
-    generateMockAlerts();
+    loadAlerts();
   }, []);
   
   // Apply filters whenever any filter changes
@@ -143,20 +167,24 @@ export const useAlerts = () => {
     setFilteredAlerts(result);
   }, [alerts, searchTerm, statusFilter, severityFilter]);
   
-  // Resolve alert
-  const resolveAlert = (alertId: string) => {
-    setAlerts(prevAlerts => 
-      prevAlerts.map(alert => 
-        alert.id === alertId
-          ? {
-              ...alert,
-              isResolved: true,
-              resolvedAt: new Date().toISOString(),
-              resolvedBy: "Admin User"
-            }
-          : alert
-      )
+  // Resolve alert with persistence
+  const resolveAlert = async (alertId: string) => {
+    const updatedAlerts = alerts.map(alert => 
+      alert.id === alertId
+        ? {
+            ...alert,
+            isResolved: true,
+            resolvedAt: new Date().toISOString(),
+            resolvedBy: "Admin User"
+          }
+        : alert
     );
+    
+    // Update state
+    setAlerts(updatedAlerts);
+    
+    // Save to localStorage via apiService
+    await apiService.post('alerts', updatedAlerts);
     
     toast({
       title: "Alert Resolved",
@@ -166,11 +194,11 @@ export const useAlerts = () => {
   
   // Refresh alerts
   const refreshAlerts = () => {
+    loadAlerts();
     toast({
       title: "Refreshed",
       description: "Alert data has been refreshed."
     });
-    generateMockAlerts();
   };
   
   return {
