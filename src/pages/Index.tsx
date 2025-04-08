@@ -1,15 +1,25 @@
 
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { printerService } from '@/services/printer';
 import { PrinterActivity } from '@/types/printers';
 import { Alert } from '@/types/alerts';
+
+// Import our components
+import StatsOverview from '@/components/dashboard/StatsOverview';
+import PrinterStatusSummary from '@/components/dashboard/PrinterStatusSummary';
+import RecentActivity from '@/components/dashboard/RecentActivity';
+import AlertsOverview from '@/components/dashboard/AlertsOverview';
+import LowSuppliesWarning from '@/components/dashboard/LowSuppliesWarning';
+import SystemStatus from '@/components/dashboard/SystemStatus';
 import { RefreshCw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { useAuth } from '@/context/AuthContext';
-import DashboardHeader from '@/components/dashboard/DashboardHeader';
-import DashboardContent from '@/components/dashboard/DashboardContent';
 
 const Index = () => {
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [recentActivities, setRecentActivities] = useState<PrinterActivity[]>([]);
   const [alerts, setAlerts] = useState<Alert[]>([
@@ -95,6 +105,11 @@ const Index = () => {
   // Calculate alerts
   const activeAlerts = alerts.filter(alert => !alert.isResolved).length;
   
+  // Navigation handlers
+  const handleViewAllPrinters = () => navigate('/printers');
+  const handleViewAllActivity = () => navigate('/activity');
+  const handleViewAllAlerts = () => navigate('/alerts');
+  
   // Refresh dashboard data
   const handleRefresh = () => {
     setIsLoading(true);
@@ -111,19 +126,78 @@ const Index = () => {
   
   return (
     <div className="space-y-6">
-      <DashboardHeader onRefresh={handleRefresh} isLoading={isLoading} />
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold">Dashboard</h1>
+          <p className="text-muted-foreground mt-1">
+            Overview of your printing system
+          </p>
+        </div>
+        
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={handleRefresh}
+          disabled={isLoading}
+        >
+          <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+        </Button>
+      </div>
 
       {isLoading ? (
         <div className="flex justify-center items-center h-64">
           <RefreshCw className="h-8 w-8 animate-spin text-primary/70" />
         </div>
       ) : (
-        <DashboardContent 
-          printers={printers}
-          recentActivities={recentActivities}
-          alerts={alerts}
-          activeAlerts={activeAlerts}
-        />
+        <>
+          {/* Stats overview */}
+          <StatsOverview 
+            printers={printers} 
+            activeAlerts={activeAlerts} 
+          />
+
+          {/* Main Dashboard Content */}
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <Card className="col-span-1">
+              <CardContent className="p-0">
+                <PrinterStatusSummary
+                  printers={printers}
+                  onViewAllPrinters={handleViewAllPrinters}
+                />
+              </CardContent>
+            </Card>
+            
+            <Card className="col-span-1 md:col-span-2">
+              <CardContent className="p-0">
+                <RecentActivity
+                  activities={recentActivities}
+                  onViewAllActivity={handleViewAllActivity}
+                />
+              </CardContent>
+            </Card>
+            
+            <Card className="col-span-1">
+              <CardContent className="p-0">
+                <AlertsOverview
+                  alerts={alerts}
+                  onViewAllAlerts={handleViewAllAlerts}
+                />
+              </CardContent>
+            </Card>
+            
+            <Card className="col-span-1">
+              <CardContent className="p-0">
+                <LowSuppliesWarning printers={printers} />
+              </CardContent>
+            </Card>
+            
+            <Card className="col-span-1 md:col-span-3">
+              <CardContent className="p-0">
+                <SystemStatus />
+              </CardContent>
+            </Card>
+          </div>
+        </>
       )}
     </div>
   );

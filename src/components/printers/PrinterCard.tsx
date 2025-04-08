@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { PrinterData } from '@/types/printers';
+import { PrinterData } from '@/services/printer';
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,101 +21,23 @@ import {
 
 interface PrinterCardProps {
   printer: PrinterData;
-  isGridView: boolean;
   onOpenDetails: (id: string) => void;
-  onOpenEdit: (id: string) => void;
-  onOpenDelete: (id: string) => void;
+  onOpenEdit: (printer: PrinterData) => void;
+  onOpenDelete: (printer: PrinterData) => void;
   onRestart: (id: string) => void;
   isAdmin?: boolean;
 }
 
 const PrinterCard: React.FC<PrinterCardProps> = ({
   printer,
-  isGridView,
   onOpenDetails,
   onOpenEdit,
   onOpenDelete,
   onRestart,
   isAdmin = false
 }) => {
-  const statusColors = {
-    online: 'bg-green-100 text-green-800 hover:bg-green-100',
-    offline: 'bg-gray-100 text-gray-800 hover:bg-gray-100',
-    error: 'bg-red-100 text-red-800 hover:bg-red-100',
-    maintenance: 'bg-blue-100 text-blue-800 hover:bg-blue-100',
-    warning: 'bg-amber-100 text-amber-800 hover:bg-amber-100'
-  };
-
-  const statusLabels = {
-    online: 'Online',
-    offline: 'Offline',
-    error: 'Error',
-    maintenance: 'Maintenance',
-    warning: 'Warning'
-  };
-
-  if (!isGridView) {
-    return (
-      <Card className="overflow-hidden">
-        <CardContent className="p-4">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center">
-              <div className="mr-4 bg-blue-100 p-2 rounded-full">
-                <Printer className="h-5 w-5 text-blue-600" />
-              </div>
-              <div>
-                <h3 className="font-medium">{printer.name}</h3>
-                <p className="text-sm text-muted-foreground">{printer.model}</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center">
-              <Badge className={statusColors[printer.status]}>
-                {statusLabels[printer.status]}
-              </Badge>
-              
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 ml-2">
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => onOpenDetails(printer.id)}>
-                    <Info className="mr-2 h-4 w-4" />
-                    <span>View Details</span>
-                  </DropdownMenuItem>
-                  
-                  {isAdmin && (
-                    <>
-                      <DropdownMenuItem onClick={() => onOpenEdit(printer.id)}>
-                        <Pencil className="mr-2 h-4 w-4" />
-                        <span>Edit</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onRestart(printer.id)}>
-                        <RotateCw className="mr-2 h-4 w-4" />
-                        <span>Restart</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        onClick={() => onOpenDelete(printer.id)}
-                        className="text-red-600 focus:text-red-600"
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        <span>Delete</span>
-                      </DropdownMenuItem>
-                    </>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
-    <Card className="overflow-hidden">
+    <Card key={printer.id} className="overflow-hidden">
       <CardContent className="p-0">
         <div className="p-6 border-b bg-muted/20">
           <div className="flex justify-between items-start">
@@ -130,8 +52,21 @@ const PrinterCard: React.FC<PrinterCardProps> = ({
             </div>
             
             <div className="flex items-center">
-              <Badge className={`${statusColors[printer.status]} mr-2`}>
-                {statusLabels[printer.status]}
+              <Badge 
+                className={`
+                  ${printer.status === 'online' ? 'bg-green-100 text-green-800 hover:bg-green-100' : 
+                    printer.status === 'offline' ? 'bg-gray-100 text-gray-800 hover:bg-gray-100' : 
+                    printer.status === 'error' ? 'bg-red-100 text-red-800 hover:bg-red-100' : 
+                    printer.status === 'maintenance' ? 'bg-blue-100 text-blue-800 hover:bg-blue-100' : 
+                    'bg-amber-100 text-amber-800 hover:bg-amber-100'}
+                  mr-2
+                `}
+              >
+                {printer.status === 'online' ? 'Online' : 
+                  printer.status === 'offline' ? 'Offline' : 
+                  printer.status === 'error' ? 'Error' : 
+                  printer.status === 'maintenance' ? 'Maintenance' : 
+                  'Warning'}
               </Badge>
               
               <DropdownMenu>
@@ -148,7 +83,7 @@ const PrinterCard: React.FC<PrinterCardProps> = ({
                   
                   {isAdmin && (
                     <>
-                      <DropdownMenuItem onClick={() => onOpenEdit(printer.id)}>
+                      <DropdownMenuItem onClick={() => onOpenEdit(printer)}>
                         <Pencil className="mr-2 h-4 w-4" />
                         <span>Edit</span>
                       </DropdownMenuItem>
@@ -157,7 +92,7 @@ const PrinterCard: React.FC<PrinterCardProps> = ({
                         <span>Restart</span>
                       </DropdownMenuItem>
                       <DropdownMenuItem 
-                        onClick={() => onOpenDelete(printer.id)}
+                        onClick={() => onOpenDelete(printer)}
                         className="text-red-600 focus:text-red-600"
                       >
                         <Trash2 className="mr-2 h-4 w-4" />
@@ -207,11 +142,11 @@ const PrinterCard: React.FC<PrinterCardProps> = ({
             </div>
             <div>
               <p className="text-muted-foreground">Job Count</p>
-              <p className="font-medium">{printer.jobCount || 0}</p>
+              <p className="font-medium">{printer.jobCount}</p>
             </div>
             <div>
               <p className="text-muted-foreground">Last Active</p>
-              <p className="font-medium">{printer.lastActive || 'N/A'}</p>
+              <p className="font-medium">{printer.lastActive}</p>
             </div>
             <div>
               <p className="text-muted-foreground">Department</p>
