@@ -6,6 +6,7 @@ import { updatePrinter } from './updatePrinter';
 import { deletePrinter } from './deletePrinter';
 import { restartPrinter } from './restartPrinter';
 import { updatePrinterLevels, detectPrinterLevels } from './autoPrinterLevels';
+import { changeStatus } from './changeStatus';
 
 export {
   getAllPrinters,
@@ -15,5 +16,6 @@ export {
   deletePrinter,
   restartPrinter,
   updatePrinterLevels,
-  detectPrinterLevels
+  detectPrinterLevels,
+  changeStatus
 };
