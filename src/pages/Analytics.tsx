@@ -4,21 +4,22 @@ import { useQuery } from '@tanstack/react-query';
 import { analyticsService } from '@/services/analytics';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { DateRangePicker } from '@/components/analytics/DateRangePicker';
 import { RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import StatsSummaryCards from '@/components/analytics/StatsSummaryCards';
 import PrintVolumeChart from '@/components/analytics/PrintVolumeChart';
 import DepartmentVolumeChart from '@/components/analytics/DepartmentVolumeChart';
 import AnalyticsHeader from '@/components/analytics/AnalyticsHeader';
+import { DateRange } from 'react-day-picker';
+import DateRangePicker from '@/components/analytics/DateRangePicker';
 
 const Analytics = () => {
-  const [dateRange, setDateRange] = useState<string>('7d');
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [activeTab, setActiveTab] = useState<string>('overview');
 
   // Fetch analytics data
   const {
-    data: analyticsData,
+    data: analyticsData = { summary: {} },
     isLoading: isLoadingAnalytics,
     refetch: refetchAnalytics,
   } = useQuery({
@@ -28,12 +29,12 @@ const Analytics = () => {
 
   // Fetch print volume data
   const {
-    data: printVolumeData,
+    data: printVolumeData = [],
     isLoading: isLoadingVolume,
     refetch: refetchVolume,
   } = useQuery({
     queryKey: ['printVolume', dateRange],
-    queryFn: () => analyticsService.getPrintVolumeData(dateRange),
+    queryFn: () => analyticsService.getPrintVolumeData('7d'),
   });
 
   // Handle refresh
@@ -42,9 +43,9 @@ const Analytics = () => {
     refetchVolume();
   };
 
-  // Handle date range change
-  const handleDateRangeChange = (range: string) => {
-    setDateRange(range);
+  // Handle date range apply
+  const handleDateRangeApply = () => {
+    refetchVolume();
   };
 
   const isLoading = isLoadingAnalytics || isLoadingVolume;
@@ -52,12 +53,16 @@ const Analytics = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <AnalyticsHeader />
+        <div>
+          <h1 className="text-2xl font-semibold">Analytics</h1>
+          <p className="text-muted-foreground mt-1">Monitor your printer usage and performance</p>
+        </div>
         
         <div className="flex items-center gap-2">
           <DateRangePicker
-            value={dateRange}
-            onValueChange={handleDateRangeChange}
+            dateRange={dateRange}
+            setDateRange={setDateRange}
+            onApply={handleDateRangeApply}
           />
           <Button
             variant="outline"
@@ -83,7 +88,7 @@ const Analytics = () => {
             </div>
           ) : (
             <div className="space-y-6">
-              <StatsSummaryCards data={analyticsData?.summary || {}} />
+              <StatsSummaryCards data={analyticsData.summary} />
 
               <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
                 <Card className="lg:col-span-3">
@@ -91,7 +96,7 @@ const Analytics = () => {
                     <CardTitle>Print Volume Over Time</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <PrintVolumeChart data={printVolumeData || []} />
+                    <PrintVolumeChart data={printVolumeData} />
                   </CardContent>
                 </Card>
 
@@ -100,7 +105,7 @@ const Analytics = () => {
                     <CardTitle>Department Volume</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <DepartmentVolumeChart data={analyticsData?.summary?.departmentVolume || []} />
+                    <DepartmentVolumeChart data={analyticsData.summary.departmentVolume || []} />
                   </CardContent>
                 </Card>
               </div>

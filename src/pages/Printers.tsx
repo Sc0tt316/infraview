@@ -1,42 +1,21 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { useForm, UseFormReturn } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { printerService } from '@/services/printer';
 import { PrinterData } from '@/types/printers';
-import { Grid, ListFilter, PlusCircle, Printer } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import PrinterCard from '@/components/printers/PrinterCard';
+import { createInitialFormData, PrinterFormValues } from '@/components/printers/PrinterFormUtils';
 import PrinterDetailModal from '@/components/printers/PrinterDetailModal';
+import PrintersHeader from '@/components/printers/PrintersHeader';
 import PrinterFilters from '@/components/printers/PrinterFilters';
-import EmptyPrinterState from '@/components/printers/EmptyPrinterState';
+import PrintersContent from '@/components/printers/PrintersContent';
 import AddPrinterForm from '@/components/printers/AddPrinterForm';
 import EditPrinterForm from '@/components/printers/EditPrinterForm';
 import DeletePrinterConfirmation from '@/components/printers/DeletePrinterConfirmation';
 import { Dialog, DialogContent, DialogTitle, DialogHeader, DialogDescription } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-interface AddPrinterFormProps {
-  form: UseFormReturn<{
-    name?: string;
-    model?: string;
-    location?: string;
-    status?: "online" | "offline" | "error" | "maintenance" | "warning";
-    inkLevel?: number;
-    paperLevel?: number;
-    ipAddress?: string;
-    department?: string;
-  }>;
-  loading: boolean;
-  onSubmit: (values: any) => Promise<void>;
-  onCancel: () => void;
-  formData: any;
-}
-
-// Partial implementation - focus on the type error fixes
 const Printers = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -50,33 +29,14 @@ const Printers = () => {
   const [addLoading, setAddLoading] = useState(false);
   const [editLoading, setEditLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
-  const [formData, setFormData] = useState<PrinterData>({
-    id: '',
-    name: '',
-    model: '',
-    location: '',
-    status: 'online',
-    inkLevel: 100,
-    paperLevel: 100,
-    ipAddress: '',
-    department: '',
-  });
+  const [formData, setFormData] = useState<PrinterFormValues>(createInitialFormData);
 
   const { user } = useAuth();
   const { toast } = useToast();
   const isAdminOrManager = user?.role === 'admin' || user?.role === 'manager';
 
-  const form = useForm({
-    defaultValues: {
-      name: '',
-      model: '',
-      location: '',
-      status: 'online',
-      inkLevel: 100,
-      paperLevel: 100,
-      ipAddress: '',
-      department: '',
-    },
+  const form = useForm<PrinterFormValues>({
+    defaultValues: createInitialFormData()
   });
 
   const { data: printers = [], isLoading, refetch } = useQuery({
@@ -108,39 +68,36 @@ const Printers = () => {
     return filtered;
   }, [printers, searchTerm, statusFilter, departmentFilter]);
 
-  const handleOpenAddModal = () => {
-    setShowAddModal(true);
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value, type } = e.target;
+    if (type === 'range') {
+      setFormData(prev => ({ ...prev, [name]: parseInt(value, 10) }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
   };
 
-  const handleCloseAddModal = () => {
-    setShowAddModal(false);
-    form.reset();
+  const handleOpenAddModal = () => {
+    setFormData(createInitialFormData());
+    setShowAddModal(true);
   };
 
   const handleOpenEditModal = (printerId: string) => {
     const printerToEdit = printers.find(printer => printer.id === printerId);
     if (printerToEdit) {
-      setFormData(printerToEdit);
+      setFormData({
+        name: printerToEdit.name,
+        model: printerToEdit.model,
+        location: printerToEdit.location,
+        status: printerToEdit.status,
+        inkLevel: printerToEdit.inkLevel,
+        paperLevel: printerToEdit.paperLevel,
+        ipAddress: printerToEdit.ipAddress,
+        department: printerToEdit.department,
+      });
       setSelectedPrinterId(printerId);
       setShowEditModal(true);
     }
-  };
-
-  const handleCloseEditModal = () => {
-    setShowEditModal(false);
-    setSelectedPrinterId(null);
-    setFormData({
-      id: '',
-      name: '',
-      model: '',
-      location: '',
-      status: 'online',
-      inkLevel: 100,
-      paperLevel: 100,
-      ipAddress: '',
-      department: '',
-    });
-    form.reset();
   };
 
   const handleOpenDeleteModal = (printerId: string) => {
@@ -148,22 +105,41 @@ const Printers = () => {
     setShowDeleteModal(true);
   };
 
+  const handleCloseAddModal = () => {
+    setShowAddModal(false);
+    form.reset();
+  };
+
+  const handleCloseEditModal = () => {
+    setShowEditModal(false);
+    setSelectedPrinterId(null);
+    form.reset();
+  };
+
   const handleCloseDeleteModal = () => {
     setShowDeleteModal(false);
     setDeletePrinterId(null);
   };
 
-  const handleRefresh = () => {
-    refetch();
+  const handleToggleViewMode = () => {
+    setIsGridView(!isGridView);
   };
 
-  const handleAddSubmit = async (values: PrinterData) => {
+  const handleAddSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
     setAddLoading(true);
     try {
-      await printerService.addPrinter(values);
+      // Adding jobCount and lastActive as they're required by the PrinterData type
+      const newPrinter: PrinterData = {
+        id: '',
+        ...formData,
+        jobCount: 0,
+        lastActive: new Date().toISOString()
+      };
+      await printerService.addPrinter(newPrinter);
       toast({
         title: "Printer Added",
-        description: `Printer ${values.name} has been added successfully.`,
+        description: `Printer ${formData.name} has been added successfully.`,
       });
       handleCloseAddModal();
       refetch();
@@ -179,14 +155,15 @@ const Printers = () => {
     }
   };
 
-  const handleEditSubmit = async (values: PrinterData) => {
+  const handleEditSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
     setEditLoading(true);
     try {
       if (selectedPrinterId) {
-        await printerService.updatePrinter(selectedPrinterId, values);
+        await printerService.updatePrinter(selectedPrinterId, formData as PrinterData);
         toast({
           title: "Printer Updated",
-          description: `Printer ${values.name} has been updated successfully.`,
+          description: `Printer ${formData.name} has been updated successfully.`,
         });
         handleCloseEditModal();
         refetch();
@@ -227,33 +204,18 @@ const Printers = () => {
     }
   };
 
+  const selectedPrinter = deletePrinterId ? printers.find(p => p.id === deletePrinterId) || null : null;
+
   return (
     <div className="space-y-6">
       {/* Header section */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold">Printers</h1>
-          <p className="text-muted-foreground mt-1">Manage your organization's printers</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={handleRefresh}>
-            <RefreshCw className="h-4 w-4" />
-          </Button>
-          {isAdminOrManager && (
-            <Button onClick={handleOpenAddModal}>
-              <PlusCircle className="w-4 h-4 mr-2" />
-              Add Printer
-            </Button>
-          )}
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => setIsGridView(!isGridView)}
-          >
-            {isGridView ? <ListFilter className="h-4 w-4" /> : <Grid className="h-4 w-4" />}
-          </Button>
-        </div>
-      </div>
+      <PrintersHeader 
+        onRefresh={refetch}
+        onAddPrinter={handleOpenAddModal}
+        toggleViewMode={handleToggleViewMode}
+        isGridView={isGridView}
+        isAdminOrManager={isAdminOrManager}
+      />
 
       {/* Filter section */}
       <PrinterFilters
@@ -266,25 +228,14 @@ const Printers = () => {
       />
 
       {/* Main content */}
-      {isLoading ? (
-        <div className="flex justify-center items-center h-64">
-          <RefreshCw className="h-8 w-8 animate-spin text-primary/70" />
-        </div>
-      ) : filteredPrinters.length > 0 ? (
-        <div className={isGridView ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" : "space-y-4"}>
-          {filteredPrinters.map(printer => (
-            <PrinterCard
-              key={printer.id}
-              printer={printer}
-              isGridView={isGridView}
-              onEdit={() => handleOpenEditModal(printer.id)}
-              onDelete={() => handleOpenDeleteModal(printer.id)}
-            />
-          ))}
-        </div>
-      ) : (
-        <EmptyPrinterState onAdd={handleOpenAddModal} />
-      )}
+      <PrintersContent 
+        filteredPrinters={filteredPrinters}
+        isLoading={isLoading}
+        isGridView={isGridView}
+        onEdit={handleOpenEditModal}
+        onDelete={handleOpenDeleteModal}
+        onAdd={handleOpenAddModal}
+      />
 
       {/* Add Printer Dialog */}
       <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
@@ -296,11 +247,12 @@ const Printers = () => {
             </DialogDescription>
           </DialogHeader>
           <AddPrinterForm
-            form={form}
+            form={form as any}
             loading={addLoading}
             onSubmit={handleAddSubmit}
-            onCancel={() => setShowAddModal(false)}
+            onCancel={handleCloseAddModal}
             formData={formData}
+            handleInputChange={handleInputChange}
           />
         </DialogContent>
       </Dialog>
@@ -315,12 +267,13 @@ const Printers = () => {
             </DialogDescription>
           </DialogHeader>
           <EditPrinterForm
-            form={form}
+            form={form as any}
             loading={editLoading}
             onSubmit={handleEditSubmit}
             onCancel={handleCloseEditModal}
             formData={formData}
-            printerId={selectedPrinterId || ''}
+            handleInputChange={handleInputChange}
+            setFormData={setFormData}
           />
         </DialogContent>
       </Dialog>
@@ -335,6 +288,7 @@ const Printers = () => {
             </DialogDescription>
           </DialogHeader>
           <DeletePrinterConfirmation
+            printer={selectedPrinter}
             loading={deleteLoading}
             onConfirm={handleDeleteSubmit}
             onCancel={handleCloseDeleteModal}

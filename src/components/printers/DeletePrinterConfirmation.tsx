@@ -1,49 +1,43 @@
 
 import React from 'react';
-import { DialogFooter, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { PrinterData } from '@/services/printerService';
-import { AlertCircle, Printer } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
+import { PrinterData } from '@/types/printers';
 
 interface DeletePrinterConfirmationProps {
   printer: PrinterData | null;
-  onDelete: () => void;
+  loading?: boolean;
+  onConfirm: () => Promise<void>;
   onCancel: () => void;
 }
 
 const DeletePrinterConfirmation: React.FC<DeletePrinterConfirmationProps> = ({
   printer,
-  onDelete,
+  loading = false,
+  onConfirm,
   onCancel
 }) => {
-  if (!printer) return null;
-  
   return (
-    <DialogContent className="sm:max-w-[425px]">
-      <DialogHeader>
-        <DialogTitle className="text-destructive flex items-center gap-2">
+    <div className="space-y-4">
+      <div className="flex flex-col items-start gap-2">
+        <div className="flex items-center gap-2 text-destructive">
           <AlertCircle className="h-5 w-5" />
-          Delete Printer
-        </DialogTitle>
-        <DialogDescription>
-          This action cannot be undone. The printer will be permanently removed from your system.
-        </DialogDescription>
-      </DialogHeader>
-      <div className="py-4 border-y my-4">
-        <p className="font-medium mb-2">Are you sure you want to delete:</p>
-        <div className="flex items-center gap-3 p-3 bg-muted rounded-md">
-          <Printer className="h-5 w-5 text-muted-foreground" />
-          <div>
-            <p className="font-semibold">{printer.name}</p>
-            <p className="text-sm text-muted-foreground">{printer.model} • {printer.location}</p>
-          </div>
+          <h4 className="font-medium text-lg">Delete Printer</h4>
         </div>
+        <p className="text-muted-foreground">
+          Are you sure you want to delete this printer? This action cannot be undone.
+        </p>
       </div>
-      <DialogFooter>
-        <Button variant="outline" onClick={onCancel}>Cancel</Button>
-        <Button variant="destructive" onClick={onDelete}>Delete Printer</Button>
-      </DialogFooter>
-    </DialogContent>
+
+      <div className="flex justify-end gap-2 pt-4 border-t">
+        <Button variant="outline" onClick={onCancel} disabled={loading}>
+          Cancel
+        </Button>
+        <Button variant="destructive" onClick={onConfirm} disabled={loading}>
+          {loading ? 'Deleting...' : 'Delete Printer'}
+        </Button>
+      </div>
+    </div>
   );
 };
 
