@@ -12,14 +12,14 @@ const Layout: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const navigate = useNavigate();
-  const { user, isLoading } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   
   // Handle route protection
   useEffect(() => {
-    if (!isLoading && !user) {
+    if (!isAuthenticated) {
       navigate('/login');
     }
-  }, [user, isLoading, navigate]);
+  }, [user, isAuthenticated, navigate]);
   
   // Handle responsive sidebar
   useEffect(() => {
@@ -39,7 +39,7 @@ const Layout: React.FC = () => {
   }, []);
   
   // If still loading authentication or no user, don't render layout yet
-  if (isLoading || !user) {
+  if (!isAuthenticated || !user) {
     return null;
   }
   
@@ -76,8 +76,6 @@ const Layout: React.FC = () => {
         <main className="flex-1 container mx-auto px-4 py-8">
           <Outlet />
         </main>
-        
-        {/* Footer could be added here */}
       </div>
       
       {/* Toast notifications */}

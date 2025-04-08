@@ -15,7 +15,7 @@ interface MaintenanceHistoryProps {
 const MaintenanceHistory: React.FC<MaintenanceHistoryProps> = ({ printerId }) => {
   const { data: activities, isLoading } = useQuery({
     queryKey: ['maintenance', printerId],
-    queryFn: () => printerService.getPrinterActivity(printerId, { action: 'maintenance' }),
+    queryFn: () => printerService.getPrinterActivity(printerId),
   });
 
   if (isLoading) {

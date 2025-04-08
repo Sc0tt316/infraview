@@ -15,7 +15,7 @@ interface SupplyHistoryProps {
 const SupplyHistory: React.FC<SupplyHistoryProps> = ({ printerId }) => {
   const { data: activities, isLoading } = useQuery({
     queryKey: ['supplies', printerId],
-    queryFn: () => printerService.getPrinterActivity(printerId, { action: 'supply' }),
+    queryFn: () => printerService.getPrinterActivity(printerId),
   });
 
   if (isLoading) {

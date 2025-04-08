@@ -5,7 +5,7 @@ import { printerService } from '@/services/printer';
 import { format } from 'date-fns';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card } from '@/components/ui/card';
-import { User, FileText } from 'lucide-react';
+import { FileText, User } from 'lucide-react';
 import LoadingSpinner from './LoadingSpinner';
 
 interface PrintingHistoryProps {
@@ -15,7 +15,7 @@ interface PrintingHistoryProps {
 const PrintingHistory: React.FC<PrintingHistoryProps> = ({ printerId }) => {
   const { data: logs, isLoading } = useQuery({
     queryKey: ['printLogs', printerId],
-    queryFn: () => printerService.getPrinterLogs(printerId, { type: 'print' }),
+    queryFn: () => printerService.getPrinterLogs(printerId),
   });
 
   if (isLoading) {
@@ -44,7 +44,6 @@ const PrintingHistory: React.FC<PrintingHistoryProps> = ({ printerId }) => {
             <TableHead>Date</TableHead>
             <TableHead>Document</TableHead>
             <TableHead>User</TableHead>
-            <TableHead>Pages</TableHead>
             <TableHead>Status</TableHead>
           </TableRow>
         </TableHeader>
@@ -54,14 +53,13 @@ const PrintingHistory: React.FC<PrintingHistoryProps> = ({ printerId }) => {
               <TableCell className="font-mono text-xs">
                 {format(new Date(log.timestamp), 'MMM dd, yyyy HH:mm')}
               </TableCell>
-              <TableCell>{log.details || 'Document'}</TableCell>
+              <TableCell>{log.message || 'Document'}</TableCell>
               <TableCell>
                 <div className="flex items-center">
                   <User className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
                   {log.user || 'Unknown'}
                 </div>
               </TableCell>
-              <TableCell>{log.pages || '1'}</TableCell>
               <TableCell>
                 <span className={`text-xs px-2 py-1 rounded-full ${
                   log.type === 'error' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'

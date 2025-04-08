@@ -16,9 +16,9 @@ export const getPrinter = async (id: string): Promise<PrinterData | undefined> =
     }
     
     // Auto-detect and update ink and paper levels
-    printer = await updatePrinterLevels(printer);
+    const updatedPrinter = await updatePrinterLevels(printer);
     
-    return printer;
+    return updatedPrinter as PrinterData;
   } catch (error) {
     console.error(`Error fetching printer ${id}:`, error);
     toast({
