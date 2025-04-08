@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/context/AuthContext';
@@ -17,7 +18,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-  DialogTrigger
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,6 +25,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PlusCircle, Search, UserPlus, RefreshCw } from 'lucide-react';
 import { UserData } from '@/types/user';
+import { userService } from '@/services/userService';
 
 const Users = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -35,8 +36,9 @@ const Users = () => {
   const [newUser, setNewUser] = useState({
     name: '',
     email: '',
-    role: 'user',
+    role: 'user' as const,
     department: '',
+    password: '',
   });
 
   const { user: loggedInUser } = useAuth();
@@ -45,36 +47,7 @@ const Users = () => {
   const { data: users, isLoading, refetch } = useQuery({
     queryKey: ['users'],
     queryFn: async () => {
-      // Mock data for demonstration
-      return [
-        {
-          id: '1',
-          name: 'John Doe',
-          email: 'john.doe@example.com',
-          role: 'admin',
-          department: 'IT',
-          lastActive: '2024-01-25T12:00:00.000Z',
-          status: 'active',
-        },
-        {
-          id: '2',
-          name: 'Jane Smith',
-          email: 'jane.smith@example.com',
-          role: 'user',
-          department: 'Marketing',
-          lastActive: '2024-01-24T18:30:00.000Z',
-          status: 'active',
-        },
-        {
-          id: '3',
-          name: 'Alice Johnson',
-          email: 'alice.johnson@example.com',
-          role: 'manager',
-          department: 'Sales',
-          lastActive: '2024-01-23T09:45:00.000Z',
-          status: 'inactive',
-        },
-      ];
+      return await userService.getAllUsers();
     },
   });
 
@@ -118,10 +91,11 @@ const Users = () => {
       email: '',
       role: 'user',
       department: '',
+      password: '',
     });
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setNewUser(prevUser => ({
       ...prevUser,
@@ -129,13 +103,35 @@ const Users = () => {
     }));
   };
 
-  const handleAddUser = () => {
-    // Mock add user logic
-    toast({
-      title: "User Added",
-      description: `User ${newUser.name} has been added successfully.`,
-    });
-    handleCloseAddUserModal();
+  const handleRoleChange = (value: string) => {
+    setNewUser(prevUser => ({
+      ...prevUser,
+      role: value as 'admin' | 'user' | 'manager',
+    }));
+  };
+
+  const handleAddUser = async () => {
+    try {
+      // Add user with password
+      await userService.addUserWithPassword({
+        name: newUser.name,
+        email: newUser.email,
+        role: newUser.role,
+        department: newUser.department,
+        status: 'active',
+        password: newUser.password,
+      });
+      
+      refetch();
+      handleCloseAddUserModal();
+    } catch (error) {
+      console.error('Error adding user:', error);
+      toast({
+        title: "Failed to add user",
+        description: "An error occurred while adding the user.",
+        variant: "destructive"
+      });
+    }
   };
 
   const isAdmin = loggedInUser?.role === 'admin';
@@ -204,7 +200,6 @@ const Users = () => {
                 <TableHead>Role</TableHead>
                 <TableHead>Department</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -215,9 +210,6 @@ const Users = () => {
                   <TableCell>{user.role}</TableCell>
                   <TableCell>{user.department}</TableCell>
                   <TableCell>{user.status}</TableCell>
-                  <TableCell className="text-right">
-                    {/* Add action buttons here */}
-                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -266,10 +258,23 @@ const Users = () => {
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="password" className="text-right">
+                Password
+              </Label>
+              <Input
+                type="password"
+                id="password"
+                name="password"
+                value={newUser.password}
+                onChange={handleInputChange}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="role" className="text-right">
                 Role
               </Label>
-              <Select onValueChange={(value) => setNewUser(prevUser => ({ ...prevUser, role: value }))}>
+              <Select onValueChange={handleRoleChange} defaultValue={newUser.role}>
                 <SelectTrigger className="col-span-3">
                   <SelectValue placeholder="Select a role" />
                 </SelectTrigger>

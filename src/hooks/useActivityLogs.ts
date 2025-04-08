@@ -13,7 +13,7 @@ export const useActivityLogs = () => {
   // Create a memoized query function to prevent unnecessary rerenders
   const getActivityLogsWithParams = useCallback(async () => {
     return await analyticsService.getActivityLogs({
-      limit: 100,
+      limit: 100, // Get more logs for the activity page
       sortBy,
       sortOrder
     });
@@ -49,7 +49,18 @@ export const useActivityLogs = () => {
 
     // Apply type filter
     if (filterType !== 'all') {
-      filtered = filtered.filter(log => log.type === filterType);
+      filtered = filtered.filter(log => {
+        if (filterType === 'login') {
+          return log.action?.toLowerCase().includes('login') || log.message?.toLowerCase().includes('login');
+        } else if (filterType === 'print') {
+          return log.action?.toLowerCase().includes('print') || log.message?.toLowerCase().includes('print');
+        } else if (filterType === 'config') {
+          return log.action?.toLowerCase().includes('config') || log.message?.toLowerCase().includes('config');
+        } else if (filterType === 'error') {
+          return log.type === 'error';
+        }
+        return true;
+      });
     }
 
     return filtered;
