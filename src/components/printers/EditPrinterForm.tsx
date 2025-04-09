@@ -6,6 +6,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { PrinterFormValues } from '@/types/printer';
 import { UseFormReturn } from 'react-hook-form';
+import { Progress } from '@/components/ui/progress';
 
 interface EditPrinterFormProps {
   form: UseFormReturn<PrinterFormValues>;
@@ -22,7 +23,6 @@ const EditPrinterForm: React.FC<EditPrinterFormProps> = ({
   onCancel, 
   formData, 
   handleInputChange,
-  setFormData
 }) => {
   return (
     <Form {...form}>
@@ -145,28 +145,18 @@ const EditPrinterForm: React.FC<EditPrinterFormProps> = ({
         <div className="space-y-3">
           <FormItem>
             <FormLabel>Ink Level ({formData.inkLevel}%)</FormLabel>
-            <input 
-              type="range" 
-              name="inkLevel"
-              min="0" 
-              max="100" 
-              value={formData.inkLevel} 
-              onChange={(e) => setFormData({...formData, inkLevel: parseInt(e.target.value)})}
-              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary"
-            />
+            <div className="space-y-2">
+              <Progress value={formData.inkLevel} className="w-full h-2" />
+              <p className="text-sm text-muted-foreground">Ink level is detected automatically from the printer</p>
+            </div>
           </FormItem>
           
           <FormItem>
             <FormLabel>Paper Level ({formData.paperLevel}%)</FormLabel>
-            <input 
-              type="range" 
-              name="paperLevel"
-              min="0" 
-              max="100" 
-              value={formData.paperLevel} 
-              onChange={(e) => setFormData({...formData, paperLevel: parseInt(e.target.value)})}
-              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary"
-            />
+            <div className="space-y-2">
+              <Progress value={formData.paperLevel} className="w-full h-2" />
+              <p className="text-sm text-muted-foreground">Paper level is detected automatically from the printer</p>
+            </div>
           </FormItem>
         </div>
         

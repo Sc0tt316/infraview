@@ -1,11 +1,11 @@
 
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { printerService } from '@/services/printer';
-import { PrinterActivity } from '@/types/printers';
+import { PrinterData, PrinterActivity } from '@/types/printers';
+import { useNavigate } from 'react-router-dom';
 
-// Import our components
+// Import components
 import StatsOverview from '@/components/dashboard/StatsOverview';
 import PrinterStatusSummary from '@/components/dashboard/PrinterStatusSummary';
 import RecentActivity from '@/components/dashboard/RecentActivity';
@@ -77,36 +77,7 @@ const Index = () => {
     loadActivities();
   }, []);
   
-  // Update printer levels automatically
-  useEffect(() => {
-    const updateLevels = async () => {
-      if (printers.length > 0) {
-        const updatedPrinters = await Promise.all(
-          printers.map(async (printer) => {
-            const updated = await printerService.updatePrinterLevels(printer);
-            return { ...printer, ...updated };
-          })
-        );
-        
-        // Refetch printers to get updated data
-        refetch();
-      }
-    };
-    
-    updateLevels();
-    
-    // Update levels periodically (every 5 minutes)
-    const interval = setInterval(updateLevels, 300000);
-    
-    return () => clearInterval(interval);
-  }, [printers, refetch]);
-  
-  // Calculate alerts
-  const activeAlerts = alerts.filter(alert => !alert.isResolved).length;
-  
   // Navigation handlers
-  const handleViewAllPrinters = () => navigate('/printers');
-  const handleViewAllActivity = () => navigate('/activity');
   const handleViewAllAlerts = () => navigate('/alerts');
   
   // Refresh dashboard data
@@ -122,6 +93,9 @@ const Index = () => {
       });
     });
   };
+  
+  // Calculate alerts
+  const activeAlerts = alerts.filter(alert => !alert.isResolved).length;
   
   return (
     <div className="space-y-6">
@@ -159,19 +133,13 @@ const Index = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
             <Card className="col-span-1">
               <CardContent className="p-0">
-                <PrinterStatusSummary
-                  printers={printers}
-                  onViewAllPrinters={handleViewAllPrinters}
-                />
+                <PrinterStatusSummary printers={printers} />
               </CardContent>
             </Card>
             
             <Card className="col-span-1 md:col-span-2">
               <CardContent className="p-0">
-                <RecentActivity
-                  activities={recentActivities}
-                  onViewAllActivity={handleViewAllActivity}
-                />
+                <RecentActivity activities={recentActivities} />
               </CardContent>
             </Card>
             

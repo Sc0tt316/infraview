@@ -28,12 +28,11 @@ export interface AnalyticsSummary {
 export interface AnalyticsData {
   summary: AnalyticsSummary;
   printerStatus: PrinterStatus;
-  departmentVolume?: DepartmentVolume[];
+  departmentVolume: DepartmentVolume[];
 }
 
 export interface PrintVolumeData {
   date: string;
-  count: number;
   volume: number;
 }
 
@@ -64,9 +63,12 @@ export interface AlertData {
   entityId?: string;
   entityType?: string;
   entityName?: string;
+  severity?: string;
+  isResolved?: boolean;
   printer?: {
     id: string;
     name: string;
+    location?: string;
   };
   user?: {
     id: string;
@@ -74,11 +76,10 @@ export interface AlertData {
   };
 }
 
-// Extend analyticsService types
+// Define analytics service interface
 export interface AnalyticsServiceInterface {
   getAnalyticsData(): Promise<AnalyticsData>;
-  getPrintVolumeByTimeRange(timeRange: 'day' | 'week' | 'month' | 'year'): Promise<PrintVolumeData[]>;
-  getPrintVolumeByDateRange(options: { from: Date; to: Date }): Promise<PrintVolumeData[]>;
+  getPrintVolumeData(options?: { timeRange?: string; from?: Date; to?: Date }): Promise<PrintVolumeData[]>;
   getActivityLogs(options?: { limit?: number; sortBy?: string; sortOrder?: 'asc' | 'desc' }): Promise<ActivityLogData[]>;
   getAlerts(options?: { 
     limit?: number; 

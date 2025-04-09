@@ -1,19 +1,7 @@
 
 import { apiService } from './api';
-import { toast } from 'sonner';
-
-// Define user types
-export interface UserData {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  role: "admin" | "user" | "manager";
-  department: string;
-  status: "active" | "inactive";
-  lastActive: string;
-  avatar?: string;
-}
+import { toast } from '@/components/ui/use-toast';
+import { UserData } from '@/types/user';
 
 // Initialize with mock data if none exists
 const initializeUsers = async () => {
@@ -97,7 +85,11 @@ export const userService = {
       }) : [];
     } catch (error) {
       console.error('Error fetching users:', error);
-      toast.error("Failed to fetch users. Please try again.");
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to fetch users. Please try again."
+      });
       return [];
     }
   },
@@ -109,7 +101,11 @@ export const userService = {
       return users.find(user => user.id === id) || null;
     } catch (error) {
       console.error(`Error fetching user ${id}:`, error);
-      toast.error("Failed to fetch user details. Please try again.");
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to fetch user details. Please try again."
+      });
       return null;
     }
   },
@@ -124,7 +120,11 @@ export const userService = {
       // Check if user already exists
       const userExists = allUsers.some(u => u.email === userData.email);
       if (userExists) {
-        toast.error("A user with this email already exists.");
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "A user with this email already exists."
+        });
         throw new Error("User already exists");
       }
       
@@ -139,26 +139,37 @@ export const userService = {
       
       // Return user without password
       const { password, ...userWithoutPassword } = newUser;
-      toast.success(`User "${newUser.name}" has been added.`);
+      toast({
+        title: "Success",
+        description: `User "${newUser.name}" has been added.`
+      });
       
       return userWithoutPassword;
     } catch (error) {
       console.error('Error adding user with password:', error);
       if (!(error instanceof Error && error.message === "User already exists")) {
-        toast.error("Failed to add user. Please try again.");
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to add user. Please try again."
+        });
       }
       throw error;
     }
   },
   
-  // Update user (fixed to prevent freezing)
+  // Update user
   updateUser: async (id: string, updateData: Partial<UserData>): Promise<UserData | null> => {
     try {
       const allUsers = await apiService.get<(UserData & { password: string })[]>('users') || [];
       const userIndex = allUsers.findIndex(user => user.id === id);
       
       if (userIndex === -1) {
-        toast.error("User not found.");
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "User not found."
+        });
         return null;
       }
       
@@ -178,12 +189,19 @@ export const userService = {
       
       // Return user without password
       const { password, ...userWithoutPassword } = updatedUser;
-      toast.success(`User "${updatedUser.name}" has been updated.`);
+      toast({
+        title: "Success",
+        description: `User "${updatedUser.name}" has been updated.`
+      });
       
       return userWithoutPassword;
     } catch (error) {
       console.error(`Error updating user ${id}:`, error);
-      toast.error("Failed to update user. Please try again.");
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to update user. Please try again."
+      });
       return null;
     }
   },
@@ -195,7 +213,11 @@ export const userService = {
       const userIndex = allUsers.findIndex(user => user.id === id);
       
       if (userIndex === -1) {
-        toast.error("User not found.");
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "User not found."
+        });
         return false;
       }
       
@@ -203,12 +225,19 @@ export const userService = {
       const updatedUsers = allUsers.filter(user => user.id !== id);
       await apiService.post('users', updatedUsers);
       
-      toast.success(`User "${userName}" has been deleted.`);
+      toast({
+        title: "Success",
+        description: `User "${userName}" has been deleted.`
+      });
       
       return true;
     } catch (error) {
       console.error(`Error deleting user ${id}:`, error);
-      toast.error("Failed to delete user. Please try again.");
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to delete user. Please try again."
+      });
       return false;
     }
   },

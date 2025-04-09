@@ -1,16 +1,15 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { Printer, AlertTriangle, WrenchIcon, CheckCircle, XCircle } from 'lucide-react';
+import { AlertTriangle, WrenchIcon, CheckCircle, XCircle, Printer } from 'lucide-react';
 import { PrinterData } from '@/services/printer';
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 
 interface PrinterStatusSummaryProps {
   printers: PrinterData[];
-  onViewAllPrinters: () => void;
 }
 
-const PrinterStatusSummary: React.FC<PrinterStatusSummaryProps> = ({ printers, onViewAllPrinters }) => {
+const PrinterStatusSummary: React.FC<PrinterStatusSummaryProps> = ({ printers }) => {
   // Calculate printer status counts
   const statusCounts = {
     online: printers.filter(p => p.status === 'online').length,
@@ -20,13 +19,13 @@ const PrinterStatusSummary: React.FC<PrinterStatusSummaryProps> = ({ printers, o
     warning: printers.filter(p => p.status === 'warning').length,
   };
 
-  // Calculate percentages for the progress bars
-  const total = printers.length;
-  const online = Math.round((statusCounts.online / total) * 100) || 0;
-  const offline = Math.round((statusCounts.offline / total) * 100) || 0;
-  const error = Math.round((statusCounts.error / total) * 100) || 0;
-  const maintenance = Math.round((statusCounts.maintenance / total) * 100) || 0;
-  const warning = Math.round((statusCounts.warning / total) * 100) || 0;
+  const chartData = [
+    { name: 'Online', value: statusCounts.online, color: '#22c55e' }, // green
+    { name: 'Offline', value: statusCounts.offline, color: '#6b7280' }, // gray
+    { name: 'Error', value: statusCounts.error, color: '#ef4444' }, // red
+    { name: 'Maintenance', value: statusCounts.maintenance, color: '#3b82f6' }, // blue
+    { name: 'Warning', value: statusCounts.warning, color: '#f59e0b' }, // amber
+  ].filter(item => item.value > 0);
 
   return (
     <Card>
@@ -37,74 +36,37 @@ const PrinterStatusSummary: React.FC<PrinterStatusSummaryProps> = ({ printers, o
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-3">
-          <div>
-            <div className="flex justify-between mb-1 text-sm">
-              <div className="flex items-center">
-                <CheckCircle className="h-3 w-3 text-green-500 mr-1.5" />
-                <span>Online</span>
-              </div>
-              <span className="font-medium">{statusCounts.online}</span>
-            </div>
-            <Progress value={online} className="h-2 bg-gray-100" 
-              style={{ '--progress-background': 'rgb(34 197 94)' } as React.CSSProperties} />
+        {chartData.length > 0 ? (
+          <div className="h-[200px] mt-4">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={chartData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={45}
+                  outerRadius={80}
+                  paddingAngle={2}
+                  dataKey="value"
+                  label={({ name, value }) => `${name}: ${value}`}
+                >
+                  {chartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip 
+                  formatter={(value, name) => [`${value} printers`, name]}
+                  labelFormatter={() => 'Status'}
+                />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
           </div>
-
-          <div>
-            <div className="flex justify-between mb-1 text-sm">
-              <div className="flex items-center">
-                <XCircle className="h-3 w-3 text-gray-500 mr-1.5" />
-                <span>Offline</span>
-              </div>
-              <span className="font-medium">{statusCounts.offline}</span>
-            </div>
-            <Progress value={offline} className="h-2 bg-gray-100" 
-              style={{ '--progress-background': 'rgb(107 114 128)' } as React.CSSProperties} />
+        ) : (
+          <div className="py-8 text-center text-muted-foreground">
+            No printer data available
           </div>
-
-          <div>
-            <div className="flex justify-between mb-1 text-sm">
-              <div className="flex items-center">
-                <AlertTriangle className="h-3 w-3 text-red-500 mr-1.5" />
-                <span>Error</span>
-              </div>
-              <span className="font-medium">{statusCounts.error}</span>
-            </div>
-            <Progress value={error} className="h-2 bg-gray-100" 
-              style={{ '--progress-background': 'rgb(239 68 68)' } as React.CSSProperties} />
-          </div>
-
-          <div>
-            <div className="flex justify-between mb-1 text-sm">
-              <div className="flex items-center">
-                <WrenchIcon className="h-3 w-3 text-blue-500 mr-1.5" />
-                <span>Maintenance</span>
-              </div>
-              <span className="font-medium">{statusCounts.maintenance}</span>
-            </div>
-            <Progress value={maintenance} className="h-2 bg-gray-100" 
-              style={{ '--progress-background': 'rgb(59 130 246)' } as React.CSSProperties} />
-          </div>
-
-          <div>
-            <div className="flex justify-between mb-1 text-sm">
-              <div className="flex items-center">
-                <AlertTriangle className="h-3 w-3 text-amber-500 mr-1.5" />
-                <span>Warning</span>
-              </div>
-              <span className="font-medium">{statusCounts.warning}</span>
-            </div>
-            <Progress value={warning} className="h-2 bg-gray-100" 
-              style={{ '--progress-background': 'rgb(245 158 11)' } as React.CSSProperties} />
-          </div>
-        </div>
-        
-        <button 
-          onClick={onViewAllPrinters}
-          className="w-full mt-4 text-sm text-primary hover:underline text-center"
-        >
-          View all printers
-        </button>
+        )}
       </CardContent>
     </Card>
   );

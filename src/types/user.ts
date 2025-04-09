@@ -8,4 +8,5 @@ export interface UserData {
   department?: string;
   lastActive?: string;
   status?: 'active' | 'inactive' | 'pending';
+  phone: string;
 }

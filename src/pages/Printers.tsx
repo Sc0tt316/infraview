@@ -92,7 +92,7 @@ const Printers = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const { data: printers, isLoading, refetch } = useQuery({
+  const { data: printers = [], isLoading, refetch } = useQuery({
     queryKey: ['printers'],
     queryFn: () => printerService.getAllPrinters(),
   });
@@ -124,8 +124,7 @@ const Printers = () => {
       printerService.updatePrinter(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['printers'] });
-      setShowEditPrinterModal(false);
-      setSelectedPrinter(null);
+      handleCloseEditModal();
       toast({
         title: "Printer Updated",
         description: "The printer has been updated successfully.",
@@ -146,6 +145,7 @@ const Printers = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['printers'] });
       setShowDeleteConfirmation(false);
+      setSelectedPrinter(null);
       toast({
         title: "Printer Deleted",
         description: "The printer has been deleted successfully.",
@@ -237,9 +237,9 @@ const Printers = () => {
       name: formData.name,
       model: formData.model,
       location: formData.location,
-      status: formData.status || "offline",
-      inkLevel: Number(formData.inkLevel) || 100,
-      paperLevel: Number(formData.paperLevel) || 100,
+      status: formData.status,
+      inkLevel: Number(formData.inkLevel),
+      paperLevel: Number(formData.paperLevel),
       ipAddress: formData.ipAddress,
       department: formData.department
     };
@@ -260,11 +260,9 @@ const Printers = () => {
       id: selectedPrinter.id,
       data: {
         name: formData.name,
-        status: formData.status as PrinterData['status'],
+        status: formData.status,
         model: formData.model,
         location: formData.location,
-        inkLevel: Number(formData.inkLevel),
-        paperLevel: Number(formData.paperLevel),
         ipAddress: formData.ipAddress,
         department: formData.department
       }
@@ -383,7 +381,10 @@ const Printers = () => {
           ))}
         </div>
       ) : (
-        <EmptyPrinterState onAddPrinter={() => setShowAddPrinterModal(true)} isAdmin={isAdmin} />
+        <EmptyPrinterState 
+          onAddPrinter={() => setShowAddPrinterModal(true)} 
+          isAdmin={isAdmin} 
+        />
       )}
 
       {/* Dialog for adding a new printer */}
@@ -407,33 +408,37 @@ const Printers = () => {
       </Dialog>
 
       {/* Dialog for editing a printer */}
-      <Dialog open={showEditPrinterModal} onOpenChange={handleCloseEditModal}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Edit Printer</DialogTitle>
-            <DialogDescription>
-              Update the details of {selectedPrinter?.name}
-            </DialogDescription>
-          </DialogHeader>
-          <EditPrinterForm 
-            form={form}
-            onSubmit={handleUpdatePrinter}
-            onCancel={handleCloseEditModal}
-            formData={formData}
-            handleInputChange={handleInputChange}
-            setFormData={setFormData}
-          />
-        </DialogContent>
-      </Dialog>
+      {selectedPrinter && (
+        <Dialog open={showEditPrinterModal} onOpenChange={handleCloseEditModal}>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>Edit Printer</DialogTitle>
+              <DialogDescription>
+                Update the details of {selectedPrinter.name}
+              </DialogDescription>
+            </DialogHeader>
+            <EditPrinterForm 
+              form={form}
+              onSubmit={handleUpdatePrinter}
+              onCancel={handleCloseEditModal}
+              formData={formData}
+              handleInputChange={handleInputChange}
+              setFormData={setFormData}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* Dialog for confirming printer deletion */}
-      <Dialog open={showDeleteConfirmation} onOpenChange={setShowDeleteConfirmation}>
-        <DeletePrinterConfirmation
-          printer={selectedPrinter}
-          onDelete={handleDeletePrinter}
-          onCancel={() => setShowDeleteConfirmation(false)}
-        />
-      </Dialog>
+      {selectedPrinter && (
+        <Dialog open={showDeleteConfirmation} onOpenChange={setShowDeleteConfirmation}>
+          <DeletePrinterConfirmation
+            printer={selectedPrinter}
+            onDelete={handleDeletePrinter}
+            onCancel={() => setShowDeleteConfirmation(false)}
+          />
+        </Dialog>
+      )}
       
       {/* Printer Detail Modal */}
       {selectedPrinterId && (

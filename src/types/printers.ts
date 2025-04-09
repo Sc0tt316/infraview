@@ -26,27 +26,6 @@ export interface PrinterData {
     monthlyPages: number;
     jams: number;
   };
-  printLogs?: PrintLog[];
-  activity?: ActivityItem[];
-}
-
-// Define print log type
-export interface PrintLog {
-  id?: string;
-  fileName: string;
-  user: string;
-  timestamp: string;
-  status: "completed" | "failed";
-  pages: number;
-  size: string;
-}
-
-// Define activity item type
-export interface ActivityItem {
-  id?: string;
-  timestamp: string;
-  type: "error" | "warning" | "info" | "success";
-  message: string;
 }
 
 // Define log types 
