@@ -17,17 +17,21 @@ export const useAlerts = () => {
     setIsLoading(true);
     try {
       const fetchedAlerts = await analyticsService.getAlerts();
-      // Transform AlertData to Alert if needed
+      // Transform AlertData to Alert
       const transformedAlerts: Alert[] = fetchedAlerts.map(alert => ({
         id: alert.id,
         title: alert.title,
-        description: alert.description || '', // Ensure description is not undefined
+        description: alert.description || '', 
         timestamp: alert.timestamp,
         severity: alert.severity as AlertSeverity,
-        printer: alert.printer,
-        isResolved: alert.isResolved,
-        resolvedAt: alert.resolvedAt,
-        resolvedBy: alert.resolvedBy
+        printer: alert.printer ? {
+          id: alert.printer.id,
+          name: alert.printer.name,
+          location: alert.printer.name || 'Unknown', // Ensure location is not undefined
+        } : undefined,
+        isResolved: alert.resolved || false,
+        resolvedAt: alert.status === 'resolved' ? new Date().toISOString() : undefined,
+        resolvedBy: alert.user?.name
       }));
       setAlerts(transformedAlerts);
     } catch (error) {

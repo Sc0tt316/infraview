@@ -24,4 +24,3 @@ export interface User {
   status?: 'active' | 'inactive' | 'pending';
   phone: string;
 }
-

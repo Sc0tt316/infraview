@@ -39,7 +39,7 @@ const Index = () => {
   const [recentAlerts, setRecentAlerts] = useState<Alert[]>([]);
   const [printerData, setPrinterData] = useState<PrinterData[]>([]);
 
-  // Check if user is admin
+  // Check if user is admin or manager
   const hasAdminAccess = user?.role === 'admin' || user?.role === 'manager';
 
   useEffect(() => {
