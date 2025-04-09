@@ -54,11 +54,14 @@ const Layout: React.FC = () => {
       </div>
       
       {/* Mobile Sidebar - Shown on smaller screens */}
-      <MobileSidebar 
-        isOpen={isMobileSidebarOpen}
-        onClose={() => setIsMobileSidebarOpen(false)}
-        user={user}
-      />
+      {isMobileSidebarOpen && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setIsMobileSidebarOpen(false)}></div>
+          <div className="absolute left-0 top-0 h-full w-64 bg-background">
+            <MobileSidebar onClose={() => setIsMobileSidebarOpen(false)} />
+          </div>
+        </div>
+      )}
       
       {/* Main Content Area */}
       <div 

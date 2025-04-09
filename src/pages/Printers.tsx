@@ -30,7 +30,7 @@ const Printers = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   
   const { user } = useAuth();
-  const isAdmin = user?.role === 'admin';
+  const isAdmin = user?.role === 'admin' || user?.role === "manager";
   const isManager = user?.role === 'manager';
   const hasManageAccess = isAdmin || isManager;
   

@@ -24,13 +24,9 @@ export const useAlerts = () => {
         description: alert.description || '', 
         timestamp: alert.timestamp,
         severity: alert.severity as AlertSeverity,
-        printer: alert.printer ? {
-          id: alert.printer.id,
-          name: alert.printer.name,
-          location: alert.printer.name || 'Unknown', // Ensure location is not undefined
-        } : undefined,
+        printer: alert.printer,
         isResolved: alert.resolved || false,
-        resolvedAt: alert.status === 'resolved' ? new Date().toISOString() : undefined,
+        resolvedAt: alert.resolved ? new Date().toISOString() : undefined,
         resolvedBy: alert.user?.name
       }));
       setAlerts(transformedAlerts);

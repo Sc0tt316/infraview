@@ -2,8 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { useAuth } from '@/context/AuthContext';
-import { Alert } from '@/types/alerts';
-import { AlertSeverity } from '@/types/alerts';
+import { Alert, AlertSeverity } from '@/types/alerts';
 import { useAlerts } from '@/hooks/useAlerts';
 import {
   Table,
@@ -28,19 +27,20 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useNavigate } from 'react-router-dom';
 import PrinterStatusSummary from '@/components/dashboard/PrinterStatusSummary';
-import { usePrinters } from '@/hooks/usePrinters';
 import { PrinterData } from '@/types/printers';
+import { printerService } from '@/services/printerService';
 
 const Index = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { alerts, filteredAlerts, isLoading: alertsLoading } = useAlerts();
-  const { printers, isLoading: printersLoading } = usePrinters();
+  const [printersLoading, setPrintersLoading] = useState(true);
+  const [printers, setPrinters] = useState<PrinterData[]>([]);
   const [recentAlerts, setRecentAlerts] = useState<Alert[]>([]);
   const [printerData, setPrinterData] = useState<PrinterData[]>([]);
 
   // Check if user is admin or manager
-  const hasAdminAccess = user?.role === 'admin' || user?.role === 'manager';
+  const hasAdminAccess = user?.role === 'admin' || user?.role === "manager";
 
   useEffect(() => {
     // Sort alerts by timestamp and get the 5 most recent
@@ -50,10 +50,21 @@ const Index = () => {
 
   useEffect(() => {
     // Fetch printer data
-    if (!printersLoading) {
-      setPrinterData(printers);
-    }
-  }, [printers, printersLoading]);
+    const fetchPrinters = async () => {
+      setPrintersLoading(true);
+      try {
+        const fetchedPrinters = await printerService.getAllPrinters();
+        setPrinters(fetchedPrinters);
+        setPrinterData(fetchedPrinters);
+      } catch (error) {
+        console.error('Error fetching printers:', error);
+      } finally {
+        setPrintersLoading(false);
+      }
+    };
+    
+    fetchPrinters();
+  }, []);
 
   // Function to determine badge color based on severity
   const getSeverityColor = (severity: AlertSeverity) => {
