@@ -46,26 +46,18 @@ const Layout: React.FC = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Desktop Sidebar */}
-      <div className={cn(
-        "fixed inset-y-0 left-0 z-10 w-64 transition-all duration-300",
-        isSidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0 md:w-20"
-      )}>
-        <Sidebar />
-      </div>
+      <Sidebar 
+        isOpen={isSidebarOpen} 
+        toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} 
+        user={user}
+      />
       
       {/* Mobile Sidebar - Shown on smaller screens */}
-      {isMobileSidebarOpen && (
-        <div className="fixed inset-0 z-50 md:hidden">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setIsMobileSidebarOpen(false)}></div>
-          <div className="absolute left-0 top-0 h-full w-64 bg-background">
-            <MobileSidebar 
-              isOpen={isMobileSidebarOpen} 
-              onClose={() => setIsMobileSidebarOpen(false)} 
-              user={user}
-            />
-          </div>
-        </div>
-      )}
+      <MobileSidebar 
+        isOpen={isMobileSidebarOpen}
+        onClose={() => setIsMobileSidebarOpen(false)}
+        user={user}
+      />
       
       {/* Main Content Area */}
       <div 
