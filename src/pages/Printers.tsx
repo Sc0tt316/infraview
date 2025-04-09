@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { printerService, PrinterData } from '@/services/printer';
@@ -35,9 +34,9 @@ const Printers = () => {
   const [selectedPrinterId, setSelectedPrinterId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   
-  // Get user role
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin' || user?.role === 'manager';
+  const hasManageAccess = user?.role === 'admin' || user?.role === 'manager';
   
   const form = useForm<PrinterFormValues>({
     resolver: zodResolver(printerFormSchema),
@@ -180,13 +179,12 @@ const Printers = () => {
     }
   });
 
-  // Event handlers
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
   };
 
   const handleOpenEditModal = (printer: PrinterData) => {
-    if (!isAdmin) {
+    if (!hasManageAccess) {
       toast({
         variant: "destructive",
         title: "Access Denied",
@@ -210,7 +208,7 @@ const Printers = () => {
   };
 
   const handleOpenDeleteConfirmation = (printer: PrinterData) => {
-    if (!isAdmin) {
+    if (!hasManageAccess) {
       toast({
         variant: "destructive",
         title: "Access Denied",
@@ -247,14 +245,14 @@ const Printers = () => {
   };
 
   const handleDeletePrinter = () => {
-    if (selectedPrinter && isAdmin) {
+    if (selectedPrinter && hasManageAccess) {
       deletePrinterMutation.mutate(selectedPrinter.id);
     }
   };
 
   const handleUpdatePrinter = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedPrinter || !isAdmin) return;
+    if (!selectedPrinter || !hasManageAccess) return;
 
     const updateData = {
       id: selectedPrinter.id,
@@ -271,7 +269,7 @@ const Printers = () => {
   };
 
   const handleRestartPrinter = (id: string) => {
-    if (!isAdmin) {
+    if (!hasManageAccess) {
       toast({
         variant: "destructive",
         title: "Access Denied",
@@ -287,21 +285,17 @@ const Printers = () => {
     setStatusFilter(status);
   };
 
-  // Fix for edit modal freeze issue
   const handleCloseEditModal = () => {
-    // Use setTimeout to prevent UI freeze when closing the modal
     setTimeout(() => {
       setShowEditPrinterModal(false);
       setSelectedPrinter(null);
     }, 0);
   };
 
-  // Filter printers based on search term and status filter
   useEffect(() => {
     if (printers) {
       let filtered = printers;
       
-      // Apply search filter
       if (searchTerm) {
         const lowerSearchTerm = searchTerm.toLowerCase();
         filtered = filtered.filter(printer =>
@@ -311,7 +305,6 @@ const Printers = () => {
         );
       }
       
-      // Apply status filter
       if (statusFilter !== 'all') {
         filtered = filtered.filter(printer => printer.status === statusFilter);
       }
@@ -387,7 +380,6 @@ const Printers = () => {
         />
       )}
 
-      {/* Dialog for adding a new printer */}
       <Dialog open={showAddPrinterModal} onOpenChange={setShowAddPrinterModal}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
@@ -407,7 +399,6 @@ const Printers = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog for editing a printer */}
       {selectedPrinter && (
         <Dialog open={showEditPrinterModal} onOpenChange={handleCloseEditModal}>
           <DialogContent className="sm:max-w-[600px]">
@@ -429,7 +420,6 @@ const Printers = () => {
         </Dialog>
       )}
 
-      {/* Dialog for confirming printer deletion */}
       {selectedPrinter && (
         <Dialog open={showDeleteConfirmation} onOpenChange={setShowDeleteConfirmation}>
           <DeletePrinterConfirmation
@@ -440,7 +430,6 @@ const Printers = () => {
         </Dialog>
       )}
       
-      {/* Printer Detail Modal */}
       {selectedPrinterId && (
         <PrinterDetailModal
           printerId={selectedPrinterId}

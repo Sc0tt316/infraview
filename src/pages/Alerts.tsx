@@ -6,6 +6,8 @@ import AlertDetailsDialog from '@/components/alerts/AlertDetailsDialog';
 import AlertsHeader from '@/components/alerts/AlertsHeader';
 import AlertsContent from '@/components/alerts/AlertsContent';
 import { useAlerts } from '@/hooks/useAlerts';
+import { Button } from '@/components/ui/button';
+import { CheckCircle, Trash2 } from 'lucide-react';
 
 const Alerts = () => {
   const [selectedAlert, setSelectedAlert] = useState<Alert | null>(null);
@@ -21,7 +23,9 @@ const Alerts = () => {
     severityFilter,
     setSeverityFilter,
     resolveAlert,
-    refreshAlerts
+    refreshAlerts,
+    clearResolvedAlerts,
+    resolveAllAlerts
   } = useAlerts();
   
   // Event handlers
@@ -54,6 +58,14 @@ const Alerts = () => {
       setShowDetailDialog(false);
     }
   };
+
+  const handleClearResolved = () => {
+    clearResolvedAlerts();
+  };
+
+  const handleResolveAll = () => {
+    resolveAllAlerts();
+  };
   
   return (
     <div className="space-y-6">
@@ -62,14 +74,39 @@ const Alerts = () => {
         isLoading={isLoading} 
       />
       
-      <AlertFilters
-        searchTerm={searchTerm}
-        onSearchChange={handleSearchChange}
-        statusFilter={statusFilter}
-        onStatusFilterChange={handleStatusFilterChange}
-        severityFilter={severityFilter}
-        onSeverityFilterChange={handleSeverityFilterChange}
-      />
+      <div className="flex flex-col md:flex-row justify-between gap-4 items-start md:items-center">
+        <AlertFilters
+          searchTerm={searchTerm}
+          onSearchChange={handleSearchChange}
+          statusFilter={statusFilter}
+          onStatusFilterChange={handleStatusFilterChange}
+          severityFilter={severityFilter}
+          onSeverityFilterChange={handleSeverityFilterChange}
+        />
+        
+        <div className="flex gap-2 w-full md:w-auto">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="flex-1 md:flex-none"
+            onClick={handleClearResolved}
+            disabled={isLoading || filteredAlerts.filter(a => a.isResolved).length === 0}
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Clear Resolved
+          </Button>
+          <Button 
+            variant="default" 
+            size="sm"
+            className="flex-1 md:flex-none" 
+            onClick={handleResolveAll}
+            disabled={isLoading || filteredAlerts.filter(a => !a.isResolved).length === 0}
+          >
+            <CheckCircle className="h-4 w-4 mr-2" />
+            Resolve All
+          </Button>
+        </div>
+      </div>
       
       <AlertsContent 
         isLoading={isLoading}
