@@ -8,14 +8,9 @@ import { Alert } from '@/types/alerts';
 
 // Import components
 import StatsOverview from '@/components/dashboard/StatsOverview';
-import PrinterStatusSummary from '@/components/dashboard/PrinterStatusSummary';
-import RecentActivity from '@/components/dashboard/RecentActivity';
-import AlertsOverview from '@/components/dashboard/AlertsOverview';
-import LowSuppliesWarning from '@/components/dashboard/LowSuppliesWarning';
-import SystemStatus from '@/components/dashboard/SystemStatus';
+import MainDashboard from '@/components/dashboard/MainDashboard';
 import { RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { useAuth } from '@/context/AuthContext';
 
 const Index = () => {
@@ -131,40 +126,12 @@ const Index = () => {
           />
 
           {/* Main Dashboard Content */}
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            <Card className="col-span-1">
-              <CardContent className="p-0">
-                <PrinterStatusSummary printers={printers} />
-              </CardContent>
-            </Card>
-            
-            <Card className="col-span-1 md:col-span-2">
-              <CardContent className="p-0">
-                <RecentActivity activities={recentActivities} />
-              </CardContent>
-            </Card>
-            
-            <Card className="col-span-1">
-              <CardContent className="p-0">
-                <AlertsOverview
-                  alerts={alerts}
-                  onViewAllAlerts={handleViewAllAlerts}
-                />
-              </CardContent>
-            </Card>
-            
-            <Card className="col-span-1">
-              <CardContent className="p-0">
-                <LowSuppliesWarning printers={printers} />
-              </CardContent>
-            </Card>
-            
-            <Card className="col-span-1 md:col-span-3">
-              <CardContent className="p-0">
-                <SystemStatus />
-              </CardContent>
-            </Card>
-          </div>
+          <MainDashboard 
+            printers={printers}
+            recentActivities={recentActivities}
+            alerts={alerts}
+            onViewAllAlerts={handleViewAllAlerts}
+          />
         </>
       )}
     </div>

@@ -1,210 +1,128 @@
 
-import { useState, useEffect } from 'react';
-import { printerService } from '@/services/printer';
-import { useToast } from '@/hooks/use-toast';
+import { useState, useEffect, useCallback } from 'react';
 import { Alert, AlertFilter, AlertSeverity } from '@/types/alerts';
-import { apiService } from '@/services/api';
+import { analyticsService } from '@/services/analytics';
+import { toast } from 'sonner';
 
 export const useAlerts = () => {
-  const [isLoading, setIsLoading] = useState(false);
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [filteredAlerts, setFilteredAlerts] = useState<Alert[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<AlertFilter>('all');
   const [severityFilter, setSeverityFilter] = useState<AlertSeverity | 'all'>('all');
-  
-  const { toast } = useToast();
-  
-  // Load alerts from local storage or generate mock data
-  const loadAlerts = async () => {
+
+  // Fetch alerts on component mount
+  const fetchAlerts = useCallback(async () => {
     setIsLoading(true);
     try {
-      // Try to get alerts from API service (localStorage)
-      const storedAlerts = await apiService.get<Alert[]>('alerts');
-      
-      if (storedAlerts && storedAlerts.length > 0) {
-        setAlerts(storedAlerts);
-      } else {
-        // Generate mock alerts if none exist
-        await generateMockAlerts();
-      }
+      const fetchedAlerts = await analyticsService.getAlerts();
+      setAlerts(fetchedAlerts);
     } catch (error) {
-      console.error("Error loading alerts:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to load alerts. Please try again."
-      });
+      console.error('Error fetching alerts:', error);
+      toast.error('Failed to fetch alerts');
     } finally {
       setIsLoading(false);
     }
-  };
-  
-  // Generate mock alerts function
-  const generateMockAlerts = async () => {
-    try {
-      // Get printers for the mock data
-      const printers = await printerService.getAllPrinters();
-      
-      // Generate mock alerts
-      const mockAlerts: Alert[] = [
-        {
-          id: "a1",
-          title: "Paper jam detected",
-          description: "Paper jam detected in the main tray. Please check and clear any jammed paper.",
-          timestamp: new Date().toISOString(),
-          severity: "medium",
-          printer: printers[2] ? {
-            id: printers[2].id,
-            name: printers[2].name,
-            location: printers[2].location
-          } : undefined,
-          isResolved: false
-        },
-        {
-          id: "a2",
-          title: "Toner critically low",
-          description: "Black toner cartridge is at 5% remaining. Please replace soon to avoid disruption.",
-          timestamp: new Date(Date.now() - 3600000).toISOString(),
-          severity: "high",
-          printer: printers[1] ? {
-            id: printers[1].id,
-            name: printers[1].name,
-            location: printers[1].location
-          } : undefined,
-          isResolved: false
-        },
-        {
-          id: "a3",
-          title: "Connection lost",
-          description: "Printer went offline unexpectedly. Check network connection and power.",
-          timestamp: new Date(Date.now() - 7200000).toISOString(),
-          severity: "low",
-          printer: printers[3] ? {
-            id: printers[3].id,
-            name: printers[3].name,
-            location: printers[3].location
-          } : undefined,
-          isResolved: false
-        },
-        {
-          id: "a4",
-          title: "System update required",
-          description: "A critical firmware update is available for this printer. Please update as soon as possible.",
-          timestamp: new Date(Date.now() - 86400000).toISOString(),
-          severity: "critical",
-          printer: printers[0] ? {
-            id: printers[0].id,
-            name: printers[0].name,
-            location: printers[0].location
-          } : undefined,
-          isResolved: true,
-          resolvedAt: new Date(Date.now() - 43200000).toISOString(),
-          resolvedBy: "John Admin"
-        },
-        {
-          id: "a5",
-          title: "Low memory warning",
-          description: "Printer is experiencing low memory. Large print jobs may fail.",
-          timestamp: new Date(Date.now() - 172800000).toISOString(),
-          severity: "medium",
-          printer: printers[4] ? {
-            id: printers[4].id,
-            name: printers[4].name,
-            location: printers[4].location
-          } : undefined,
-          isResolved: true,
-          resolvedAt: new Date(Date.now() - 129600000).toISOString(),
-          resolvedBy: "System"
-        }
-      ];
-      
-      setAlerts(mockAlerts);
-      // Save the mock alerts to localStorage via apiService
-      await apiService.post('alerts', mockAlerts);
-    } catch (error) {
-      console.error("Error generating mock alerts:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to generate mock alerts."
-      });
-    }
-  };
-  
-  // Load data initially
-  useEffect(() => {
-    loadAlerts();
   }, []);
-  
-  // Apply filters whenever any filter changes
+
   useEffect(() => {
-    let result = [...alerts];
-    
+    fetchAlerts();
+  }, [fetchAlerts]);
+
+  // Apply filters to alerts
+  useEffect(() => {
+    let filtered = alerts;
+
     // Apply search filter
     if (searchTerm) {
-      const lowerSearchTerm = searchTerm.toLowerCase();
-      result = result.filter(alert => 
-        alert.title.toLowerCase().includes(lowerSearchTerm) ||
-        alert.description.toLowerCase().includes(lowerSearchTerm) ||
-        (alert.printer?.name.toLowerCase().includes(lowerSearchTerm))
+      const searchTermLower = searchTerm.toLowerCase();
+      filtered = filtered.filter(
+        alert =>
+          alert.title.toLowerCase().includes(searchTermLower) ||
+          alert.description.toLowerCase().includes(searchTermLower)
       );
     }
-    
+
     // Apply status filter
     if (statusFilter !== 'all') {
-      result = result.filter(alert => 
-        (statusFilter === 'active' && !alert.isResolved) || 
-        (statusFilter === 'resolved' && alert.isResolved)
-      );
+      const isResolved = statusFilter === 'resolved';
+      filtered = filtered.filter(alert => alert.isResolved === isResolved);
     }
-    
+
     // Apply severity filter
     if (severityFilter !== 'all') {
-      result = result.filter(alert => alert.severity === severityFilter);
+      filtered = filtered.filter(alert => alert.severity === severityFilter);
     }
-    
-    setFilteredAlerts(result);
+
+    setFilteredAlerts(filtered);
   }, [alerts, searchTerm, statusFilter, severityFilter]);
-  
-  // Resolve alert with persistence
+
+  // Resolve an alert
   const resolveAlert = async (alertId: string) => {
-    const updatedAlerts = alerts.map(alert => 
-      alert.id === alertId
-        ? {
-            ...alert,
-            isResolved: true,
-            resolvedAt: new Date().toISOString(),
-            resolvedBy: "Admin User"
-          }
-        : alert
-    );
-    
-    // Update state
-    setAlerts(updatedAlerts);
-    
-    // Save to localStorage via apiService
-    await apiService.post('alerts', updatedAlerts);
-    
-    toast({
-      title: "Alert Resolved",
-      description: "The alert has been marked as resolved."
-    });
+    try {
+      await analyticsService.resolveAlert(alertId);
+      
+      // Update local state
+      setAlerts(prev => 
+        prev.map(alert => 
+          alert.id === alertId 
+            ? { ...alert, isResolved: true, resolvedAt: new Date().toISOString() } 
+            : alert
+        )
+      );
+      
+      toast.success('Alert resolved successfully');
+    } catch (error) {
+      console.error('Error resolving alert:', error);
+      toast.error('Failed to resolve alert');
+    }
   };
-  
+
+  // Clear all resolved alerts
+  const clearResolvedAlerts = () => {
+    setAlerts(prev => prev.filter(alert => !alert.isResolved));
+    toast.success('Resolved alerts cleared');
+  };
+
+  // Resolve all alerts
+  const resolveAllAlerts = async () => {
+    try {
+      // Get all unresolved alerts
+      const unresolvedAlerts = alerts.filter(alert => !alert.isResolved);
+      
+      // Update all unresolved alerts to resolved
+      setAlerts(prev => 
+        prev.map(alert => 
+          !alert.isResolved 
+            ? { ...alert, isResolved: true, resolvedAt: new Date().toISOString() } 
+            : alert
+        )
+      );
+      
+      // Try to resolve each alert with the API
+      for (const alert of unresolvedAlerts) {
+        await analyticsService.resolveAlert(alert.id);
+      }
+      
+      toast.success('All alerts resolved');
+    } catch (error) {
+      console.error('Error resolving all alerts:', error);
+      toast.error('Failed to resolve all alerts');
+      // Refresh the alerts to ensure state is consistent with server
+      fetchAlerts();
+    }
+  };
+
   // Refresh alerts
   const refreshAlerts = () => {
-    loadAlerts();
-    toast({
-      title: "Refreshed",
-      description: "Alert data has been refreshed."
-    });
+    fetchAlerts();
   };
-  
+
   return {
-    isLoading,
     alerts,
     filteredAlerts,
+    isLoading,
     searchTerm,
     setSearchTerm,
     statusFilter,
@@ -212,6 +130,8 @@ export const useAlerts = () => {
     severityFilter,
     setSeverityFilter,
     resolveAlert,
-    refreshAlerts
+    refreshAlerts,
+    clearResolvedAlerts,
+    resolveAllAlerts
   };
 };

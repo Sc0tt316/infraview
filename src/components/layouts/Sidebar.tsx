@@ -1,169 +1,133 @@
 
 import React from 'react';
-import { NavLink } from 'react-router-dom';
-import { useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import {
-  ChevronLeft,
-  ChevronRight,
-  LayoutDashboard,
-  Printer,
-  Bell,
-  Users,
-  ActivityIcon,
-  LogOut,
+import Logo from '../common/Logo';
+import { useAuth } from '@/context/AuthContext';
+import { 
+  Home, 
+  Printer, 
+  AlertCircle, 
+  Users, 
+  LineChart, 
   Settings,
+  LogOut
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
-import Logo from '@/components/common/Logo';
-import { UserData } from '@/types/user';
-
-interface SidebarProps {
-  isOpen: boolean;
-  toggleSidebar: () => void;
-  user: UserData;
+interface NavLinkProps {
+  href: string;
+  children: React.ReactNode;
+  icon: React.ReactNode;
+  active?: boolean;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({
-  isOpen,
-  toggleSidebar,
-  user,
-}) => {
+const Sidebar = () => {
   const location = useLocation();
+  const { user, logout } = useAuth();
+  const isAdmin = user?.role === 'admin';
   
-  // Get initials from user name
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(part => part[0])
-      .join('')
-      .toUpperCase();
-  };
-  
-  const navigationItems = [
-    { name: 'Dashboard', icon: LayoutDashboard, path: '/' },
-    { name: 'Printers', icon: Printer, path: '/printers' },
-    { name: 'Alerts', icon: Bell, path: '/alerts' },
-    { name: 'Activity', icon: ActivityIcon, path: '/activity' },
+  // Routes for navigation
+  const routes = [
+    {
+      href: '/',
+      label: 'Dashboard',
+      icon: <Home className="h-5 w-5" />,
+      showFor: ['admin', 'manager', 'user']
+    },
+    {
+      href: '/printers',
+      label: 'Printers',
+      icon: <Printer className="h-5 w-5" />,
+      showFor: ['admin', 'manager', 'user']
+    },
+    {
+      href: '/alerts',
+      label: 'Alerts',
+      icon: <AlertCircle className="h-5 w-5" />,
+      showFor: ['admin', 'manager', 'user']
+    },
+    {
+      href: '/users',
+      label: 'Users',
+      icon: <Users className="h-5 w-5" />,
+      showFor: ['admin', 'manager']
+    },
+    {
+      href: '/analytics',
+      label: 'Analytics',
+      icon: <LineChart className="h-5 w-5" />,
+      showFor: ['admin', 'manager']
+    },
+    {
+      href: '/settings',
+      label: 'Settings',
+      icon: <Settings className="h-5 w-5" />,
+      showFor: ['admin', 'manager', 'user']
+    }
   ];
   
-  // Add Users menu item only for admin users
-  if (user.role === 'admin') {
-    navigationItems.push({ name: 'Users', icon: Users, path: '/users' });
-  }
-  
+  // Filter routes based on user role
+  const filteredRoutes = routes.filter(route => 
+    user && route.showFor.includes(user.role)
+  );
+
   return (
-    <aside
-      className={cn(
-        'fixed top-0 left-0 z-30 h-full bg-card border-r border-r-border transition-all duration-300 ease-in-out',
-        isOpen ? 'w-64' : 'w-20'
-      )}
-    >
-      <div className="flex h-full flex-col justify-between py-4">
-        {/* Logo and toggle */}
-        <div className="px-4">
-          <div className="flex items-center justify-between mb-8">
-            {isOpen ? <Logo /> : <Logo iconOnly />}
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={toggleSidebar}
-              className="rounded-full"
+    <div className="h-full flex flex-col border-r bg-background">
+      <div className="flex items-center h-16 px-6 border-b">
+        <Logo />
+      </div>
+      <div className="flex-1 overflow-auto py-2">
+        <nav className="grid items-start px-2 text-sm font-medium">
+          {filteredRoutes.map(route => (
+            <NavLink
+              key={route.href}
+              href={route.href}
+              active={location.pathname === route.href}
+              icon={route.icon}
             >
-              {isOpen ? (
-                <ChevronLeft className="h-5 w-5" />
-              ) : (
-                <ChevronRight className="h-5 w-5" />
-              )}
-            </Button>
-          </div>
-        </div>
-        
-        {/* Navigation */}
-        <div className="flex-1 overflow-y-auto px-3">
-          <div className="space-y-1">
-            {navigationItems.map((item) => (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                className={({ isActive }) =>
-                  cn(
-                    'flex items-center rounded-md px-3 py-2 text-sm transition-colors',
-                    isActive
-                      ? 'bg-primary/10 text-primary'
-                      : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-                    !isOpen && 'justify-center'
-                  )
-                }
-              >
-                <item.icon className={cn('h-5 w-5', !isOpen ? 'mx-auto' : 'mr-3')} />
-                {isOpen && <span>{item.name}</span>}
-              </NavLink>
-            ))}
-          </div>
-        </div>
-        
-        {/* User and logout */}
-        <div className="mt-auto px-3 space-y-3">
-          {/* Settings link */}
-          <NavLink
-            to="/settings"
-            className={({ isActive }) =>
-              cn(
-                'flex items-center rounded-md px-3 py-2 text-sm transition-colors',
-                isActive
-                  ? 'bg-primary/10 text-primary'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-                !isOpen && 'justify-center'
-              )
-            }
-          >
-            <Settings className={cn('h-5 w-5', !isOpen ? 'mx-auto' : 'mr-3')} />
-            {isOpen && <span>Settings</span>}
-          </NavLink>
-          
-          {/* Logout button */}
-          <Button
-            variant="ghost"
-            className={cn(
-              'w-full justify-start rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground',
-              !isOpen && 'justify-center'
-            )}
-            onClick={() => {
-              // Add logout logic
-            }}
-          >
-            <LogOut className={cn('h-5 w-5', !isOpen ? 'mx-auto' : 'mr-3')} />
-            {isOpen && <span>Logout</span>}
-          </Button>
-          
-          {/* User profile */}
-          {isOpen && (
-            <div className="mt-3 flex items-center px-3 py-2">
-              <Avatar className="h-8 w-8 mr-2">
-                <AvatarImage src={user.avatar} />
-                <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
-              </Avatar>
-              <div className="truncate">
-                <p className="text-sm font-medium">{user.name}</p>
-                <p className="text-xs text-muted-foreground">{user.role}</p>
-              </div>
-            </div>
-          )}
-          
-          {!isOpen && (
-            <div className="flex justify-center py-2">
-              <Avatar className="h-8 w-8">
-                <AvatarImage src={user.avatar} />
-                <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
-              </Avatar>
-            </div>
-          )}
+              {route.label}
+            </NavLink>
+          ))}
+        </nav>
+      </div>
+      <div className="p-4 border-t">
+        <Button 
+          variant="ghost" 
+          className="w-full justify-start text-muted-foreground"
+          onClick={logout}
+        >
+          <LogOut className="h-5 w-5 mr-2" />
+          Sign out
+        </Button>
+        <div className="mt-2 text-xs text-muted-foreground px-2">
+          Logged in as {user?.name}
+          <div className="font-medium">{user?.role}</div>
         </div>
       </div>
-    </aside>
+    </div>
+  );
+};
+
+const NavLink: React.FC<NavLinkProps> = ({
+  href,
+  children,
+  icon,
+  active
+}) => {
+  return (
+    <Link
+      to={href}
+      className={cn(
+        "flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:text-primary",
+        active 
+          ? "bg-primary/10 text-primary" 
+          : "text-muted-foreground hover:bg-muted"
+      )}
+    >
+      {icon}
+      <span>{children}</span>
+    </Link>
   );
 };
 

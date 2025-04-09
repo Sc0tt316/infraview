@@ -1,133 +1,71 @@
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import React, { useState } from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ThemeProvider } from './context/ThemeContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 
-import { AuthProvider, useAuth } from "./context/AuthContext";
-import { ThemeProvider } from "./context/ThemeContext";
-import Layout from "./components/layout/Layout";
-import Index from "./pages/Index";
-import Printers from "./pages/Printers";
-import Users from "./pages/Users";
-import Analytics from "./pages/Analytics";
-import Activity from "./pages/Activity";
-import Alerts from "./pages/Alerts";
-import Settings from "./pages/Settings";
-import NotFound from "./pages/NotFound";
-import Login from "./pages/Login";
+// Layouts
+import Layout from './components/layouts/Layout';
 
-// Configure React Query client with defaults
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      refetchOnWindowFocus: false,
-      staleTime: 1000 * 60 * 5, // 5 minutes
-      retry: 1,
-    },
-  },
-});
+// Pages
+import Login from './pages/Login';
+import Index from './pages/Index';
+import Printers from './pages/Printers';
+import Alerts from './pages/Alerts';
+import Users from './pages/Users';
+import Analytics from './pages/Analytics';
+import Settings from './pages/Settings';
+import NotFound from './pages/NotFound';
 
-// Protected route wrapper that uses the AuthContext
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isAuthenticated } = useAuth();
+// Toaster
+import { Toaster } from "@/components/ui/sonner";
+
+// Create a client
+const queryClient = new QueryClient();
+
+// Protected route component
+const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
+  const { user } = useAuth();
   
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+  if (!user) {
+    return <Navigate to="/login" />;
   }
   
-  return <>{children}</>;
+  return children;
 };
 
-// Routes component that uses AuthContext
-const AppRoutes = () => {
-  const { isAuthenticated } = useAuth();
+function App() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   
   return (
-    <Routes>
-      <Route path="/login" element={
-        isAuthenticated ? <Navigate to="/" replace /> : <Login />
-      } />
-      
-      <Route path="/" element={
-        <ProtectedRoute>
-          <Layout>
-            <Index />
-          </Layout>
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/printers" element={
-        <ProtectedRoute>
-          <Layout>
-            <Printers />
-          </Layout>
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/users" element={
-        <ProtectedRoute>
-          <Layout>
-            <Users />
-          </Layout>
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/analytics" element={
-        <ProtectedRoute>
-          <Layout>
-            <Analytics />
-          </Layout>
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/activity" element={
-        <ProtectedRoute>
-          <Layout>
-            <Activity />
-          </Layout>
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/alerts" element={
-        <ProtectedRoute>
-          <Layout>
-            <Alerts />
-          </Layout>
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/settings" element={
-        <ProtectedRoute>
-          <Layout>
-            <Settings />
-          </Layout>
-        </ProtectedRoute>
-      } />
-      
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+    <ThemeProvider defaultTheme="light">
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider setIsLoggedIn={setIsLoggedIn}>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <Layout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<Index />} />
+              <Route path="printers" element={<Printers />} />
+              <Route path="alerts" element={<Alerts />} />
+              <Route path="users" element={<Users />} />
+              <Route path="analytics" element={<Analytics />} />
+              <Route path="settings" element={<Settings />} />
+            </Route>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+          <Toaster />
+        </AuthProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
   );
-};
-
-// Main App component with proper provider order
-const App = () => {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <ThemeProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <AppRoutes />
-            </BrowserRouter>
-          </TooltipProvider>
-        </ThemeProvider>
-      </AuthProvider>
-    </QueryClientProvider>
-  );
-};
+}
 
 export default App;
