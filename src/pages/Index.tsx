@@ -18,14 +18,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from 'react-router-dom';
 import PrinterStatusSummary from '@/components/dashboard/PrinterStatusSummary';
-import { usePrinters } from '@/hooks/usePrinters';
 import { PrinterData } from '@/types/printers';
+import { printerService } from '@/services/printerService';
 
 const Index = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { alerts, filteredAlerts, isLoading: alertsLoading } = useAlerts();
-  const { printers, isLoading: printersLoading } = usePrinters();
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [recentAlerts, setRecentAlerts] = useState<Alert[]>([]);
   const [printerData, setPrinterData] = useState<PrinterData[]>([]);
 
@@ -40,10 +40,20 @@ const Index = () => {
 
   useEffect(() => {
     // Fetch printer data
-    if (!printersLoading) {
-      setPrinterData(printers);
-    }
-  }, [printers, printersLoading]);
+    const fetchPrinters = async () => {
+      setIsLoading(true);
+      try {
+        const data = await printerService.getAllPrinters();
+        setPrinterData(data);
+      } catch (error) {
+        console.error('Error fetching printers:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchPrinters();
+  }, []);
 
   // Function to determine badge color based on severity
   const getSeverityColor = (severity: AlertSeverity) => {
