@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { useAuth } from '@/context/AuthContext';
 import { Alert } from '@/types/alerts';
 import { AlertSeverity } from '@/types/alerts';
@@ -12,11 +13,11 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Badge } from "@/components/ui/badge"
-import { MoreVertical, Edit, Copy, Trash } from "lucide-react"
-import { Button } from "@/components/ui/button"
+} from "@/components/ui/table";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
+import { MoreVertical, Edit, Copy, Trash } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,7 +25,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
 import { useNavigate } from 'react-router-dom';
 import PrinterStatusSummary from '@/components/dashboard/PrinterStatusSummary';
 import { usePrinters } from '@/hooks/usePrinters';

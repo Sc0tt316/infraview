@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '@/context/AuthContext';
+import { usePrinters } from '@/hooks/usePrinters';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { printerService, PrinterData } from '@/services/printer';
 import { useToast } from '@/hooks/use-toast';
@@ -10,14 +12,7 @@ import AddPrinterForm from '@/components/printers/AddPrinterForm';
 import EditPrinterForm from '@/components/printers/EditPrinterForm';
 import DeletePrinterConfirmation from '@/components/printers/DeletePrinterConfirmation';
 import { Button } from "@/components/ui/button";
-import { useAuth } from '@/context/AuthContext';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { RefreshCw, Plus, ShieldAlert } from 'lucide-react';
@@ -35,8 +30,9 @@ const Printers = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   
   const { user } = useAuth();
-  const isAdmin = user?.role === 'admin' || user?.role === 'manager';
-  const hasManageAccess = user?.role === 'admin' || user?.role === 'manager';
+  const isAdmin = user?.role === 'admin';
+  const isManager = user?.role === 'manager';
+  const hasManageAccess = isAdmin || isManager;
   
   const form = useForm<PrinterFormValues>({
     resolver: zodResolver(printerFormSchema),
