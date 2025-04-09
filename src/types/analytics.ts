@@ -32,15 +32,13 @@ export interface ActivityLogData {
   entityType?: string;
   entityId?: string;
   user?: string;
-  type: 'success' | 'error' | 'warning' | 'info' | 'login' | 'print' | 'config';
+  type: 'success' | 'error' | 'warning' | 'info';
 }
 
 export interface PrintVolumeData {
   date: string;
   volume: number;
 }
-
-export type AlertData = Alert;
 
 export interface AnalyticsServiceInterface {
   getAnalyticsData: () => Promise<AnalyticsData>;

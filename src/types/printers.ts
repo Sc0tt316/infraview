@@ -1,60 +1,70 @@
 
+// Define printer types
 export interface PrinterData {
   id: string;
   name: string;
   model: string;
   location: string;
-  status: 'online' | 'offline' | 'error' | 'maintenance' | 'warning';
+  status: "online" | "offline" | "error" | "maintenance" | "warning";
   inkLevel: number;
   paperLevel: number;
-  ipAddress: string;
-  department: string;
-  jobCount?: number;
-  lastActive?: string;
+  jobCount: number;
+  lastActive: string;
+  ipAddress?: string;
+  department?: string;
+  serialNumber?: string;
+  addedDate?: string;
+  supplies?: {
+    black: number;
+    cyan?: number;
+    magenta?: number;
+    yellow?: number;
+    waste?: number;
+  };
+  stats?: {
+    totalPages: number;
+    monthlyPages: number;
+    jams: number;
+  };
+  printLogs?: PrintLog[];
+  activity?: ActivityItem[];
 }
 
-export interface PrinterActivity {
-  id: string;
-  type: string;
-  title: string;
-  description: string;
+// Define print log type
+export interface PrintLog {
+  id?: string;
+  fileName: string;
+  user: string;
   timestamp: string;
-  user?: string;
-  printerId?: string;
+  status: "completed" | "failed";
+  pages: number;
+  size: string;
 }
 
+// Define activity item type
+export interface ActivityItem {
+  id?: string;
+  timestamp: string;
+  type: "error" | "warning" | "info" | "success";
+  message: string;
+}
+
+// Define log types 
 export interface PrinterLog {
   id: string;
+  printerId: string;
   timestamp: string;
-  type: string;
-  user: string;
   message: string;
+  type: "info" | "warning" | "error";
+  user?: string;
+}
+
+// Define activity types
+export interface PrinterActivity {
+  id: string;
+  printerId: string;
+  timestamp: string;
+  action: string;
+  user?: string;
   details?: string;
-  pages?: number;
-}
-
-export interface PrinterFiltersProps {
-  searchTerm: string;
-  onSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  statusFilter: string;
-  onStatusFilterChange: (status: string) => void;
-  departmentFilter: string;
-  onDepartmentFilterChange: (dept: string) => void;
-}
-
-export interface PrinterCardProps {
-  printer: PrinterData;
-  isGridView: boolean;
-  onEdit: () => void;
-  onDelete: () => void;
-}
-
-export interface EmptyPrinterStateProps {
-  onAdd: () => void;
-}
-
-export interface DeletePrinterConfirmationProps {
-  loading: boolean;
-  onConfirm: () => void;
-  onCancel: () => void;
 }

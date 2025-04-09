@@ -2,10 +2,10 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { printerService } from '@/services/printer';
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { format } from 'date-fns';
-import { Progress } from '@/components/ui/progress';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Card } from '@/components/ui/card';
+import { Package } from 'lucide-react';
 import LoadingSpinner from './LoadingSpinner';
 
 interface SupplyHistoryProps {
@@ -13,63 +13,54 @@ interface SupplyHistoryProps {
 }
 
 const SupplyHistory: React.FC<SupplyHistoryProps> = ({ printerId }) => {
-  const { data: supplyLogs = [], isLoading, isError } = useQuery({
-    queryKey: ['supply-logs', printerId],
-    queryFn: () => printerService.getSupplyLogs(printerId),
+  const { data: activities, isLoading } = useQuery({
+    queryKey: ['supplies', printerId],
+    queryFn: () => printerService.getPrinterActivity(printerId),
   });
 
   if (isLoading) {
-    return <LoadingSpinner />;
+    return <LoadingSpinner message="Loading supply history..." />;
   }
 
-  if (isError) {
-    return <div className="text-center py-8 text-muted-foreground">Failed to load supply history.</div>;
-  }
-
-  if (supplyLogs.length === 0) {
-    return <div className="text-center py-8 text-muted-foreground">No supply history found for this printer.</div>;
+  if (!activities || activities.length === 0) {
+    return (
+      <Card className="p-6 text-center border-dashed border-2">
+        <Package className="h-12 w-12 mx-auto text-muted-foreground/60 mb-2" />
+        <h3 className="text-lg font-medium mb-1">No supply records</h3>
+        <p className="text-muted-foreground text-sm">
+          This printer has no supply replacement records yet.
+        </p>
+      </Card>
+    );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Supply History</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Date</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Description</TableHead>
-              <TableHead>User</TableHead>
-              <TableHead className="text-right">Level</TableHead>
+    <div className="space-y-4">
+      <h3 className="text-lg font-medium">Supply Replacement History</h3>
+
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Date</TableHead>
+            <TableHead>Supply Type</TableHead>
+            <TableHead>Changed By</TableHead>
+            <TableHead>Details</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {activities.map((activity, index) => (
+            <TableRow key={activity.id || index}>
+              <TableCell className="font-mono text-xs">
+                {format(new Date(activity.timestamp), 'MMM dd, yyyy HH:mm')}
+              </TableCell>
+              <TableCell>{activity.action}</TableCell>
+              <TableCell>{activity.user || 'System'}</TableCell>
+              <TableCell>{activity.details || 'Supply replacement'}</TableCell>
             </TableRow>
-          </TableHeader>
-          <TableBody>
-            {supplyLogs.map((log) => (
-              <TableRow key={log.id}>
-                <TableCell>
-                  {format(new Date(log.timestamp), 'MMM d, yyyy h:mm a')}
-                </TableCell>
-                <TableCell>{log.type}</TableCell>
-                <TableCell>{log.message}</TableCell>
-                <TableCell>{log.user}</TableCell>
-                <TableCell className="text-right">
-                  <div className="flex items-center justify-end gap-2">
-                    <Progress
-                      value={parseInt(log.message.replace(/\D/g, '')) || 0}
-                      className="h-2 w-20"
-                    />
-                    <span>{log.message.replace(/\D/g, '') || 0}%</span>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
   );
 };
 

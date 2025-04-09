@@ -1,11 +1,10 @@
 
 import React from 'react';
 import { format } from 'date-fns';
-import { RefreshCw, Printer, Trash, Settings, Activity } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { ActivityLogData } from '@/types/analytics';
-import { Button } from '@/components/ui/button';
 
 interface ActivityTableProps {
   logs: ActivityLogData[];
@@ -13,21 +12,6 @@ interface ActivityTableProps {
 }
 
 const ActivityTable: React.FC<ActivityTableProps> = ({ logs, isLoading }) => {
-  // Get icon for activity type
-  const getActivityIcon = (type: string | undefined, action: string | undefined) => {
-    const actionLower = action?.toLowerCase() || '';
-    
-    if (actionLower.includes('delete') || actionLower.includes('deleted')) {
-      return <div className="bg-rose-900 rounded-full p-2"><Trash className="h-5 w-5 text-rose-200" /></div>;
-    } else if (actionLower.includes('add') || actionLower.includes('added')) {
-      return <div className="bg-blue-900 rounded-full p-2"><Printer className="h-5 w-5 text-blue-200" /></div>;
-    } else if (actionLower.includes('update') || actionLower.includes('updated')) {
-      return <div className="bg-amber-900 rounded-full p-2"><Settings className="h-5 w-5 text-amber-200" /></div>;
-    }
-    
-    return <div className="bg-slate-800 rounded-full p-2"><Activity className="h-5 w-5 text-slate-200" /></div>;
-  };
-
   if (isLoading) {
     return (
       <div className="flex justify-center py-8">
@@ -59,28 +43,41 @@ const ActivityTable: React.FC<ActivityTableProps> = ({ logs, isLoading }) => {
   };
 
   return (
-    <div className="space-y-4">
-      {logs.map((log, index) => (
-        <div key={log.id || index} className="flex gap-3 items-start border-b border-gray-800 pb-4 last:border-0">
-          {getActivityIcon(log.type, log.action)}
-          <div className="flex-1">
-            <p className="font-medium">{log.action || "Activity"}</p>
-            <p className="text-sm text-muted-foreground">{log.message || log.entityType}</p>
-            <p className="text-xs text-muted-foreground mt-1">
-              {log.user || 'System'} • {format(new Date(log.timestamp), 'MMM d, h:mm a')}
-            </p>
-          </div>
-        </div>
-      ))}
-      
-      <div className="flex justify-center">
-        <Button 
-          variant="link" 
-          className="text-blue-500"
-        >
-          View all activity
-        </Button>
-      </div>
+    <div className="rounded-md border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Date & Time</TableHead>
+            <TableHead>Action</TableHead>
+            <TableHead>Entity</TableHead>
+            <TableHead>User</TableHead>
+            <TableHead>Status</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {logs.map((log, index) => (
+            <TableRow key={log.id || index}>
+              <TableCell className="font-medium">
+                {format(new Date(log.timestamp), 'MMM d, yyyy h:mm a')}
+              </TableCell>
+              <TableCell>{log.action || log.message || log.entityType}</TableCell>
+              <TableCell>
+                {log.entityId ? (
+                  <Badge variant="outline" className="whitespace-nowrap">
+                    {log.entityType} #{log.entityId}
+                  </Badge>
+                ) : log.entityType}
+              </TableCell>
+              <TableCell>{log.user || 'System'}</TableCell>
+              <TableCell>
+                <Badge variant={getBadgeVariant(log.type)}>
+                  {log.type}
+                </Badge>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   );
 };

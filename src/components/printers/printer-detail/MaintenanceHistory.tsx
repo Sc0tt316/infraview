@@ -2,10 +2,10 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { printerService } from '@/services/printer';
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Card } from '@/components/ui/card';
+import { Wrench } from 'lucide-react';
 import LoadingSpinner from './LoadingSpinner';
 
 interface MaintenanceHistoryProps {
@@ -13,59 +13,54 @@ interface MaintenanceHistoryProps {
 }
 
 const MaintenanceHistory: React.FC<MaintenanceHistoryProps> = ({ printerId }) => {
-  const { data: maintenanceLogs = [], isLoading, isError } = useQuery({
-    queryKey: ['maintenance-logs', printerId],
-    queryFn: () => printerService.getMaintenanceLogs(printerId),
+  const { data: activities, isLoading } = useQuery({
+    queryKey: ['maintenance', printerId],
+    queryFn: () => printerService.getPrinterActivity(printerId),
   });
 
   if (isLoading) {
-    return <LoadingSpinner />;
+    return <LoadingSpinner message="Loading maintenance history..." />;
   }
 
-  if (isError) {
-    return <div className="text-center py-8 text-muted-foreground">Failed to load maintenance history.</div>;
-  }
-
-  if (maintenanceLogs.length === 0) {
-    return <div className="text-center py-8 text-muted-foreground">No maintenance history found for this printer.</div>;
+  if (!activities || activities.length === 0) {
+    return (
+      <Card className="p-6 text-center border-dashed border-2">
+        <Wrench className="h-12 w-12 mx-auto text-muted-foreground/60 mb-2" />
+        <h3 className="text-lg font-medium mb-1">No maintenance records</h3>
+        <p className="text-muted-foreground text-sm">
+          This printer has no maintenance records yet.
+        </p>
+      </Card>
+    );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Maintenance History</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Date</TableHead>
-              <TableHead>Technician</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Description</TableHead>
-              <TableHead>Status</TableHead>
+    <div className="space-y-4">
+      <h3 className="text-lg font-medium">Maintenance Records</h3>
+
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Date</TableHead>
+            <TableHead>Action</TableHead>
+            <TableHead>Performed By</TableHead>
+            <TableHead>Details</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {activities.map((activity, index) => (
+            <TableRow key={activity.id || index}>
+              <TableCell className="font-mono text-xs">
+                {format(new Date(activity.timestamp), 'MMM dd, yyyy HH:mm')}
+              </TableCell>
+              <TableCell>{activity.action}</TableCell>
+              <TableCell>{activity.user || 'System'}</TableCell>
+              <TableCell>{activity.details || 'Routine maintenance'}</TableCell>
             </TableRow>
-          </TableHeader>
-          <TableBody>
-            {maintenanceLogs.map((log) => (
-              <TableRow key={log.id}>
-                <TableCell>
-                  {format(new Date(log.timestamp), 'MMM d, yyyy h:mm a')}
-                </TableCell>
-                <TableCell>{log.user}</TableCell>
-                <TableCell>{log.type}</TableCell>
-                <TableCell>{log.message}</TableCell>
-                <TableCell>
-                  <Badge variant={log.type === 'scheduled' ? 'outline' : 'default'}>
-                    {log.type === 'emergency' ? 'Emergency' : 'Scheduled'}
-                  </Badge>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
   );
 };
 

@@ -8,7 +8,6 @@ export interface UserData {
   department?: string;
   lastActive?: string;
   status?: 'active' | 'inactive' | 'pending';
-  phone?: string;
 }
 
 export interface NewUserWithPassword {
@@ -18,5 +17,4 @@ export interface NewUserWithPassword {
   role: 'admin' | 'user' | 'manager';
   department: string;
   status: 'active' | 'inactive' | 'pending';
-  phone?: string;
 }
