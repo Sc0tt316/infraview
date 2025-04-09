@@ -33,7 +33,17 @@ const initializeAnalyticsData = async () => {
         error: 1,
         warning: 2,
         maintenance: 0
-      }
+      },
+      departmentVolume: [
+        { department: "Marketing", volume: 34582 },
+        { department: "Finance", volume: 27843 },
+        { department: "HR", volume: 14950 },
+        { department: "IT", volume: 42801 },
+        { department: "Operations", volume: 38762 },
+        { department: "Sales", volume: 31250 },
+        { department: "Legal", volume: 19837 },
+        { department: "Executive", volume: 8950 }
+      ]
     };
     await apiService.post('analytics', mockData);
     return mockData;

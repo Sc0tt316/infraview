@@ -10,8 +10,6 @@ interface MainDashboardProps {
   printers: PrinterData[];
   recentActivities: PrinterActivity[];
   alerts: any[];
-  onViewAllPrinters: () => void;
-  onViewAllActivity: () => void;
   onViewAllAlerts: () => void;
 }
 
@@ -19,21 +17,13 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
   printers,
   recentActivities,
   alerts,
-  onViewAllPrinters,
-  onViewAllActivity,
   onViewAllAlerts
 }) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-      <PrinterStatusSummary
-        printers={printers}
-        onViewAllPrinters={onViewAllPrinters}
-      />
+      <PrinterStatusSummary printers={printers} />
       
-      <RecentActivity
-        activities={recentActivities}
-        onViewAllActivity={onViewAllActivity}
-      />
+      <RecentActivity activities={recentActivities} />
       
       <AlertsOverview
         alerts={alerts}

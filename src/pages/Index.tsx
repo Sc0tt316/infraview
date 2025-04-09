@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { printerService } from '@/services/printer';
 import { PrinterData, PrinterActivity } from '@/types/printers';
 import { useNavigate } from 'react-router-dom';
+import { Alert } from '@/types/alerts';
 
 // Import components
 import StatsOverview from '@/components/dashboard/StatsOverview';
@@ -21,7 +22,7 @@ const Index = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [recentActivities, setRecentActivities] = useState<PrinterActivity[]>([]);
-  const [alerts, setAlerts] = useState([
+  const [alerts, setAlerts] = useState<Alert[]>([
     {
       id: "a1",
       title: "Paper jam detected",

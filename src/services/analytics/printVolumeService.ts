@@ -2,99 +2,81 @@
 import { apiService } from '../api';
 import { toast } from 'sonner';
 import { PrintVolumeData } from '@/types/analytics';
+import { format, subDays, eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval } from 'date-fns';
 
-// Initialize print volume data
-const initializePrintVolumeData = async () => {
-  const existingData = await apiService.get<Record<string, PrintVolumeData[]>>('printVolume');
-  if (!existingData) {
-    const today = new Date();
+// Generate realistic looking print volume data
+const generatePrintVolumeData = (days: number): PrintVolumeData[] => {
+  const data: PrintVolumeData[] = [];
+  const now = new Date();
+  
+  for (let i = days; i >= 0; i--) {
+    const date = subDays(now, i);
+    const dayOfWeek = date.getDay();
     
-    const dailyData: PrintVolumeData[] = Array.from({ length: 24 }, (_, i) => {
-      const hour = String(i).padStart(2, '0');
-      return {
-        date: `${hour}:00`,
-        count: Math.floor(Math.random() * 50) + 10,
-        volume: Math.floor(Math.random() * 500) + 100
-      };
+    // Lower volume on weekends
+    const baseVolume = dayOfWeek === 0 || dayOfWeek === 6 ? 
+      Math.floor(Math.random() * 200) + 50 :  // Weekend (50-250)
+      Math.floor(Math.random() * 800) + 300;  // Weekday (300-1100)
+    
+    data.push({
+      date: format(date, 'yyyy-MM-dd'),
+      volume: baseVolume
     });
-    
-    const weeklyData: PrintVolumeData[] = Array.from({ length: 7 }, (_, i) => {
-      const date = new Date();
-      date.setDate(today.getDate() - (6 - i));
-      return {
-        date: date.toLocaleDateString('en-US', { weekday: 'short' }),
-        count: Math.floor(Math.random() * 200) + 50,
-        volume: Math.floor(Math.random() * 2000) + 500
-      };
-    });
-    
-    const monthlyData: PrintVolumeData[] = Array.from({ length: 30 }, (_, i) => {
-      const date = new Date();
-      date.setDate(today.getDate() - (29 - i));
-      return {
-        date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        count: Math.floor(Math.random() * 150) + 30,
-        volume: Math.floor(Math.random() * 1500) + 300
-      };
-    });
-    
-    const yearlyData: PrintVolumeData[] = Array.from({ length: 12 }, (_, i) => {
-      const date = new Date();
-      date.setMonth(i);
-      return {
-        date: date.toLocaleDateString('en-US', { month: 'short' }),
-        count: Math.floor(Math.random() * 3000) + 1000,
-        volume: Math.floor(Math.random() * 30000) + 10000
-      };
-    });
-    
-    const mockData = {
-      day: dailyData,
-      week: weeklyData,
-      month: monthlyData,
-      year: yearlyData
-    };
-    
-    await apiService.post('printVolume', mockData);
-    return mockData;
   }
-  return existingData;
+  return data;
 };
 
-// Print volume service
 export const printVolumeService = {
-  getPrintVolumeByTimeRange: async (timeRange: 'day' | 'week' | 'month' | 'year'): Promise<PrintVolumeData[]> => {
+  getPrintVolumeData: async (options?: { timeRange?: string; from?: Date; to?: Date }): Promise<PrintVolumeData[]> => {
     try {
-      const volumeData = await initializePrintVolumeData();
-      return volumeData[timeRange] || [];
+      // Check if we already have data
+      let volumeData = await apiService.get<PrintVolumeData[]>('print-volume');
+      
+      if (!volumeData || volumeData.length === 0) {
+        // Generate 60 days of data for initial setup
+        volumeData = generatePrintVolumeData(60);
+        await apiService.post('print-volume', volumeData);
+      }
+      
+      // Handle filtering by time range or dates
+      if (options) {
+        const { timeRange, from, to } = options;
+        
+        if (from && to) {
+          // Filter by date range
+          return volumeData.filter(item => {
+            const itemDate = new Date(item.date);
+            return itemDate >= from && itemDate <= to;
+          });
+        }
+        
+        if (timeRange) {
+          const now = new Date();
+          const days = timeRange === 'day' ? 1 : 
+                      timeRange === 'week' ? 7 : 
+                      timeRange === 'month' ? 30 : 365;
+          
+          return volumeData.filter(item => {
+            const itemDate = new Date(item.date);
+            return itemDate >= subDays(now, days);
+          });
+        }
+      }
+      
+      return volumeData;
     } catch (error) {
       console.error('Error fetching print volume data:', error);
       toast.error("Failed to fetch print volume data. Please try again.");
-      return [];
+      throw error;
     }
   },
   
+  // Add missing methods to meet interface requirements
   getPrintVolumeByDateRange: async ({ from, to }: { from: Date; to: Date }): Promise<PrintVolumeData[]> => {
-    try {
-      const daysDiff = Math.ceil((to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24));
-      const customData: PrintVolumeData[] = [];
-      
-      for (let i = 0; i <= daysDiff; i++) {
-        const date = new Date(from);
-        date.setDate(from.getDate() + i);
-        
-        customData.push({
-          date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-          count: Math.floor(Math.random() * 150) + 30,
-          volume: Math.floor(Math.random() * 1500) + 300
-        });
-      }
-      
-      return customData;
-    } catch (error) {
-      console.error('Error generating custom date range data:', error);
-      toast.error("Failed to generate custom date range data.");
-      return [];
-    }
+    return printVolumeService.getPrintVolumeData({ from, to });
+  },
+  
+  getPrintVolumeByTimeRange: async (timeRange: 'day' | 'week' | 'month' | 'year'): Promise<PrintVolumeData[]> => {
+    return printVolumeService.getPrintVolumeData({ timeRange });
   }
 };

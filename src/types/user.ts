@@ -9,4 +9,18 @@ export interface UserData {
   lastActive?: string;
   status?: 'active' | 'inactive' | 'pending';
   phone: string;
+  password?: string;
+}
+
+// This is to match the User type from AuthContext with UserData
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: 'admin' | 'user' | 'manager';
+  avatar?: string;
+  department?: string;
+  lastActive?: string;
+  status?: 'active' | 'inactive' | 'pending';
+  phone: string;
 }

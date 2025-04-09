@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertTriangle, WrenchIcon, CheckCircle, XCircle, Printer } from 'lucide-react';
-import { PrinterData } from '@/services/printer';
+import { PrinterData } from '@/types/printers';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 
 interface PrinterStatusSummaryProps {

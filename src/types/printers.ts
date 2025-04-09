@@ -47,3 +47,22 @@ export interface PrinterActivity {
   user?: string;
   details?: string;
 }
+
+// Adding missing types that were causing errors
+export type PrintLog = {
+  id: string;
+  timestamp: string;
+  fileName: string;
+  pages: number;
+  size: string;
+  status: 'completed' | 'failed';
+  user: string;
+};
+
+export type ActivityItem = {
+  id: string;
+  timestamp: string;
+  message: string;
+  type: 'info' | 'warning' | 'error' | 'success';
+  details?: string;
+};
