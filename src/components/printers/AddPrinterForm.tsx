@@ -28,7 +28,6 @@ const AddPrinterForm: React.FC<AddPrinterFormProps> = ({
   onCancel,
   formData,
   handleInputChange,
-  setFormData
 }) => {
   return (
     <Form {...form}>
@@ -177,58 +176,10 @@ const AddPrinterForm: React.FC<AddPrinterFormProps> = ({
               </FormItem>
             )}
           />
-          
-          {/* Ink Level - Read only */}
-          <FormField
-            control={form.control}
-            name="inkLevel"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Ink Level</FormLabel>
-                <FormControl>
-                  <Input 
-                    {...field} 
-                    value={formData.inkLevel}
-                    onChange={(e) => {
-                      field.onChange(e);
-                      handleInputChange(e);
-                    }}
-                    type="number"
-                    min={0}
-                    max={100}
-                    readOnly
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          {/* Paper Level - Read only */}
-          <FormField
-            control={form.control}
-            name="paperLevel"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Paper Level</FormLabel>
-                <FormControl>
-                  <Input 
-                    {...field} 
-                    value={formData.paperLevel}
-                    onChange={(e) => {
-                      field.onChange(e);
-                      handleInputChange(e);
-                    }}
-                    type="number"
-                    min={0}
-                    max={100}
-                    readOnly
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+        </div>
+        
+        <div className="text-sm text-muted-foreground">
+          <p>Ink and paper levels will be automatically detected once the printer is connected.</p>
         </div>
         
         {/* Form Actions */}

@@ -2,6 +2,14 @@
 import React from 'react';
 import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { AlertFilter, AlertSeverity } from '@/types/alerts';
 
 interface AlertFiltersProps {
@@ -11,6 +19,8 @@ interface AlertFiltersProps {
   onStatusFilterChange: (status: AlertFilter) => void;
   severityFilter: AlertSeverity | 'all';
   onSeverityFilterChange: (severity: AlertSeverity | 'all') => void;
+  relatedToFilter: 'all' | 'user' | 'printer';
+  onRelatedToFilterChange: (relatedTo: 'all' | 'user' | 'printer') => void;
 }
 
 const AlertFilters: React.FC<AlertFiltersProps> = ({
@@ -19,11 +29,13 @@ const AlertFilters: React.FC<AlertFiltersProps> = ({
   statusFilter,
   onStatusFilterChange,
   severityFilter,
-  onSeverityFilterChange
+  onSeverityFilterChange,
+  relatedToFilter,
+  onRelatedToFilterChange
 }) => {
   return (
-    <div className="flex flex-col md:flex-row gap-4 pb-4">
-      <div className="relative flex-grow">
+    <div className="grid gap-4 md:grid-cols-4">
+      <div className="relative">
         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
         <Input
           type="search"
@@ -34,28 +46,57 @@ const AlertFilters: React.FC<AlertFiltersProps> = ({
         />
       </div>
       
-      <div className="flex gap-2">
-        <select
-          className="flex h-10 items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+      <div>
+        <Label htmlFor="statusFilter" className="sr-only">Filter by Status</Label>
+        <Select
           value={statusFilter}
-          onChange={(e) => onStatusFilterChange(e.target.value as AlertFilter)}
+          onValueChange={(value: AlertFilter) => onStatusFilterChange(value)}
         >
-          <option value="all">All Status</option>
-          <option value="active">Active</option>
-          <option value="resolved">Resolved</option>
-        </select>
-        
-        <select
-          className="flex h-10 items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          <SelectTrigger id="statusFilter" className="w-full">
+            <SelectValue placeholder="Filter by Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="active">Active</SelectItem>
+            <SelectItem value="resolved">Resolved</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      
+      <div>
+        <Label htmlFor="severityFilter" className="sr-only">Filter by Severity</Label>
+        <Select
           value={severityFilter}
-          onChange={(e) => onSeverityFilterChange(e.target.value as AlertSeverity | 'all')}
+          onValueChange={(value: AlertSeverity | 'all') => onSeverityFilterChange(value)}
         >
-          <option value="all">All Severity</option>
-          <option value="low">Low</option>
-          <option value="medium">Medium</option>
-          <option value="high">High</option>
-          <option value="critical">Critical</option>
-        </select>
+          <SelectTrigger id="severityFilter" className="w-full">
+            <SelectValue placeholder="Filter by Severity" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Severities</SelectItem>
+            <SelectItem value="low">Low</SelectItem>
+            <SelectItem value="medium">Medium</SelectItem>
+            <SelectItem value="high">High</SelectItem>
+            <SelectItem value="critical">Critical</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      
+      <div>
+        <Label htmlFor="relatedToFilter" className="sr-only">Filter by Related To</Label>
+        <Select
+          value={relatedToFilter}
+          onValueChange={(value: 'all' | 'user' | 'printer') => onRelatedToFilterChange(value)}
+        >
+          <SelectTrigger id="relatedToFilter" className="w-full">
+            <SelectValue placeholder="Filter by Related To" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All</SelectItem>
+            <SelectItem value="printer">Printer Related</SelectItem>
+            <SelectItem value="user">User Related</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
     </div>
   );

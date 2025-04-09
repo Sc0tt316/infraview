@@ -8,7 +8,7 @@ export interface Alert {
   printer?: {
     id: string;
     name: string;
-    location: string;
+    location?: string;
   };
   isResolved: boolean;
   resolvedAt?: string;

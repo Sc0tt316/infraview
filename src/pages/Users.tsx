@@ -34,6 +34,7 @@ const Users = () => {
   const [showAddUserModal, setShowAddUserModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
   const [roleFilter, setRoleFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [showPassword, setShowPassword] = useState(false);
   const [newUser, setNewUser] = useState({
     name: '',
@@ -89,6 +90,7 @@ const Users = () => {
     if (users) {
       let filtered = users;
 
+      // Apply search filter
       if (searchTerm) {
         const lowerSearchTerm = searchTerm.toLowerCase();
         filtered = filtered.filter(user =>
@@ -98,13 +100,19 @@ const Users = () => {
         );
       }
 
+      // Apply role filter
       if (roleFilter !== 'all') {
         filtered = filtered.filter(user => user.role === roleFilter);
       }
 
+      // Apply status filter
+      if (statusFilter !== 'all') {
+        filtered = filtered.filter(user => user.status === statusFilter);
+      }
+
       setFilteredUsers(filtered);
     }
-  }, [users, searchTerm, roleFilter]);
+  }, [users, searchTerm, roleFilter, statusFilter]);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
@@ -112,6 +120,10 @@ const Users = () => {
 
   const handleRoleFilterChange = (role: string) => {
     setRoleFilter(role);
+  };
+
+  const handleStatusFilterChange = (status: string) => {
+    setStatusFilter(status);
   };
 
   const handleOpenAddUserModal = () => {
@@ -190,29 +202,45 @@ const Users = () => {
         </div>
       </div>
 
-      <div className="flex items-center justify-between">
-        <div className="flex items-center">
+      <div className="flex flex-col md:flex-row gap-4">
+        <div className="relative flex-grow">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
-            type="text"
+            type="search"
             placeholder="Search users..."
+            className="pl-8"
             value={searchTerm}
             onChange={handleSearchChange}
-            className="max-w-md"
           />
-          <Search className="w-4 h-4 ml-2 text-muted-foreground" />
         </div>
 
-        <Select onValueChange={handleRoleFilterChange}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Filter by role" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Roles</SelectItem>
-            <SelectItem value="admin">Admin</SelectItem>
-            <SelectItem value="manager">Manager</SelectItem>
-            <SelectItem value="user">User</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="w-full md:w-[200px]">
+          <Select onValueChange={handleRoleFilterChange} defaultValue="all">
+            <SelectTrigger>
+              <SelectValue placeholder="Filter by role" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Roles</SelectItem>
+              <SelectItem value="admin">Admin</SelectItem>
+              <SelectItem value="manager">Manager</SelectItem>
+              <SelectItem value="user">User</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="w-full md:w-[200px]">
+          <Select onValueChange={handleStatusFilterChange} defaultValue="all">
+            <SelectTrigger>
+              <SelectValue placeholder="Filter by status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="inactive">Inactive</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {isLoading ? (
