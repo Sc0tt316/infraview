@@ -4,16 +4,20 @@ import { useQuery } from '@tanstack/react-query';
 import { analyticsService } from '@/services/analytics';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { DateRangePicker } from '@/components/analytics/DateRangePicker';
+import DateRangePicker from '@/components/analytics/DateRangePicker';
 import { RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import StatsSummaryCards from '@/components/analytics/StatsSummaryCards';
 import PrintVolumeChart from '@/components/analytics/PrintVolumeChart';
 import DepartmentVolumeChart from '@/components/analytics/DepartmentVolumeChart';
 import AnalyticsHeader from '@/components/analytics/AnalyticsHeader';
+import { DateRange } from 'react-day-picker';
 
 const Analytics = () => {
-  const [dateRange, setDateRange] = useState<string>('7d');
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: new Date(new Date().setDate(new Date().getDate() - 30)),
+    to: new Date()
+  });
   const [activeTab, setActiveTab] = useState<string>('overview');
 
   // Fetch analytics data
@@ -33,7 +37,7 @@ const Analytics = () => {
     refetch: refetchVolume,
   } = useQuery({
     queryKey: ['printVolume', dateRange],
-    queryFn: () => analyticsService.getPrintVolumeData(dateRange),
+    queryFn: () => analyticsService.getPrintVolumeData('30d'),
   });
 
   // Handle refresh
@@ -42,9 +46,9 @@ const Analytics = () => {
     refetchVolume();
   };
 
-  // Handle date range change
-  const handleDateRangeChange = (range: string) => {
-    setDateRange(range);
+  // Handle date range apply
+  const handleDateRangeApply = () => {
+    refetchVolume();
   };
 
   const isLoading = isLoadingAnalytics || isLoadingVolume;
@@ -52,22 +56,13 @@ const Analytics = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <AnalyticsHeader />
-        
-        <div className="flex items-center gap-2">
-          <DateRangePicker
-            value={dateRange}
-            onValueChange={handleDateRangeChange}
-          />
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={handleRefresh}
-            disabled={isLoading}
-          >
-            <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
-          </Button>
-        </div>
+        <AnalyticsHeader 
+          dateRange={dateRange}
+          setDateRange={setDateRange}
+          onDateRangeApply={handleDateRangeApply}
+          onRefresh={handleRefresh}
+          isLoading={isLoading}
+        />
       </div>
 
       <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
@@ -83,7 +78,7 @@ const Analytics = () => {
             </div>
           ) : (
             <div className="space-y-6">
-              <StatsSummaryCards data={analyticsData?.summary || {}} />
+              <StatsSummaryCards analyticsData={analyticsData} />
 
               <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
                 <Card className="lg:col-span-3">
@@ -91,7 +86,12 @@ const Analytics = () => {
                     <CardTitle>Print Volume Over Time</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <PrintVolumeChart data={printVolumeData || []} />
+                    <PrintVolumeChart 
+                      timeRange="month"
+                      setTimeRange={() => {}}
+                      volumeData={printVolumeData}
+                      isLoading={isLoadingVolume}
+                    />
                   </CardContent>
                 </Card>
 
@@ -100,7 +100,10 @@ const Analytics = () => {
                     <CardTitle>Department Volume</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <DepartmentVolumeChart data={analyticsData?.summary?.departmentVolume || []} />
+                    <DepartmentVolumeChart 
+                      departmentData={analyticsData?.summary?.departmentVolume}
+                      isLoading={isLoadingAnalytics}
+                    />
                   </CardContent>
                 </Card>
               </div>
