@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { printerService, PrinterData } from '@/services/printer';
 import { useToast } from '@/hooks/use-toast';
@@ -36,7 +36,8 @@ const Printers = () => {
   
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin' || user?.role === 'manager';
-  const hasManageAccess = user?.role === 'admin' || user?.role === 'manager';
+  const hasAdminAccess = user?.role === 'admin' || user?.role === 'manager';
+  const hasDeleteAccess = user?.role === 'admin';
   
   const form = useForm<PrinterFormValues>({
     resolver: zodResolver(printerFormSchema),
@@ -184,7 +185,7 @@ const Printers = () => {
   };
 
   const handleOpenEditModal = (printer: PrinterData) => {
-    if (!hasManageAccess) {
+    if (!hasAdminAccess) {
       toast({
         variant: "destructive",
         title: "Access Denied",
@@ -208,7 +209,7 @@ const Printers = () => {
   };
 
   const handleOpenDeleteConfirmation = (printer: PrinterData) => {
-    if (!hasManageAccess) {
+    if (!hasDeleteAccess) {
       toast({
         variant: "destructive",
         title: "Access Denied",
@@ -245,14 +246,14 @@ const Printers = () => {
   };
 
   const handleDeletePrinter = () => {
-    if (selectedPrinter && hasManageAccess) {
+    if (selectedPrinter && hasDeleteAccess) {
       deletePrinterMutation.mutate(selectedPrinter.id);
     }
   };
 
   const handleUpdatePrinter = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedPrinter || !hasManageAccess) return;
+    if (!selectedPrinter || !hasAdminAccess) return;
 
     const updateData = {
       id: selectedPrinter.id,
@@ -269,7 +270,7 @@ const Printers = () => {
   };
 
   const handleRestartPrinter = (id: string) => {
-    if (!hasManageAccess) {
+    if (!hasAdminAccess) {
       toast({
         variant: "destructive",
         title: "Access Denied",

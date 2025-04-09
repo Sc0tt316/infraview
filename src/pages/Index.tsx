@@ -1,8 +1,8 @@
+
 import React, { useState, useEffect } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { useAuth } from '@/context/AuthContext';
-import { Alert } from '@/types/alerts';
-import { AlertSeverity } from '@/types/alerts';
+import { Alert, AlertSeverity } from '@/types/alerts';
 import { useAlerts } from '@/hooks/useAlerts';
 import {
   Table,
@@ -12,19 +12,10 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Badge } from "@/components/ui/badge"
-import { MoreVertical, Edit, Copy, Trash } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/table";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { useNavigate } from 'react-router-dom';
 import PrinterStatusSummary from '@/components/dashboard/PrinterStatusSummary';
 import { usePrinters } from '@/hooks/usePrinters';
@@ -70,20 +61,6 @@ const Index = () => {
     }
   };
 
-  // Format alerts data for display
-  const alertsData: Alert[] = recentAlerts.map(alert => ({
-    id: alert.id,
-    title: alert.title,
-    description: alert.description,
-    timestamp: alert.timestamp,
-    severity: alert.severity as AlertSeverity,
-    isResolved: alert.isResolved,
-    // Include other required fields with defaults if needed
-    resolvedAt: alert.resolvedAt,
-    resolvedBy: alert.resolvedBy,
-    printer: alert.printer
-  }));
-
   return (
     <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
       {/* Printer Status Summary */}
@@ -105,7 +82,7 @@ const Index = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {alertsData.map((alert) => (
+                {recentAlerts.map((alert) => (
                   <TableRow key={alert.id}>
                     <TableCell>
                       <Badge className={getSeverityColor(alert.severity)}>

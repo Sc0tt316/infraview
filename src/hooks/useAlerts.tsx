@@ -24,10 +24,14 @@ export const useAlerts = () => {
         description: alert.description || '', // Ensure description is not undefined
         timestamp: alert.timestamp,
         severity: alert.severity as AlertSeverity,
-        printer: alert.printer,
+        printer: alert.printer ? {
+          id: alert.printer.id,
+          name: alert.printer.name,
+          location: alert.printer.location || '' // Ensure location is not undefined
+        } : undefined,
         isResolved: alert.isResolved,
-        resolvedAt: alert.resolvedAt,
-        resolvedBy: alert.resolvedBy
+        resolvedAt: alert.resolved ? alert.resolved.timestamp : undefined,
+        resolvedBy: alert.resolved ? alert.resolved.by : undefined
       }));
       setAlerts(transformedAlerts);
     } catch (error) {
