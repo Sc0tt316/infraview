@@ -17,7 +17,19 @@ export const useAlerts = () => {
     setIsLoading(true);
     try {
       const fetchedAlerts = await analyticsService.getAlerts();
-      setAlerts(fetchedAlerts);
+      // Transform AlertData to Alert if needed
+      const transformedAlerts: Alert[] = fetchedAlerts.map(alert => ({
+        id: alert.id,
+        title: alert.title,
+        description: alert.description || '', // Ensure description is not undefined
+        timestamp: alert.timestamp,
+        severity: alert.severity as AlertSeverity,
+        printer: alert.printer,
+        isResolved: alert.isResolved,
+        resolvedAt: alert.resolvedAt,
+        resolvedBy: alert.resolvedBy
+      }));
+      setAlerts(transformedAlerts);
     } catch (error) {
       console.error('Error fetching alerts:', error);
       toast.error('Failed to fetch alerts');

@@ -39,9 +39,9 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   
   return (
-    <ThemeProvider defaultTheme="light">
+    <ThemeProvider>
       <QueryClientProvider client={queryClient}>
-        <AuthProvider setIsLoggedIn={setIsLoggedIn}>
+        <AuthProvider>
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route

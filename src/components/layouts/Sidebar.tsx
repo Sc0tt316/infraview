@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -27,7 +26,7 @@ const Sidebar = () => {
   const { user, logout } = useAuth();
   const isAdmin = user?.role === 'admin';
   
-  // Routes for navigation
+  // Routes for navigation - removed Activity
   const routes = [
     {
       href: '/',

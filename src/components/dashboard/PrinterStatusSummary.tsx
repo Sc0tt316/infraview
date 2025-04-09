@@ -37,15 +37,15 @@ const PrinterStatusSummary: React.FC<PrinterStatusSummaryProps> = ({ printers })
       </CardHeader>
       <CardContent>
         {chartData.length > 0 ? (
-          <div className="h-[160px] mt-3">
+          <div className="h-[120px] mt-2">
             <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
+              <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
                 <Pie
                   data={chartData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={35}
-                  outerRadius={60}
+                  innerRadius={25}
+                  outerRadius={40}
                   paddingAngle={2}
                   dataKey="value"
                 >
@@ -56,18 +56,21 @@ const PrinterStatusSummary: React.FC<PrinterStatusSummaryProps> = ({ printers })
                 <Tooltip 
                   formatter={(value, name) => [`${value}`, name]}
                   labelFormatter={() => ''}
+                  contentStyle={{ fontSize: '11px' }}
                 />
                 <Legend 
                   layout="horizontal" 
                   verticalAlign="bottom"
                   align="center"
-                  wrapperStyle={{ fontSize: '12px', marginTop: '10px' }}
+                  wrapperStyle={{ fontSize: '10px', paddingTop: '5px' }}
+                  iconSize={8}
+                  formatter={(value) => <span style={{ fontSize: '10px' }}>{value}</span>}
                 />
               </PieChart>
             </ResponsiveContainer>
           </div>
         ) : (
-          <div className="py-8 text-center text-muted-foreground">
+          <div className="py-6 text-center text-muted-foreground">
             No printer data available
           </div>
         )}

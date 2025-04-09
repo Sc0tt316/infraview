@@ -1,139 +1,143 @@
-
-import React, { useEffect, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { printerService } from '@/services/printer';
-import { PrinterData, PrinterActivity } from '@/types/printers';
-import { useNavigate } from 'react-router-dom';
-import { Alert } from '@/types/alerts';
-
-// Import components
-import StatsOverview from '@/components/dashboard/StatsOverview';
-import MainDashboard from '@/components/dashboard/MainDashboard';
-import { RefreshCw } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import React, { useState, useEffect } from 'react';
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { useAuth } from '@/context/AuthContext';
+import { Alert } from '@/types/alerts';
+import { AlertSeverity } from '@/types/alerts';
+import { useAlerts } from '@/hooks/useAlerts';
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Badge } from "@/components/ui/badge"
+import { MoreVertical, Edit, Copy, Trash } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { useNavigate } from 'react-router-dom';
+import PrinterStatusSummary from '@/components/dashboard/PrinterStatusSummary';
+import { usePrinters } from '@/hooks/usePrinters';
+import { PrinterData } from '@/types/printers';
 
 const Index = () => {
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(true);
-  const [recentActivities, setRecentActivities] = useState<PrinterActivity[]>([]);
-  const [alerts, setAlerts] = useState<Alert[]>([
-    {
-      id: "a1",
-      title: "Paper jam detected",
-      description: "Marketing Printer (Epson WorkForce Pro) has a paper jam in tray 2.",
-      timestamp: new Date().toISOString(),
-      severity: "medium",
-      isResolved: false
-    },
-    {
-      id: "a2",
-      title: "Toner critically low",
-      description: "Executive Printer (Canon PIXMA) black toner at 5%.",
-      timestamp: new Date(Date.now() - 3600000).toISOString(),
-      severity: "high",
-      isResolved: false
-    },
-    {
-      id: "a3",
-      title: "Connection lost",
-      description: "Conference Room Printer (Brother MFC) went offline unexpectedly.",
-      timestamp: new Date(Date.now() - 7200000).toISOString(),
-      severity: "low",
-      isResolved: false
-    }
-  ]);
-  
   const { user } = useAuth();
-  const isAdmin = user?.role === 'admin' || user?.role === 'manager';
+  const { alerts, filteredAlerts, isLoading: alertsLoading } = useAlerts();
+  const { printers, isLoading: printersLoading } = usePrinters();
+  const [recentAlerts, setRecentAlerts] = useState<Alert[]>([]);
+  const [printerData, setPrinterData] = useState<PrinterData[]>([]);
 
-  // Fetch printers data
-  const { data: printers = [], refetch } = useQuery({
-    queryKey: ['printers'],
-    queryFn: () => printerService.getAllPrinters(),
-  });
-  
-  // Load activities on component mount
+  // Check if user is admin
+  const hasAdminAccess = user?.role === 'admin' || user?.role === 'manager';
+
   useEffect(() => {
-    const loadActivities = async () => {
-      try {
-        const activities = await printerService.getAllActivities();
-        // Sort by timestamp descending and take the 5 most recent
-        const sortedActivities = activities
-          .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-          .slice(0, 5);
-        setRecentActivities(sortedActivities);
-      } catch (error) {
-        console.error("Error loading activities:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    loadActivities();
-  }, []);
-  
-  // Navigation handlers
-  const handleViewAllAlerts = () => navigate('/alerts');
-  
-  // Refresh dashboard data
-  const handleRefresh = () => {
-    setIsLoading(true);
-    refetch().then(() => {
-      printerService.getAllActivities().then(activities => {
-        const sortedActivities = activities
-          .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-          .slice(0, 5);
-        setRecentActivities(sortedActivities);
-        setIsLoading(false);
-      });
-    });
+    // Sort alerts by timestamp and get the 5 most recent
+    const sortedAlerts = [...alerts].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    setRecentAlerts(sortedAlerts.slice(0, 5));
+  }, [alerts]);
+
+  useEffect(() => {
+    // Fetch printer data
+    if (!printersLoading) {
+      setPrinterData(printers);
+    }
+  }, [printers, printersLoading]);
+
+  // Function to determine badge color based on severity
+  const getSeverityColor = (severity: AlertSeverity) => {
+    switch (severity) {
+      case 'low':
+        return 'bg-green-100 text-green-800';
+      case 'medium':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'high':
+        return 'bg-orange-100 text-orange-800';
+      case 'critical':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
   };
-  
-  // Calculate alerts
-  const activeAlerts = alerts.filter(alert => !alert.isResolved).length;
-  
+
+  // Format alerts data for display
+  const alertsData: Alert[] = recentAlerts.map(alert => ({
+    id: alert.id,
+    title: alert.title,
+    description: alert.description,
+    timestamp: alert.timestamp,
+    severity: alert.severity as AlertSeverity,
+    isResolved: alert.isResolved,
+    // Include other required fields with defaults if needed
+    resolvedAt: alert.resolvedAt,
+    resolvedBy: alert.resolvedBy,
+    printer: alert.printer
+  }));
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">Dashboard</h1>
-          <p className="text-muted-foreground mt-1">
-            Overview of your printing system
-          </p>
-        </div>
-        
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={handleRefresh}
-          disabled={isLoading}
-        >
-          <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
-        </Button>
-      </div>
+    <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+      {/* Printer Status Summary */}
+      <PrinterStatusSummary printers={printerData} />
 
-      {isLoading ? (
-        <div className="flex justify-center items-center h-64">
-          <RefreshCw className="h-8 w-8 animate-spin text-primary/70" />
-        </div>
-      ) : (
-        <>
-          {/* Stats overview */}
-          <StatsOverview 
-            printers={printers} 
-            activeAlerts={activeAlerts} 
-          />
+      {/* Recent Alerts Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Alerts</CardTitle>
+        </CardHeader>
+        <CardContent className="pl-2 pb-4">
+          <ScrollArea className="h-[300px] w-full">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[100px]">Severity</TableHead>
+                  <TableHead>Title</TableHead>
+                  <TableHead>Timestamp</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {alertsData.map((alert) => (
+                  <TableRow key={alert.id}>
+                    <TableCell>
+                      <Badge className={getSeverityColor(alert.severity)}>
+                        {alert.severity}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{alert.title}</TableCell>
+                    <TableCell>{new Date(alert.timestamp).toLocaleString()}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </ScrollArea>
+        </CardContent>
+      </Card>
 
-          {/* Main Dashboard Content */}
-          <MainDashboard 
-            printers={printers}
-            recentActivities={recentActivities}
-            alerts={alerts}
-            onViewAllAlerts={handleViewAllAlerts}
-          />
-        </>
-      )}
+      {/* Quick Actions */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Quick Actions</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-2">
+            <Button onClick={() => navigate('/printers')}>Manage Printers</Button>
+            {hasAdminAccess && (
+              <Button onClick={() => navigate('/users')}>Manage Users</Button>
+            )}
+            <Button onClick={() => navigate('/alerts')}>View All Alerts</Button>
+            <Button onClick={() => navigate('/settings')}>Settings</Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
