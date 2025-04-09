@@ -44,14 +44,12 @@ const AddPrinterForm: React.FC<AddPrinterFormProps> = ({
                 <FormControl>
                   <Input 
                     {...field} 
-                    type="text"
                     value={formData.name}
                     onChange={(e) => {
                       field.onChange(e);
                       handleInputChange(e);
                     }}
                     placeholder="Marketing Printer" 
-                    className="bg-background text-foreground"
                   />
                 </FormControl>
                 <FormMessage />
@@ -69,14 +67,12 @@ const AddPrinterForm: React.FC<AddPrinterFormProps> = ({
                 <FormControl>
                   <Input 
                     {...field} 
-                    type="text"
                     value={formData.model}
                     onChange={(e) => {
                       field.onChange(e);
                       handleInputChange(e);
                     }}
                     placeholder="Epson WorkForce Pro" 
-                    className="bg-background text-foreground"
                   />
                 </FormControl>
                 <FormMessage />
@@ -94,14 +90,12 @@ const AddPrinterForm: React.FC<AddPrinterFormProps> = ({
                 <FormControl>
                   <Input 
                     {...field} 
-                    type="text"
                     value={formData.location}
                     onChange={(e) => {
                       field.onChange(e);
                       handleInputChange(e);
                     }}
                     placeholder="Marketing Department, 2nd Floor" 
-                    className="bg-background text-foreground"
                   />
                 </FormControl>
                 <FormMessage />
@@ -118,7 +112,7 @@ const AddPrinterForm: React.FC<AddPrinterFormProps> = ({
                 <FormLabel>Status</FormLabel>
                 <FormControl>
                   <select
-                    className="w-full flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 text-foreground"
+                    className="w-full flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     name="status"
                     value={formData.status}
                     onChange={(e) => {
@@ -148,14 +142,12 @@ const AddPrinterForm: React.FC<AddPrinterFormProps> = ({
                 <FormControl>
                   <Input 
                     {...field} 
-                    type="text"
                     value={formData.ipAddress}
                     onChange={(e) => {
                       field.onChange(e);
                       handleInputChange(e);
                     }}
                     placeholder="192.168.1.100" 
-                    className="bg-background text-foreground"
                   />
                 </FormControl>
                 <FormMessage />
@@ -173,14 +165,12 @@ const AddPrinterForm: React.FC<AddPrinterFormProps> = ({
                 <FormControl>
                   <Input 
                     {...field} 
-                    type="text"
                     value={formData.department}
                     onChange={(e) => {
                       field.onChange(e);
                       handleInputChange(e);
                     }}
                     placeholder="Marketing" 
-                    className="bg-background text-foreground"
                   />
                 </FormControl>
                 <FormMessage />
@@ -207,7 +197,6 @@ const AddPrinterForm: React.FC<AddPrinterFormProps> = ({
                     min={0}
                     max={100}
                     readOnly
-                    className="bg-muted cursor-not-allowed"
                   />
                 </FormControl>
                 <FormMessage />
@@ -234,7 +223,6 @@ const AddPrinterForm: React.FC<AddPrinterFormProps> = ({
                     min={0}
                     max={100}
                     readOnly
-                    className="bg-muted cursor-not-allowed"
                   />
                 </FormControl>
                 <FormMessage />

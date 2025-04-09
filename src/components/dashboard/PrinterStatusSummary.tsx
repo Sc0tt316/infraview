@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Printer } from 'lucide-react';
+import { AlertTriangle, WrenchIcon, CheckCircle, XCircle, Printer } from 'lucide-react';
 import { PrinterData } from '@/types/printers';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 
@@ -37,40 +37,33 @@ const PrinterStatusSummary: React.FC<PrinterStatusSummaryProps> = ({ printers })
       </CardHeader>
       <CardContent>
         {chartData.length > 0 ? (
-          <div className="h-[120px] mt-2">
+          <div className="h-[200px] mt-4">
             <ResponsiveContainer width="100%" height="100%">
-              <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
+              <PieChart>
                 <Pie
                   data={chartData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={25}
-                  outerRadius={40}
+                  innerRadius={45}
+                  outerRadius={80}
                   paddingAngle={2}
                   dataKey="value"
+                  label={({ name, value }) => `${name}: ${value}`}
                 >
                   {chartData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
                 <Tooltip 
-                  formatter={(value, name) => [`${value}`, name]}
-                  labelFormatter={() => ''}
-                  contentStyle={{ fontSize: '11px' }}
+                  formatter={(value, name) => [`${value} printers`, name]}
+                  labelFormatter={() => 'Status'}
                 />
-                <Legend 
-                  layout="horizontal" 
-                  verticalAlign="bottom"
-                  align="center"
-                  wrapperStyle={{ fontSize: '10px', paddingTop: '5px' }}
-                  iconSize={8}
-                  formatter={(value) => <span style={{ fontSize: '10px' }}>{value}</span>}
-                />
+                <Legend />
               </PieChart>
             </ResponsiveContainer>
           </div>
         ) : (
-          <div className="py-6 text-center text-muted-foreground">
+          <div className="py-8 text-center text-muted-foreground">
             No printer data available
           </div>
         )}
