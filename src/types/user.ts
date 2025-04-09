@@ -9,12 +9,3 @@ export interface UserData {
   lastActive?: string;
   status?: 'active' | 'inactive' | 'pending';
 }
-
-export interface NewUserWithPassword {
-  name: string;
-  email: string;
-  password: string;
-  role: 'admin' | 'user' | 'manager';
-  department: string;
-  status: 'active' | 'inactive' | 'pending';
-}

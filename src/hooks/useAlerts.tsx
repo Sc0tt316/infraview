@@ -40,13 +40,13 @@ export const useAlerts = () => {
     }
   };
   
-  // Generate mock alerts function with a larger dataset
+  // Generate mock alerts function
   const generateMockAlerts = async () => {
     try {
       // Get printers for the mock data
       const printers = await printerService.getAllPrinters();
       
-      // Generate more mock alerts
+      // Generate mock alerts
       const mockAlerts: Alert[] = [
         {
           id: "a1",
@@ -116,45 +116,6 @@ export const useAlerts = () => {
           isResolved: true,
           resolvedAt: new Date(Date.now() - 129600000).toISOString(),
           resolvedBy: "System"
-        },
-        {
-          id: "a6",
-          title: "Paper size mismatch",
-          description: "Print job requires A3 paper but only A4 is loaded.",
-          timestamp: new Date(Date.now() - 240000).toISOString(),
-          severity: "medium",
-          printer: printers[1] ? {
-            id: printers[1].id,
-            name: printers[1].name,
-            location: printers[1].location
-          } : undefined,
-          isResolved: false
-        },
-        {
-          id: "a7",
-          title: "Network configuration error",
-          description: "Printer has an invalid IP configuration. Please check network settings.",
-          timestamp: new Date(Date.now() - 900000).toISOString(),
-          severity: "high",
-          printer: printers[2] ? {
-            id: printers[2].id,
-            name: printers[2].name,
-            location: printers[2].location
-          } : undefined,
-          isResolved: false
-        },
-        {
-          id: "a8",
-          title: "Maintenance needed",
-          description: "Printer has reached 100,000 pages and requires maintenance.",
-          timestamp: new Date(Date.now() - 259200000).toISOString(),
-          severity: "low",
-          printer: printers[0] ? {
-            id: printers[0].id,
-            name: printers[0].name,
-            location: printers[0].location
-          } : undefined,
-          isResolved: false
         }
       ];
       
@@ -208,36 +169,27 @@ export const useAlerts = () => {
   
   // Resolve alert with persistence
   const resolveAlert = async (alertId: string) => {
-    try {
-      const updatedAlerts = alerts.map(alert => 
-        alert.id === alertId
-          ? {
-              ...alert,
-              isResolved: true,
-              resolvedAt: new Date().toISOString(),
-              resolvedBy: "Admin User"
-            }
-          : alert
-      );
-      
-      // Update state
-      setAlerts(updatedAlerts);
-      
-      // Save to localStorage via apiService
-      await apiService.post('alerts', updatedAlerts);
-      
-      toast({
-        title: "Alert Resolved",
-        description: "The alert has been marked as resolved."
-      });
-    } catch (error) {
-      console.error("Error resolving alert:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to resolve the alert. Please try again."
-      });
-    }
+    const updatedAlerts = alerts.map(alert => 
+      alert.id === alertId
+        ? {
+            ...alert,
+            isResolved: true,
+            resolvedAt: new Date().toISOString(),
+            resolvedBy: "Admin User"
+          }
+        : alert
+    );
+    
+    // Update state
+    setAlerts(updatedAlerts);
+    
+    // Save to localStorage via apiService
+    await apiService.post('alerts', updatedAlerts);
+    
+    toast({
+      title: "Alert Resolved",
+      description: "The alert has been marked as resolved."
+    });
   };
   
   // Refresh alerts

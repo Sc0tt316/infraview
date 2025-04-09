@@ -1,353 +1,446 @@
+
 import React, { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { useAuth } from '@/context/AuthContext';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { printerService, PrinterData } from '@/services/printer';
 import { useToast } from '@/hooks/use-toast';
-import { useForm, UseFormReturn } from 'react-hook-form';
-import { printerService } from '@/services/printer';
-import { PrinterData } from '@/types/printers';
-import { Grid, ListFilter, PlusCircle, Printer } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import PrinterCard from '@/components/printers/PrinterCard';
 import PrinterDetailModal from '@/components/printers/PrinterDetailModal';
+import PrinterCard from '@/components/printers/PrinterCard';
 import PrinterFilters from '@/components/printers/PrinterFilters';
 import EmptyPrinterState from '@/components/printers/EmptyPrinterState';
 import AddPrinterForm from '@/components/printers/AddPrinterForm';
 import EditPrinterForm from '@/components/printers/EditPrinterForm';
 import DeletePrinterConfirmation from '@/components/printers/DeletePrinterConfirmation';
-import { Dialog, DialogContent, DialogTitle, DialogHeader, DialogDescription } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from "@/components/ui/button";
+import { useAuth } from '@/context/AuthContext';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { RefreshCw, Plus, ShieldAlert } from 'lucide-react';
+import { printerFormSchema, PrinterFormValues } from '@/types/printer';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
-interface AddPrinterFormProps {
-  form: UseFormReturn<{
-    name?: string;
-    model?: string;
-    location?: string;
-    status?: "online" | "offline" | "error" | "maintenance" | "warning";
-    inkLevel?: number;
-    paperLevel?: number;
-    ipAddress?: string;
-    department?: string;
-  }>;
-  loading: boolean;
-  onSubmit: (values: any) => Promise<void>;
-  onCancel: () => void;
-  formData: any;
-}
-
-// Partial implementation - focus on the type error fixes
 const Printers = () => {
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [selectedPrinterId, setSelectedPrinterId] = useState<string | null>(null);
-  const [deletePrinterId, setDeletePrinterId] = useState<string | null>(null);
-  const [isGridView, setIsGridView] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [filteredPrinters, setFilteredPrinters] = useState<PrinterData[]>([]);
+  const [showAddPrinterModal, setShowAddPrinterModal] = useState(false);
+  const [showEditPrinterModal, setShowEditPrinterModal] = useState(false);
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [selectedPrinter, setSelectedPrinter] = useState<PrinterData | null>(null);
+  const [selectedPrinterId, setSelectedPrinterId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [departmentFilter, setDepartmentFilter] = useState<string>('all');
-  const [addLoading, setAddLoading] = useState(false);
-  const [editLoading, setEditLoading] = useState(false);
-  const [deleteLoading, setDeleteLoading] = useState(false);
-  const [formData, setFormData] = useState<PrinterData>({
-    id: '',
-    name: '',
-    model: '',
-    location: '',
-    status: 'online',
-    inkLevel: 100,
-    paperLevel: 100,
-    ipAddress: '',
-    department: '',
-  });
-
+  
+  // Get user role
   const { user } = useAuth();
-  const { toast } = useToast();
-  const isAdminOrManager = user?.role === 'admin' || user?.role === 'manager';
-
-  const form = useForm({
+  const isAdmin = user?.role === 'admin' || user?.role === 'manager';
+  
+  const form = useForm<PrinterFormValues>({
+    resolver: zodResolver(printerFormSchema),
     defaultValues: {
-      name: '',
-      model: '',
-      location: '',
-      status: 'online',
+      name: "",
+      model: "",
+      location: "",
+      status: "offline",
       inkLevel: 100,
       paperLevel: 100,
-      ipAddress: '',
-      department: '',
+      ipAddress: "",
+      department: "",
     },
   });
+  
+  const { reset } = form;
+  
+  const resetForm = () => {
+    reset({
+      name: "",
+      model: "",
+      location: "",
+      status: "offline",
+      inkLevel: 100,
+      paperLevel: 100,
+      ipAddress: "",
+      department: "",
+    });
+    setFormData({
+      name: "",
+      model: "",
+      location: "",
+      status: "offline",
+      inkLevel: 100,
+      paperLevel: 100,
+      ipAddress: "",
+      department: "",
+    });
+  };
+  
+  const [formData, setFormData] = useState<PrinterFormValues>({
+    name: "",
+    model: "",
+    location: "",
+    status: "offline",
+    inkLevel: 100,
+    paperLevel: 100,
+    ipAddress: "",
+    department: "",
+  });
 
-  const { data: printers = [], isLoading, refetch } = useQuery({
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const { data: printers, isLoading, refetch } = useQuery({
     queryKey: ['printers'],
     queryFn: () => printerService.getAllPrinters(),
   });
 
-  const filteredPrinters = React.useMemo(() => {
-    let filtered = [...printers];
-
-    if (searchTerm) {
-      const lowerSearchTerm = searchTerm.toLowerCase();
-      filtered = filtered.filter(printer =>
-        printer.name.toLowerCase().includes(lowerSearchTerm) ||
-        printer.model.toLowerCase().includes(lowerSearchTerm) ||
-        printer.location.toLowerCase().includes(lowerSearchTerm) ||
-        printer.department?.toLowerCase().includes(lowerSearchTerm)
-      );
-    }
-
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(printer => printer.status === statusFilter);
-    }
-
-    if (departmentFilter !== 'all') {
-      filtered = filtered.filter(printer => printer.department === departmentFilter);
-    }
-
-    return filtered;
-  }, [printers, searchTerm, statusFilter, departmentFilter]);
-
-  const handleOpenAddModal = () => {
-    setShowAddModal(true);
-  };
-
-  const handleCloseAddModal = () => {
-    setShowAddModal(false);
-    form.reset();
-  };
-
-  const handleOpenEditModal = (printerId: string) => {
-    const printerToEdit = printers.find(printer => printer.id === printerId);
-    if (printerToEdit) {
-      setFormData(printerToEdit);
-      setSelectedPrinterId(printerId);
-      setShowEditModal(true);
-    }
-  };
-
-  const handleCloseEditModal = () => {
-    setShowEditModal(false);
-    setSelectedPrinterId(null);
-    setFormData({
-      id: '',
-      name: '',
-      model: '',
-      location: '',
-      status: 'online',
-      inkLevel: 100,
-      paperLevel: 100,
-      ipAddress: '',
-      department: '',
-    });
-    form.reset();
-  };
-
-  const handleOpenDeleteModal = (printerId: string) => {
-    setDeletePrinterId(printerId);
-    setShowDeleteModal(true);
-  };
-
-  const handleCloseDeleteModal = () => {
-    setShowDeleteModal(false);
-    setDeletePrinterId(null);
-  };
-
-  const handleRefresh = () => {
-    refetch();
-  };
-
-  const handleAddSubmit = async (values: PrinterData) => {
-    setAddLoading(true);
-    try {
-      await printerService.addPrinter(values);
+  const addPrinterMutation = useMutation({
+    mutationFn: (printerData: Omit<PrinterData, "id" | "jobCount" | "lastActive">) => 
+      printerService.addPrinter(printerData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['printers'] });
+      setShowAddPrinterModal(false);
+      resetForm();
       toast({
         title: "Printer Added",
-        description: `Printer ${values.name} has been added successfully.`,
+        description: "The printer has been added successfully.",
       });
-      handleCloseAddModal();
-      refetch();
-    } catch (error) {
-      console.error("Error adding printer:", error);
+    },
+    onError: (error) => {
       toast({
         variant: "destructive",
         title: "Error",
         description: "Failed to add printer. Please try again.",
       });
-    } finally {
-      setAddLoading(false);
+      console.error("Error adding printer:", error);
     }
-  };
+  });
 
-  const handleEditSubmit = async (values: PrinterData) => {
-    setEditLoading(true);
-    try {
-      if (selectedPrinterId) {
-        await printerService.updatePrinter(selectedPrinterId, values);
-        toast({
-          title: "Printer Updated",
-          description: `Printer ${values.name} has been updated successfully.`,
-        });
-        handleCloseEditModal();
-        refetch();
-      }
-    } catch (error) {
-      console.error("Error updating printer:", error);
+  const updatePrinterMutation = useMutation({
+    mutationFn: ({id, data}: {id: string, data: Partial<PrinterData>}) => 
+      printerService.updatePrinter(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['printers'] });
+      setShowEditPrinterModal(false);
+      setSelectedPrinter(null);
+      toast({
+        title: "Printer Updated",
+        description: "The printer has been updated successfully.",
+      });
+    },
+    onError: (error) => {
       toast({
         variant: "destructive",
         title: "Error",
         description: "Failed to update printer. Please try again.",
       });
-    } finally {
-      setEditLoading(false);
+      console.error("Error updating printer:", error);
     }
-  };
+  });
 
-  const handleDeleteSubmit = async () => {
-    setDeleteLoading(true);
-    try {
-      if (deletePrinterId) {
-        await printerService.deletePrinter(deletePrinterId);
-        toast({
-          title: "Printer Deleted",
-          description: "Printer has been deleted successfully.",
-        });
-        handleCloseDeleteModal();
-        refetch();
-      }
-    } catch (error) {
-      console.error("Error deleting printer:", error);
+  const deletePrinterMutation = useMutation({
+    mutationFn: (id: string) => printerService.deletePrinter(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['printers'] });
+      setShowDeleteConfirmation(false);
+      toast({
+        title: "Printer Deleted",
+        description: "The printer has been deleted successfully.",
+      });
+    },
+    onError: (error) => {
       toast({
         variant: "destructive",
         title: "Error",
         description: "Failed to delete printer. Please try again.",
       });
-    } finally {
-      setDeleteLoading(false);
+      console.error("Error deleting printer:", error);
+    }
+  });
+
+  const restartPrinterMutation = useMutation({
+    mutationFn: (id: string) => printerService.restartPrinter(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['printers'] });
+      toast({
+        title: "Printer Restarted",
+        description: "The printer restart command has been sent.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to restart printer. Please try again.",
+      });
+      console.error("Error restarting printer:", error);
+    }
+  });
+
+  // Event handlers
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+  };
+
+  const handleOpenEditModal = (printer: PrinterData) => {
+    if (!isAdmin) {
+      toast({
+        variant: "destructive",
+        title: "Access Denied",
+        description: "You don't have permission to edit printers.",
+      });
+      return;
+    }
+    
+    setSelectedPrinter(printer);
+    setFormData({
+      name: printer.name,
+      model: printer.model,
+      location: printer.location,
+      status: printer.status,
+      inkLevel: printer.inkLevel,
+      paperLevel: printer.paperLevel,
+      ipAddress: printer.ipAddress || "",
+      department: printer.department || "",
+    });
+    setShowEditPrinterModal(true);
+  };
+
+  const handleOpenDeleteConfirmation = (printer: PrinterData) => {
+    if (!isAdmin) {
+      toast({
+        variant: "destructive",
+        title: "Access Denied",
+        description: "You don't have permission to delete printers.",
+      });
+      return;
+    }
+    
+    setSelectedPrinter(printer);
+    setShowDeleteConfirmation(true);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prevData => ({
+      ...prevData,
+      [name]: value,
+    }));
+  };
+
+  const handleAddPrinter = (e: React.FormEvent) => {
+    e.preventDefault();
+    const printerToAdd: Omit<PrinterData, "id" | "jobCount" | "lastActive"> = {
+      name: formData.name,
+      model: formData.model,
+      location: formData.location,
+      status: formData.status || "offline",
+      inkLevel: Number(formData.inkLevel) || 100,
+      paperLevel: Number(formData.paperLevel) || 100,
+      ipAddress: formData.ipAddress,
+      department: formData.department
+    };
+    addPrinterMutation.mutate(printerToAdd);
+  };
+
+  const handleDeletePrinter = () => {
+    if (selectedPrinter && isAdmin) {
+      deletePrinterMutation.mutate(selectedPrinter.id);
     }
   };
 
+  const handleUpdatePrinter = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedPrinter || !isAdmin) return;
+
+    const updateData = {
+      id: selectedPrinter.id,
+      data: {
+        name: formData.name,
+        status: formData.status as PrinterData['status'],
+        model: formData.model,
+        location: formData.location,
+        inkLevel: Number(formData.inkLevel),
+        paperLevel: Number(formData.paperLevel),
+        ipAddress: formData.ipAddress,
+        department: formData.department
+      }
+    };
+    updatePrinterMutation.mutate(updateData);
+  };
+
+  const handleRestartPrinter = (id: string) => {
+    if (!isAdmin) {
+      toast({
+        variant: "destructive",
+        title: "Access Denied",
+        description: "You don't have permission to restart printers.",
+      });
+      return;
+    }
+    
+    restartPrinterMutation.mutate(id);
+  };
+
+  const handleStatusFilterChange = (status: string) => {
+    setStatusFilter(status);
+  };
+
+  // Fix for edit modal freeze issue
+  const handleCloseEditModal = () => {
+    // Use setTimeout to prevent UI freeze when closing the modal
+    setTimeout(() => {
+      setShowEditPrinterModal(false);
+      setSelectedPrinter(null);
+    }, 0);
+  };
+
+  // Filter printers based on search term and status filter
+  useEffect(() => {
+    if (printers) {
+      let filtered = printers;
+      
+      // Apply search filter
+      if (searchTerm) {
+        const lowerSearchTerm = searchTerm.toLowerCase();
+        filtered = filtered.filter(printer =>
+          printer.name.toLowerCase().includes(lowerSearchTerm) ||
+          printer.model.toLowerCase().includes(lowerSearchTerm) ||
+          printer.location.toLowerCase().includes(lowerSearchTerm)
+        );
+      }
+      
+      // Apply status filter
+      if (statusFilter !== 'all') {
+        filtered = filtered.filter(printer => printer.status === statusFilter);
+      }
+      
+      setFilteredPrinters(filtered);
+    }
+  }, [printers, searchTerm, statusFilter]);
+
   return (
     <div className="space-y-6">
-      {/* Header section */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Printers</h1>
-          <p className="text-muted-foreground mt-1">Manage your organization's printers</p>
+          <p className="text-muted-foreground mt-1">Manage your network printers</p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={handleRefresh}>
+        <div className="flex items-center gap-3">
+          <Button 
+            onClick={() => refetch()} 
+            variant="outline" 
+            size="icon"
+            className="h-10 w-10"
+          >
             <RefreshCw className="h-4 w-4" />
           </Button>
-          {isAdminOrManager && (
-            <Button onClick={handleOpenAddModal}>
-              <PlusCircle className="w-4 h-4 mr-2" />
+          
+          {isAdmin && (
+            <Button onClick={() => setShowAddPrinterModal(true)}>
+              <Plus className="w-4 h-4 mr-2" />
               Add Printer
             </Button>
           )}
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => setIsGridView(!isGridView)}
-          >
-            {isGridView ? <ListFilter className="h-4 w-4" /> : <Grid className="h-4 w-4" />}
-          </Button>
         </div>
       </div>
-
-      {/* Filter section */}
-      <PrinterFilters
+      
+      <PrinterFilters 
         searchTerm={searchTerm}
-        onSearchChange={e => setSearchTerm(e.target.value)}
         statusFilter={statusFilter}
-        onStatusFilterChange={setStatusFilter}
-        departmentFilter={departmentFilter}
-        onDepartmentFilterChange={setDepartmentFilter}
+        onSearchChange={handleSearchChange}
+        onStatusFilterChange={handleStatusFilterChange}
       />
+      
+      {!isAdmin && (
+        <Alert className="bg-blue-50 border-blue-200 text-blue-800">
+          <ShieldAlert className="h-4 w-4 mr-2" />
+          <AlertDescription>
+            You're in view mode. Contact an administrator if you need to make changes to printers.
+          </AlertDescription>
+        </Alert>
+      )}
 
-      {/* Main content */}
       {isLoading ? (
         <div className="flex justify-center items-center h-64">
           <RefreshCw className="h-8 w-8 animate-spin text-primary/70" />
         </div>
       ) : filteredPrinters.length > 0 ? (
-        <div className={isGridView ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" : "space-y-4"}>
-          {filteredPrinters.map(printer => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredPrinters.map((printer) => (
             <PrinterCard
               key={printer.id}
               printer={printer}
-              isGridView={isGridView}
-              onEdit={() => handleOpenEditModal(printer.id)}
-              onDelete={() => handleOpenDeleteModal(printer.id)}
+              onOpenDetails={(id) => setSelectedPrinterId(id)}
+              onOpenEdit={handleOpenEditModal}
+              onOpenDelete={handleOpenDeleteConfirmation}
+              onRestart={handleRestartPrinter}
+              isAdmin={isAdmin}
             />
           ))}
         </div>
       ) : (
-        <EmptyPrinterState onAdd={handleOpenAddModal} />
+        <EmptyPrinterState onAddPrinter={() => setShowAddPrinterModal(true)} isAdmin={isAdmin} />
       )}
 
-      {/* Add Printer Dialog */}
-      <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
+      {/* Dialog for adding a new printer */}
+      <Dialog open={showAddPrinterModal} onOpenChange={setShowAddPrinterModal}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle>Add New Printer</DialogTitle>
             <DialogDescription>
-              Enter the details for the new printer
+              Fill in the details below to add a new printer to your network.
             </DialogDescription>
           </DialogHeader>
-          <AddPrinterForm
+          <AddPrinterForm 
             form={form}
-            loading={addLoading}
-            onSubmit={handleAddSubmit}
-            onCancel={() => setShowAddModal(false)}
+            onSubmit={handleAddPrinter}
+            onCancel={() => setShowAddPrinterModal(false)}
             formData={formData}
+            handleInputChange={handleInputChange}
+            setFormData={setFormData}
           />
         </DialogContent>
       </Dialog>
 
-      {/* Edit Printer Dialog */}
-      <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
+      {/* Dialog for editing a printer */}
+      <Dialog open={showEditPrinterModal} onOpenChange={handleCloseEditModal}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle>Edit Printer</DialogTitle>
             <DialogDescription>
-              Update the details for the selected printer
+              Update the details of {selectedPrinter?.name}
             </DialogDescription>
           </DialogHeader>
-          <EditPrinterForm
+          <EditPrinterForm 
             form={form}
-            loading={editLoading}
-            onSubmit={handleEditSubmit}
+            onSubmit={handleUpdatePrinter}
             onCancel={handleCloseEditModal}
             formData={formData}
-            printerId={selectedPrinterId || ''}
+            handleInputChange={handleInputChange}
+            setFormData={setFormData}
           />
         </DialogContent>
       </Dialog>
 
-      {/* Delete Printer Confirmation Dialog */}
-      <Dialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Delete Printer</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete this printer? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DeletePrinterConfirmation
-            loading={deleteLoading}
-            onConfirm={handleDeleteSubmit}
-            onCancel={handleCloseDeleteModal}
-          />
-        </DialogContent>
+      {/* Dialog for confirming printer deletion */}
+      <Dialog open={showDeleteConfirmation} onOpenChange={setShowDeleteConfirmation}>
+        <DeletePrinterConfirmation
+          printer={selectedPrinter}
+          onDelete={handleDeletePrinter}
+          onCancel={() => setShowDeleteConfirmation(false)}
+        />
       </Dialog>
       
       {/* Printer Detail Modal */}
       {selectedPrinterId && (
-        <PrinterDetailModal 
-          printerId={selectedPrinterId} 
-          onClose={() => setSelectedPrinterId(null)} 
-          isAdmin={isAdminOrManager}
+        <PrinterDetailModal
+          printerId={selectedPrinterId}
+          onClose={() => setSelectedPrinterId(null)}
+          isAdmin={isAdmin}
         />
       )}
     </div>

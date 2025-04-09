@@ -28,20 +28,6 @@ const ActivityTable: React.FC<ActivityTableProps> = ({ logs, isLoading }) => {
     );
   }
 
-  // Helper function to get badge variant based on activity type
-  const getBadgeVariant = (type: string) => {
-    switch (type) {
-      case 'success':
-        return 'outline';
-      case 'error':
-        return 'destructive';
-      case 'warning':
-        return 'secondary';
-      default:
-        return 'default';
-    }
-  };
-
   return (
     <div className="rounded-md border">
       <Table>
@@ -70,7 +56,14 @@ const ActivityTable: React.FC<ActivityTableProps> = ({ logs, isLoading }) => {
               </TableCell>
               <TableCell>{log.user || 'System'}</TableCell>
               <TableCell>
-                <Badge variant={getBadgeVariant(log.type)}>
+                <Badge
+                  variant={
+                    log.type === 'success' ? 'outline' : 
+                    log.type === 'error' ? 'destructive' : 
+                    log.type === 'warning' ? 'secondary' : 
+                    'default'
+                  }
+                >
                   {log.type}
                 </Badge>
               </TableCell>
