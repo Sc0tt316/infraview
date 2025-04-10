@@ -1,112 +1,104 @@
 
 import React, { useState, useEffect, ChangeEvent } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { analyticsService } from '@/services/analytics';
+import { printerService } from '@/services/printer';
 import ActivityHeader from '@/components/activity/ActivityHeader';
 import ActivityFilters from '@/components/activity/ActivityFilters';
 import ActivityContent from '@/components/activity/ActivityContent';
-import ActivityTable from '@/components/activity/ActivityTable';
+import { Printer, AlertTriangle, Info, Settings } from 'lucide-react';
 import { ActivityLogData } from '@/types/analytics';
-import { Printer, Settings, AlertCircle, RefreshCw } from 'lucide-react';
 
 const Activity = () => {
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [filterType, setFilterType] = useState<string>('all');
-  const [sortBy, setSortBy] = useState<string>('timestamp');
-  const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
+  // State for filters and search
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterType, setFilterType] = useState('all');
+  const [sortBy, setSortBy] = useState('timestamp');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
-  const { data: logs = [], isLoading, refetch } = useQuery({
-    queryKey: ['activityLogs', filterType, sortBy, sortOrder],
-    queryFn: () => analyticsService.getActivityLogs(filterType),
+  // Fetch activity logs
+  const { data: logs, isLoading, refetch } = useQuery({
+    queryKey: ['activityLogs', { sortBy, sortOrder }],
+    queryFn: () => printerService.getAllActivities(),
   });
 
-  const handleSearchChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
-  };
+  // Filter and sort logs based on user selections
+  const filteredLogs = React.useMemo(() => {
+    if (!logs) return [];
+    
+    let filtered = [...logs];
+    
+    // Apply type filter
+    if (filterType !== 'all') {
+      filtered = filtered.filter(log => log.action.toLowerCase().includes(filterType.toLowerCase()));
+    }
+    
+    // Apply search query
+    if (searchQuery) {
+      filtered = filtered.filter(log => 
+        log.action.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        log.details?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        log.user.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        log.printerName?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+    
+    // Apply sorting
+    filtered.sort((a, b) => {
+      const valueA = a[sortBy as keyof ActivityLogData];
+      const valueB = b[sortBy as keyof ActivityLogData];
+      
+      if (typeof valueA === 'string' && typeof valueB === 'string') {
+        return sortOrder === 'asc' 
+          ? valueA.localeCompare(valueB) 
+          : valueB.localeCompare(valueA);
+      }
+      
+      return 0;
+    });
+    
+    return filtered;
+  }, [logs, searchQuery, filterType, sortBy, sortOrder]);
 
-  const handleFilterChange = (value: string) => {
-    setFilterType(value);
-  };
-
-  const handleSortChange = (value: string) => {
-    setSortBy(value);
-  };
-
-  const handleSortOrderChange = (value: 'desc' | 'asc') => {
-    setSortOrder(value);
-  };
-
-  const handleRefresh = () => {
-    refetch();
-  };
-
+  // Get icon based on activity type
   const getActivityIcon = (type: string) => {
-    switch (type) {
-      case 'printer':
-        return <Printer className="h-4 w-4" />;
-      case 'settings':
-        return <Settings className="h-4 w-4" />;
-      case 'alert':
-        return <AlertCircle className="h-4 w-4" />;
-      default:
-        return <RefreshCw className="h-4 w-4" />;
+    if (type.toLowerCase().includes('print')) {
+      return <Printer className="h-4 w-4" />;
+    } else if (type.toLowerCase().includes('error') || type.toLowerCase().includes('failed')) {
+      return <AlertTriangle className="h-4 w-4" />;
+    } else if (type.toLowerCase().includes('config') || type.toLowerCase().includes('change')) {
+      return <Settings className="h-4 w-4" />;
+    } else {
+      return <Info className="h-4 w-4" />;
     }
   };
-
-  const filteredLogs = logs.filter(log => {
-    // Filter by search query
-    if (searchQuery && !log.message.toLowerCase().includes(searchQuery.toLowerCase())) {
-      return false;
-    }
-    // Filter by type
-    if (filterType !== 'all' && log.type !== filterType) {
-      return false;
-    }
-    return true;
-  });
-
-  // Sort the logs
-  const sortedLogs = [...filteredLogs].sort((a, b) => {
-    if (sortBy === 'timestamp') {
-      return sortOrder === 'desc'
-        ? new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-        : new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
-    }
-    return 0;
-  });
 
   return (
     <div className="space-y-6">
-      <ActivityHeader onRefresh={handleRefresh} />
+      <ActivityHeader onRefresh={() => refetch()} />
       
-      <ActivityFilters
+      <ActivityFilters 
         searchQuery={searchQuery}
         filterType={filterType}
         sortBy={sortBy}
         sortOrder={sortOrder}
-        onSearchChange={handleSearchChange}
-        onFilterChange={handleFilterChange}
-        onSortChange={handleSortChange}
-        onSortOrderChange={handleSortOrderChange}
+        onSearchChange={(e: ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
+        onFilterChange={(value: string) => setFilterType(value)}
+        onSortChange={(value: string) => setSortBy(value)}
+        onSortOrderChange={(value: 'asc' | 'desc') => setSortOrder(value)}
       />
       
       <ActivityContent 
-        logs={sortedLogs}
+        logs={filteredLogs} 
         isLoading={isLoading}
         searchQuery={searchQuery}
         filterType={filterType}
         sortBy={sortBy}
         sortOrder={sortOrder}
-        onSearchChange={handleSearchChange}
-        onFilterChange={handleFilterChange}
-        onSortChange={handleSortChange}
-        onSortOrderChange={handleSortOrderChange}
-      >
-        <ActivityTable 
-          logs={sortedLogs} 
-          isLoading={isLoading}
-        />
-      </ActivityContent>
+        onSearchChange={(e) => setSearchQuery(e.target.value)}
+        onFilterChange={(value) => setFilterType(value)}
+        onSortChange={(value) => setSortBy(value)}
+        onSortOrderChange={(value) => setSortOrder(value)}
+      />
     </div>
   );
 };

@@ -4,7 +4,7 @@ import { PrinterData } from '@/types/printers';
 import { initializePrinters } from '../mockDataService';
 import { addLog } from '../activityLogService';
 
-export const changeStatus = async (printerId: string, newStatus: string): Promise<void> => {
+export const changeStatus = async (printerId: string, newStatus: "warning" | "error" | "online" | "offline" | "maintenance"): Promise<void> => {
   try {
     await initializePrinters();
     

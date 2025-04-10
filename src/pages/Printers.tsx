@@ -24,7 +24,7 @@ import { RefreshCw, Plus, ShieldAlert } from 'lucide-react';
 import { printerFormSchema, PrinterFormValues } from '@/types/printer';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
-const Printers = () => {
+const Printers: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredPrinters, setFilteredPrinters] = useState<PrinterData[]>([]);
   const [showAddPrinterModal, setShowAddPrinterModal] = useState(false);
@@ -36,6 +36,7 @@ const Printers = () => {
   
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin' || user?.role === 'manager';
+  const canAddPrinter = user && user.role !== 'user';
   
   const form = useForm<PrinterFormValues>({
     resolver: zodResolver(printerFormSchema),
@@ -329,7 +330,7 @@ const Printers = () => {
             <RefreshCw className="h-4 w-4" />
           </Button>
           
-          {isAdmin && (
+          {canAddPrinter && (
             <Button onClick={() => setShowAddPrinterModal(true)}>
               <Plus className="w-4 h-4 mr-2" />
               Add Printer
