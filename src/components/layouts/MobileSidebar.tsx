@@ -14,7 +14,6 @@ import {
   Settings,
   X,
   LogOut,
-  Activity
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
@@ -34,7 +33,6 @@ const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOpen, onClose, user }) 
     { name: 'Printers', href: '/printers', icon: Printer },
     { name: 'Users', href: '/users', icon: Users },
     { name: 'Analytics', href: '/analytics', icon: BarChart2 },
-    { name: 'Activity', href: '/activity', icon: Activity },
     { name: 'Alerts', href: '/alerts', icon: BellRing },
   ];
   
@@ -66,7 +64,7 @@ const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOpen, onClose, user }) 
               <div className="h-10 w-10 bg-primary/10 flex items-center justify-center rounded-md border border-primary/20">
                 <span className="text-primary font-bold text-xl">M</span>
               </div>
-              <span className="ml-3 text-lg font-semibold text-primary">M-Printer Manager</span>
+              <span className="ml-3 text-lg font-semibold text-primary truncate max-w-[150px]">M-Printer Manager</span>
             </div>
             <Button variant="ghost" size="icon" onClick={onClose} className="text-muted-foreground hover:text-foreground">
               <X size={20} />
@@ -110,7 +108,7 @@ const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOpen, onClose, user }) 
                   className="w-full bg-transparent"
                 >
                   <Settings size={16} className="mr-2" />
-                  Settings
+                  <span>Settings</span>
                 </Button>
               </NavLink>
               <Button
@@ -119,7 +117,7 @@ const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOpen, onClose, user }) 
                 className="flex-1 bg-transparent border-red-500/30 text-red-500 hover:bg-red-500/10 hover:text-red-600"
               >
                 <LogOut size={16} className="mr-2" />
-                Logout
+                <span>Logout</span>
               </Button>
             </div>
           </div>

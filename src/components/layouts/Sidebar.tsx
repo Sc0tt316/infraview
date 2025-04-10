@@ -10,7 +10,6 @@ import {
   BellRing,
   Settings,
   LogOut,
-  Activity
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
@@ -36,7 +35,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar, user }) => {
     { name: 'Printers', href: '/printers', icon: Printer },
     { name: 'Users', href: '/users', icon: Users },
     { name: 'Analytics', href: '/analytics', icon: BarChart2 },
-    { name: 'Activity', href: '/activity', icon: Activity },
     { name: 'Alerts', href: '/alerts', icon: BellRing },
   ];
 
@@ -71,7 +69,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar, user }) => {
             <span className="text-primary font-bold text-xl">M</span>
           </div>
           {isOpen && (
-            <span className="ml-3 text-xl font-semibold text-primary">M-Printer Manager</span>
+            <span className="ml-3 text-xl font-semibold text-primary truncate max-w-[150px]">M-Printer Manager</span>
           )}
         </div>
       </div>
@@ -125,7 +123,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar, user }) => {
               <Button
                 variant="ghost"
                 size="icon"
-                className="text-muted-foreground hover:bg-accent hover:text-foreground h-8 w-8"
+                className="text-muted-foreground hover:bg-accent hover:text-foreground h-8 w-8 flex-shrink-0"
               >
                 <Settings size={18} />
               </Button>
@@ -134,7 +132,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar, user }) => {
               variant="ghost"
               size="icon"
               onClick={handleLogout}
-              className="text-red-500 hover:bg-red-500/10 hover:text-red-600 h-8 w-8"
+              className="text-red-500 hover:bg-red-500/10 hover:text-red-600 h-8 w-8 flex-shrink-0"
             >
               <LogOut size={18} />
             </Button>

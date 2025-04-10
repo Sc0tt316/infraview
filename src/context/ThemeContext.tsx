@@ -11,7 +11,7 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider: React.FC<{children: React.ReactNode}> = ({ children }) => {
-  const [theme, setTheme] = useState<Theme>('dark');
+  const [theme, setTheme] = useState<Theme>('light');
 
   // Load theme from localStorage on mount
   useEffect(() => {
@@ -20,12 +20,10 @@ export const ThemeProvider: React.FC<{children: React.ReactNode}> = ({ children 
       setTheme(savedTheme);
       applyTheme(savedTheme);
     } else {
-      // Default to system preference
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      const defaultTheme = prefersDark ? 'dark' : 'light';
-      setTheme(defaultTheme);
-      applyTheme(defaultTheme);
-      localStorage.setItem('theme', defaultTheme);
+      // Default to light theme
+      setTheme('light');
+      applyTheme('light');
+      localStorage.setItem('theme', 'light');
     }
   }, []);
 

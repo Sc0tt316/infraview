@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -31,6 +31,18 @@ const Login = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // Force light mode on the login page
+  useEffect(() => {
+    document.documentElement.classList.remove('dark');
+    return () => {
+      // This will reapply the theme when leaving the login page
+      const savedTheme = localStorage.getItem('theme') as 'light' | 'dark';
+      if (savedTheme === 'dark') {
+        document.documentElement.classList.add('dark');
+      }
+    };
+  }, []);
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -56,14 +68,14 @@ const Login = () => {
   }
 
   return (
-    <div className="login-page">
+    <div className="login-page bg-gray-50 min-h-screen flex flex-col items-center justify-center p-4 sm:p-6">
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
         className="w-full max-w-md"
       >
-        <Card className="border-border">
+        <Card className="border-gray-200 shadow-md">
           <CardHeader className="space-y-1 flex flex-col items-center">
             <div className="h-12 w-12 bg-primary/10 flex items-center justify-center rounded-md border border-primary/20 mb-4">
               <img 

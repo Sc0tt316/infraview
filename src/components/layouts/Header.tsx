@@ -44,8 +44,6 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, openMobileSidebar }) => 
         return 'Manage system users';
       case '/analytics':
         return 'Monitor printer usage and performance';
-      case '/activity':
-        return 'View recent system activity';
       case '/alerts':
         return 'View and manage system alerts';
       case '/settings':
@@ -84,14 +82,38 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, openMobileSidebar }) => 
             {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
           </Button>
           
-          <Button
-            variant="ghost"
-            size="icon"
-            className="relative rounded-full"
-          >
-            <Bell size={18} />
-            <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full"></span>
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="relative rounded-full"
+              >
+                <Bell size={18} />
+                <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full"></span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Notifications</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>
+                <div className="text-sm">
+                  <p className="font-medium">New alert: Low toner</p>
+                  <p className="text-xs text-muted-foreground">5 minutes ago</p>
+                </div>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <div className="text-sm">
+                  <p className="font-medium">Printer maintenance required</p>
+                  <p className="text-xs text-muted-foreground">2 hours ago</p>
+                </div>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="text-center">
+                View all notifications
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
