@@ -14,10 +14,10 @@ const PrinterStatistics: React.FC<PrinterStatisticsProps> = ({ stats, jobCount, 
       <h3 className="text-lg font-medium mb-2">Statistics</h3>
       <div className="grid grid-cols-2 gap-3 text-sm">
         <div className="text-muted-foreground">Total Pages:</div>
-        <div>{stats?.totalPages?.toLocaleString() || 'N/A'}</div>
+        <div>{stats?.totalPages?.toLocaleString() || stats?.totalPrints?.toLocaleString() || 'N/A'}</div>
 
         <div className="text-muted-foreground">Monthly Pages:</div>
-        <div>{stats?.monthlyPages?.toLocaleString() || 'N/A'}</div>
+        <div>{stats?.monthlyPages?.toLocaleString() || stats?.monthlyPrints?.toLocaleString() || 'N/A'}</div>
 
         <div className="text-muted-foreground">Paper Jams:</div>
         <div>{stats?.jams || 0} incidents</div>

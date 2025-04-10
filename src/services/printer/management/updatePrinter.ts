@@ -1,56 +1,45 @@
 
-import { apiService } from '../../api';
-import { toast } from '@/hooks/use-toast';
+import { apiService } from '@/services/api';
 import { PrinterData } from '@/types/printers';
-import { getAllPrinters } from './getAllPrinters';
+import { initializePrinters } from '../mockDataService';
 import { addActivity } from '../activityLogService';
 
-// Update printer
-export const updatePrinter = async (id: string, updateData: Partial<PrinterData>): Promise<PrinterData | null> => {
+export const updatePrinter = async (
+  printerId: string, 
+  data: Partial<PrinterData>
+): Promise<PrinterData> => {
   try {
-    const printers = await getAllPrinters();
-    const printerIndex = printers.findIndex(printer => printer.id === id);
+    await initializePrinters();
+    
+    const printers = await apiService.get<PrinterData[]>('printers') || [];
+    const printerIndex = printers.findIndex(printer => printer.id === printerId);
     
     if (printerIndex === -1) {
-      toast({
-        title: "Error",
-        description: "Printer not found.",
-        variant: "destructive"
-      });
-      return null;
+      throw new Error(`Printer with id ${printerId} not found`);
     }
     
+    const printerToUpdate = printers[printerIndex];
     const updatedPrinter = {
-      ...printers[printerIndex],
-      ...updateData,
-      lastActive: "Just updated"
+      ...printerToUpdate,
+      ...data
     };
     
     printers[printerIndex] = updatedPrinter;
     await apiService.post('printers', printers);
     
-    // Add activity record
+    // Log the activity
     await addActivity({
-      printerId: id,
+      printerId,
+      printerName: updatedPrinter.name,
       timestamp: new Date().toISOString(),
-      action: "Printer updated",
+      action: "Printer Updated",
       user: "admin",
-      details: `Updated printer ${updatedPrinter.name}`
-    });
-    
-    toast({
-      title: "Success",
-      description: `Printer "${updatedPrinter.name}" has been updated.`,
+      details: `Updated printer properties: ${Object.keys(data).join(', ')}`
     });
     
     return updatedPrinter;
   } catch (error) {
-    console.error(`Error updating printer ${id}:`, error);
-    toast({
-      title: "Error",
-      description: "Failed to update printer. Please try again.",
-      variant: "destructive"
-    });
-    return null;
+    console.error('Error updating printer:', error);
+    throw error;
   }
 };

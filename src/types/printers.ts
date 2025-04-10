@@ -15,23 +15,35 @@ export interface PrinterData {
   logs?: PrintLog[];
   serialNumber?: string;
   addedDate?: string;
-  supplies?: Supply[];
+  supplies?: SuppliesData;
   stats?: PrinterStats;
 }
 
-// Supply interface
+// SuppliesData interface (updated from Supply[] to an object)
+export interface SuppliesData {
+  black: number;
+  cyan?: number;
+  magenta?: number;
+  yellow?: number;
+  waste?: number;
+}
+
+// Individual Supply interface
 export interface Supply {
   type: string;
   level: number;
   color?: string;
 }
 
-// PrinterStats interface
+// PrinterStats interface with updated fields
 export interface PrinterStats {
   dailyPrints: number;
   weeklyPrints: number;
   monthlyPrints: number;
   totalPrints: number;
+  totalPages?: number;
+  monthlyPages?: number;
+  jams?: number;
 }
 
 // PrintLog interface
@@ -46,7 +58,7 @@ export interface PrintLog {
   user: string;
 }
 
-// PrinterActivity interface
+// PrinterActivity interface updated with required printerName
 export interface PrinterActivity {
   id: string;
   printerId: string;
@@ -58,11 +70,12 @@ export interface PrinterActivity {
   status?: 'success' | 'warning' | 'error' | 'info';
 }
 
-// ActivityItem interface
+// ActivityItem interface with description and message fields
 export interface ActivityItem {
   id: string;
   type: 'print' | 'maintenance' | 'alert' | 'supply';
   description: string;
   timestamp: string;
   status: 'success' | 'warning' | 'error' | 'info';
+  message: string;
 }

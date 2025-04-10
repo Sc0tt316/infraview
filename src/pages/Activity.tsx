@@ -23,11 +23,11 @@ const Activity = () => {
   } = useActivityLogs();
 
   const getActivityIcon = (type: string) => {
-    // Fix: Use string literals for comparison instead of enums
+    // Use string literals for comparison instead of enums
     if (type === "error" || type === "warning") {
       return <AlertTriangle className="text-amber-500" />;
     }
-    // Fix: Use string literals for comparison instead of enums
+    // Use string literals for comparison instead of enums
     if (type === "info" || type === "success") {
       return <RefreshCw className="text-blue-500" />;
     }
@@ -36,7 +36,7 @@ const Activity = () => {
 
   return (
     <div className="space-y-4">
-      <ActivityHeader />
+      <ActivityHeader onRefresh={handleRefresh} />
       
       <ActivityFilters 
         searchQuery={searchQuery}
@@ -47,14 +47,23 @@ const Activity = () => {
         onFilterChange={handleFilterChange}
         onSortChange={handleSortChange}
         onSortOrderChange={handleSortOrderChange}
-        onRefresh={handleRefresh}
       />
       
-      <ActivityContent>
+      <ActivityContent 
+        logs={filteredLogs}
+        isLoading={isLoading}
+        searchQuery={searchQuery}
+        filterType={filterType}
+        sortBy={sortBy}
+        sortOrder={sortOrder}
+        onSearchChange={handleSearchChange}
+        onFilterChange={handleFilterChange}
+        onSortChange={handleSortChange}
+        onSortOrderChange={handleSortOrderChange}
+      >
         <ActivityTable 
           logs={filteredLogs}
           isLoading={isLoading}
-          getActivityIcon={getActivityIcon}
         />
       </ActivityContent>
     </div>

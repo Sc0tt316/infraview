@@ -1,47 +1,39 @@
 
-import { apiService } from '../../api';
-import { toast } from '@/hooks/use-toast';
+import { v4 as uuidv4 } from 'uuid';
+import { apiService } from '@/services/api';
 import { PrinterData } from '@/types/printers';
-import { getAllPrinters } from './getAllPrinters';
+import { initializePrinters } from '../mockDataService';
 import { addActivity } from '../activityLogService';
 
-// Add new printer
-export const addPrinter = async (printerData: Omit<PrinterData, 'id' | 'jobCount' | 'lastActive'>): Promise<PrinterData> => {
+export const addPrinter = async (data: Omit<PrinterData, "id" | "jobCount" | "lastActive">): Promise<PrinterData> => {
   try {
-    const printers = await getAllPrinters();
+    await initializePrinters();
+    
+    const printers = await apiService.get<PrinterData[]>('printers') || [];
     
     const newPrinter: PrinterData = {
-      ...printerData,
-      id: `p${Date.now()}`,
+      id: uuidv4(),
+      ...data,
       jobCount: 0,
-      lastActive: "Just added"
+      lastActive: 'Never'
     };
     
     const updatedPrinters = [...printers, newPrinter];
     await apiService.post('printers', updatedPrinters);
     
-    // Add activity record
+    // Log the activity
     await addActivity({
       printerId: newPrinter.id,
+      printerName: newPrinter.name,
       timestamp: new Date().toISOString(),
-      action: "Printer added",
+      action: "Printer Added",
       user: "admin",
-      details: `Added printer ${newPrinter.name} (${newPrinter.model})`
-    });
-    
-    toast({
-      title: "Success",
-      description: `Printer "${newPrinter.name}" has been added.`,
+      details: `Added new printer: ${newPrinter.name} - ${newPrinter.model}`
     });
     
     return newPrinter;
   } catch (error) {
     console.error('Error adding printer:', error);
-    toast({
-      title: "Error",
-      description: "Failed to add printer. Please try again.",
-      variant: "destructive"
-    });
     throw error;
   }
 };

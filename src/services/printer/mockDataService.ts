@@ -1,6 +1,5 @@
-
 import { apiService } from '../api';
-import { PrinterData, PrinterLog, PrinterActivity } from '@/types/printers';
+import { PrinterData, PrintLog, PrinterActivity } from '@/types/printers';
 
 // Initialize with mock data if none exists
 export const initializePrinters = async (): Promise<PrinterData[]> => {
@@ -80,46 +79,59 @@ export const initializePrinters = async (): Promise<PrinterData[]> => {
 };
 
 // Initialize logs if none exist
-export const initializeLogs = async (): Promise<PrinterLog[]> => {
-  const existingLogs = await apiService.get<PrinterLog[]>('printerLogs');
+export const initializeLogs = async (): Promise<PrintLog[]> => {
+  const existingLogs = await apiService.get<PrintLog[]>('printerLogs');
   if (!existingLogs) {
-    const mockLogs: PrinterLog[] = [
+    const mockLogs: PrintLog[] = [
       {
         id: "l1",
         printerId: "p1",
+        fileName: "Document1.pdf",
+        status: "completed",
         timestamp: "2023-06-01T10:30:00",
-        message: "Print job completed successfully",
-        type: "info",
+        pages: 5,
+        size: "1.2 MB",
         user: "john.doe"
       },
       {
         id: "l2",
         printerId: "p1",
+        fileName: "Report.pdf",
+        status: "failed",
         timestamp: "2023-06-01T11:45:00",
-        message: "Low ink warning",
-        type: "warning"
+        pages: 15,
+        size: "2.3 MB",
+        user: "jane.smith"
       },
       {
         id: "l3",
         printerId: "p2",
+        fileName: "Invoice.pdf",
+        status: "completed",
         timestamp: "2023-06-02T09:15:00",
-        message: "Paper jam detected",
-        type: "error"
+        pages: 2,
+        size: "512 KB",
+        user: "finance.team"
       },
       {
         id: "l4",
         printerId: "p3",
+        fileName: "Presentation.pptx",
+        status: "failed",
         timestamp: "2023-06-02T14:20:00",
-        message: "Printer went offline unexpectedly",
-        type: "error"
+        pages: 24,
+        size: "4.7 MB",
+        user: "marketing"
       },
       {
         id: "l5",
         printerId: "p4",
+        fileName: "Contract.docx",
+        status: "completed",
         timestamp: "2023-06-03T10:00:00",
-        message: "Maintenance completed",
-        type: "info",
-        user: "tech.support"
+        pages: 10,
+        size: "1.8 MB",
+        user: "legal.dept"
       }
     ];
     await apiService.post('printerLogs', mockLogs);
@@ -136,6 +148,7 @@ export const initializeActivity = async (): Promise<PrinterActivity[]> => {
       {
         id: "a1",
         printerId: "p1",
+        printerName: "Office Printer 1",
         timestamp: "2023-06-01T10:00:00",
         action: "Print job",
         user: "john.doe",
@@ -144,6 +157,7 @@ export const initializeActivity = async (): Promise<PrinterActivity[]> => {
       {
         id: "a2",
         printerId: "p2",
+        printerName: "Executive Printer", 
         timestamp: "2023-06-01T11:30:00",
         action: "Configuration change",
         user: "admin",
@@ -152,6 +166,7 @@ export const initializeActivity = async (): Promise<PrinterActivity[]> => {
       {
         id: "a3",
         printerId: "p3",
+        printerName: "Marketing Printer",
         timestamp: "2023-06-02T09:00:00",
         action: "Print job",
         user: "jane.smith",
@@ -160,6 +175,7 @@ export const initializeActivity = async (): Promise<PrinterActivity[]> => {
       {
         id: "a4",
         printerId: "p4",
+        printerName: "Conference Room Printer",
         timestamp: "2023-06-02T14:00:00",
         action: "Status change",
         user: "admin",
@@ -168,6 +184,7 @@ export const initializeActivity = async (): Promise<PrinterActivity[]> => {
       {
         id: "a5",
         printerId: "p5",
+        printerName: "Accounting Printer",
         timestamp: "2023-06-03T09:45:00",
         action: "Print job",
         user: "bob.johnson",

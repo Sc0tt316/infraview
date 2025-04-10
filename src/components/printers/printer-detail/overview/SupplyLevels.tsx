@@ -16,6 +16,7 @@ const SupplyLevels: React.FC<SupplyLevelsProps> = ({ supplies }) => {
   
   return (
     <div className="space-y-4">
+      {/* Black Toner */}
       <div className="space-y-2">
         <div className="flex justify-between text-sm">
           <span>Black Toner ({supplies.black}%)</span>
@@ -26,6 +27,7 @@ const SupplyLevels: React.FC<SupplyLevelsProps> = ({ supplies }) => {
         <Progress value={supplies.black} className="h-2" />
       </div>
 
+      {/* Cyan Toner - Optional */}
       {supplies.cyan !== undefined && (
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
@@ -38,6 +40,7 @@ const SupplyLevels: React.FC<SupplyLevelsProps> = ({ supplies }) => {
         </div>
       )}
 
+      {/* Magenta Toner - Optional */}
       {supplies.magenta !== undefined && (
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
@@ -50,6 +53,7 @@ const SupplyLevels: React.FC<SupplyLevelsProps> = ({ supplies }) => {
         </div>
       )}
 
+      {/* Yellow Toner - Optional */}
       {supplies.yellow !== undefined && (
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
@@ -62,6 +66,7 @@ const SupplyLevels: React.FC<SupplyLevelsProps> = ({ supplies }) => {
         </div>
       )}
 
+      {/* Waste Container - Optional */}
       {supplies.waste !== undefined && (
         <div className="space-y-2">
           <div className="flex justify-between text-sm">

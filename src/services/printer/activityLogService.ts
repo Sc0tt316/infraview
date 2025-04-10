@@ -1,14 +1,14 @@
 
 import { apiService } from '../api';
 import { toast } from '@/hooks/use-toast';
-import { PrinterLog, PrinterActivity } from '@/types/printers';
+import { PrintLog, PrinterActivity } from '@/types/printers';
 import { initializeLogs, initializeActivity } from './mockDataService';
 
 // Get printer logs
-export const getPrinterLogs = async (printerId: string): Promise<PrinterLog[]> => {
+export const getPrinterLogs = async (printerId: string): Promise<PrintLog[]> => {
   try {
     await initializeLogs();
-    const logs = await apiService.get<PrinterLog[]>('printerLogs');
+    const logs = await apiService.get<PrintLog[]>('printerLogs');
     return logs?.filter(log => log.printerId === printerId) || [];
   } catch (error) {
     console.error(`Error fetching logs for printer ${printerId}:`, error);
@@ -22,12 +22,12 @@ export const getPrinterLogs = async (printerId: string): Promise<PrinterLog[]> =
 };
 
 // Add a new log
-export const addLog = async (logData: Omit<PrinterLog, 'id'>): Promise<PrinterLog> => {
+export const addLog = async (logData: Omit<PrintLog, 'id'>): Promise<PrintLog> => {
   try {
     await initializeLogs();
-    const logs = await apiService.get<PrinterLog[]>('printerLogs') || [];
+    const logs = await apiService.get<PrintLog[]>('printerLogs') || [];
     
-    const newLog: PrinterLog = {
+    const newLog: PrintLog = {
       ...logData,
       id: `l${Date.now()}`
     };

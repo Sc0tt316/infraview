@@ -1,33 +1,34 @@
 
-import { addLog, addActivity } from '../activityLogService';
+import { apiService } from '@/services/api';
+import { PrinterData } from '@/types/printers';
+import { initializePrinters } from '../mockDataService';
+import { addActivity } from '../activityLogService';
 
-// Restart printer
-export const restartPrinter = async (id: string): Promise<boolean> => {
+export const restartPrinter = async (printerId: string): Promise<void> => {
   try {
-    // In a real application, this would communicate with the printer
-    // For demo purposes, we'll just update the status and return success
-    await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate processing
+    await initializePrinters();
     
-    // Add log record
-    await addLog({
-      printerId: id,
-      timestamp: new Date().toISOString(),
-      message: "Printer restarted",
-      type: "info",
-      user: "admin"
-    });
+    const printers = await apiService.get<PrinterData[]>('printers') || [];
+    const printerToRestart = printers.find(printer => printer.id === printerId);
     
-    // Add activity record
+    if (!printerToRestart) {
+      throw new Error(`Printer with id ${printerId} not found`);
+    }
+    
+    // Log the activity
     await addActivity({
-      printerId: id,
+      printerId,
+      printerName: printerToRestart.name,
       timestamp: new Date().toISOString(),
-      action: "Printer restarted",
+      action: "Printer Restarted",
       user: "admin"
     });
     
-    return true;
+    // In a real app, this would actually restart the printer
+    // For this simulation, we'll just return
+    
   } catch (error) {
-    console.error(`Error restarting printer ${id}:`, error);
+    console.error('Error restarting printer:', error);
     throw error;
   }
 };

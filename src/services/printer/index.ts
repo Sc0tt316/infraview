@@ -1,5 +1,5 @@
 
-import { PrinterData, PrinterLog, PrinterActivity } from '@/types/printers';
+import { PrinterData, PrintLog, PrinterActivity } from '@/types/printers';
 import * as printerManagement from './management';
 import { 
   getPrinterLogs, 
@@ -13,7 +13,7 @@ import {
 // Export types
 export type { 
   PrinterData, 
-  PrinterLog, 
+  PrintLog, 
   PrinterActivity,
 };
 

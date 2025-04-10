@@ -31,7 +31,7 @@ const ActivityList: React.FC<ActivityListProps> = ({ activities }) => {
           </div>
           <div className="ml-3 flex-grow">
             <div className="flex justify-between">
-              <span className="font-medium text-sm">{item.message}</span>
+              <span className="font-medium text-sm">{item.description || item.message}</span>
               <span className="text-xs text-muted-foreground ml-2 whitespace-nowrap">
                 {format(new Date(item.timestamp), 'MMM d, h:mm a')}
               </span>

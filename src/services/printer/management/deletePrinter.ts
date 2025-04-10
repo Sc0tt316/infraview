@@ -1,50 +1,35 @@
 
-import { apiService } from '../../api';
-import { toast } from '@/hooks/use-toast';
-import { getAllPrinters } from './getAllPrinters';
+import { apiService } from '@/services/api';
+import { PrinterData } from '@/types/printers';
+import { initializePrinters } from '../mockDataService';
 import { addActivity } from '../activityLogService';
 
-// Delete printer
-export const deletePrinter = async (id: string): Promise<boolean> => {
+export const deletePrinter = async (printerId: string): Promise<void> => {
   try {
-    const printers = await getAllPrinters();
-    const printerIndex = printers.findIndex(printer => printer.id === id);
+    await initializePrinters();
     
-    if (printerIndex === -1) {
-      toast({
-        title: "Error",
-        description: "Printer not found.",
-        variant: "destructive"
-      });
-      return false;
+    const printers = await apiService.get<PrinterData[]>('printers') || [];
+    const printerToDelete = printers.find(printer => printer.id === printerId);
+    
+    if (!printerToDelete) {
+      throw new Error(`Printer with id ${printerId} not found`);
     }
     
-    const printerName = printers[printerIndex].name;
-    const updatedPrinters = printers.filter(printer => printer.id !== id);
+    const updatedPrinters = printers.filter(printer => printer.id !== printerId);
     await apiService.post('printers', updatedPrinters);
     
-    // Add activity record for the deletion
+    // Log the activity
     await addActivity({
-      printerId: id,
+      printerId,
+      printerName: printerToDelete.name,
       timestamp: new Date().toISOString(),
-      action: "Printer deleted",
+      action: "Printer Deleted",
       user: "admin",
-      details: `Deleted printer ${printerName}`
+      details: `Deleted printer: ${printerToDelete.name} - ${printerToDelete.model}`
     });
     
-    toast({
-      title: "Success",
-      description: `Printer "${printerName}" has been deleted.`,
-    });
-    
-    return true;
   } catch (error) {
-    console.error(`Error deleting printer ${id}:`, error);
-    toast({
-      title: "Error",
-      description: "Failed to delete printer. Please try again.",
-      variant: "destructive"
-    });
-    return false;
+    console.error('Error deleting printer:', error);
+    throw error;
   }
 };
