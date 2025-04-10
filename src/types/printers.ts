@@ -1,68 +1,27 @@
 
-// Define printer types
+// If the file exists, add the PrintLog interface and update PrinterData
+export interface PrintLog {
+  id?: string;
+  printerId: string;
+  fileName: string;
+  status: 'completed' | 'failed' | 'pending';
+  timestamp: string;
+  pages: number;
+  size: string;
+  user: string;
+}
+
 export interface PrinterData {
   id: string;
   name: string;
   model: string;
   location: string;
-  status: "online" | "offline" | "error" | "maintenance" | "warning";
+  status: 'online' | 'offline' | 'error' | 'warning';
   inkLevel: number;
   paperLevel: number;
-  jobCount: number;
-  lastActive: string;
+  jobCount?: number;
+  lastActive?: string;
   ipAddress?: string;
   department?: string;
-  serialNumber?: string;
-  addedDate?: string;
-  supplies?: {
-    black: number;
-    cyan?: number;
-    magenta?: number;
-    yellow?: number;
-    waste?: number;
-  };
-  stats?: {
-    totalPages: number;
-    monthlyPages: number;
-    jams: number;
-  };
+  logs?: PrintLog[];
 }
-
-// Define log types 
-export interface PrinterLog {
-  id: string;
-  printerId: string;
-  timestamp: string;
-  message: string;
-  type: "info" | "warning" | "error";
-  user?: string;
-}
-
-// Define activity types
-export interface PrinterActivity {
-  id: string;
-  printerId: string;
-  timestamp: string;
-  action: string;
-  user?: string;
-  details?: string;
-}
-
-// Adding missing types that were causing errors
-export type PrintLog = {
-  id: string;
-  timestamp: string;
-  fileName: string;
-  pages: number;
-  size: string;
-  status: 'completed' | 'failed';
-  user: string;
-};
-
-export type ActivityItem = {
-  id: string;
-  timestamp: string;
-  message: string;
-  type: 'info' | 'warning' | 'error' | 'success';
-  details?: string;
-};

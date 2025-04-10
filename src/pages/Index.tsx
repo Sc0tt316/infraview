@@ -209,7 +209,7 @@ const Index = () => {
                   </thead>
                   <tbody>
                     {recentAlerts.map((alert) => {
-                      const alertDate = new Date(alert.timestamp);
+                      const alertDate = alert.timestamp ? new Date(alert.timestamp) : new Date();
                       const dateStr = alertDate.toLocaleDateString('en-US', {
                         month: 'short',
                         day: 'numeric'
@@ -218,6 +218,11 @@ const Index = () => {
                         hour: 'numeric',
                         minute: '2-digit'
                       });
+                      
+                      const severityLabel = alert.severity ? 
+                        (alert.severity.charAt(0)?.toUpperCase() + alert.severity.slice(1)) || 'Unknown' 
+                        : 'Unknown';
+                      
                       return (
                         <tr key={alert.id} className="border-b border-slate-800 last:border-0 hover:bg-slate-800/40 transition-colors">
                           <td className="py-3 pl-4">
@@ -227,12 +232,12 @@ const Index = () => {
                               alert.severity === 'medium' ? 'bg-amber-500' :
                               'bg-blue-500'
                             }>
-                              {alert.severity.charAt(0).toUpperCase() + alert.severity.slice(1)}
+                              {severityLabel}
                             </Badge>
                           </td>
                           <td className="py-3">
-                            <div className="font-medium text-slate-200">{alert.title}</div>
-                            <div className="text-slate-500 text-xs mt-0.5 truncate max-w-[300px]">{alert.description}</div>
+                            <div className="font-medium text-slate-200">{alert.title || 'Untitled Alert'}</div>
+                            <div className="text-slate-500 text-xs mt-0.5 truncate max-w-[300px]">{alert.description || 'No description'}</div>
                           </td>
                           <td className="py-3 text-sm text-slate-400">
                             {dateStr}, {timeStr}
