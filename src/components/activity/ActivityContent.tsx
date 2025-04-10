@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { ReactNode } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import ActivityFilters from './ActivityFilters';
 import ActivityTable from './ActivityTable';
@@ -16,6 +16,7 @@ interface ActivityContentProps {
   onFilterChange: (value: string) => void;
   onSortChange: (value: string) => void;
   onSortOrderChange: (value: 'asc' | 'desc') => void;
+  children?: ReactNode;
 }
 
 const ActivityContent: React.FC<ActivityContentProps> = ({
@@ -28,7 +29,8 @@ const ActivityContent: React.FC<ActivityContentProps> = ({
   onSearchChange,
   onFilterChange,
   onSortChange,
-  onSortOrderChange
+  onSortOrderChange,
+  children
 }) => {
   return (
     <Card>
@@ -48,7 +50,7 @@ const ActivityContent: React.FC<ActivityContentProps> = ({
         </div>
       </CardHeader>
       <CardContent>
-        <ActivityTable logs={logs} isLoading={isLoading} />
+        {children || <ActivityTable logs={logs} isLoading={isLoading} />}
       </CardContent>
     </Card>
   );

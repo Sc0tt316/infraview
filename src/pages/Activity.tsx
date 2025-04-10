@@ -115,7 +115,9 @@ const Activity = () => {
     <div className="space-y-6">
       <ActivityHeader onRefresh={handleRefresh} />
       
-      <ActivityFilters 
+      <ActivityContent
+        logs={filteredLogs}
+        isLoading={isLoading}
         searchQuery={searchQuery}
         filterType={filterType}
         sortBy={sortBy}
@@ -124,9 +126,7 @@ const Activity = () => {
         onFilterChange={(value: string) => setFilterType(value)}
         onSortChange={(value: string) => setSortBy(value)}
         onSortOrderChange={(value: 'asc' | 'desc') => setSortOrder(value)}
-      />
-      
-      <ActivityContent>
+      >
         <ActivityTable 
           logs={filteredLogs} 
           isLoading={isLoading} 
