@@ -59,17 +59,17 @@ const Sidebar: React.FC<SidebarProps> = ({
   };
   return <aside className={cn("fixed inset-y-0 left-0 z-50 flex flex-col transition-transform duration-300 bg-card border-r border-border", isOpen ? "translate-x-0 w-64" : "-translate-x-full md:translate-x-0 md:w-20")}>
       {/* Logo and Brand */}
-      <div className="flex h-16 items-center px-4 border-b border-border">
+      <div className="flex h-16 items-center px-4 border-b border-border py-0 mx-0 my-0">
         <div className={cn("flex items-center transition-all duration-300", isOpen ? "justify-start" : "justify-center w-full")}>
           <div className="h-10 w-10 bg-primary/10 flex items-center justify-center rounded-md border border-primary/20">
             <span className="text-primary font-bold text-xl">M</span>
           </div>
-          {isOpen && <span className="ml-3 text-xl font-semibold text-primary truncate max-w-[150px]">M-Printer Manager</span>}
+          {isOpen && <span className="ml-3 text-xl font-semibold text-primary truncate max-w-[150px] my-0 py-0 px-0 mx-[11px] text-left">M-Printer Manager</span>}
         </div>
       </div>
       
       {/* Navigation */}
-      <nav className="flex-1 space-y-1 py-4 overflow-y-auto scrollbar-none px-[4px]">
+      <nav className="flex-1 space-y-1 py-4 overflow-y-auto scrollbar-none mx-0 rounded-3xl px-[4px]">
         {navigation.map(item => <NavLink key={item.name} to={item.href} className={({
         isActive
       }) => cn(isOpen ? "sidebar-link" : "flex flex-col items-center justify-center px-2 py-3 rounded-lg text-xs", isActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent hover:text-foreground", "transition-all duration-200 font-medium")}>
