@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { Outlet, useNavigate } from 'react-router-dom';
 import Sidebar from '@/components/layouts/Sidebar';
 import Header from '@/components/layouts/Header';
 import MobileSidebar from '@/components/layouts/MobileSidebar';
@@ -12,7 +12,6 @@ const Layout: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const navigate = useNavigate();
-  const location = useLocation();
   const { user, isAuthenticated } = useAuth();
   
   // Handle route protection
@@ -45,7 +44,7 @@ const Layout: React.FC = () => {
   }
   
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
+    <div className="min-h-screen bg-background text-foreground">
       {/* Desktop Sidebar */}
       <Sidebar 
         isOpen={isSidebarOpen} 
@@ -63,7 +62,7 @@ const Layout: React.FC = () => {
       {/* Main Content Area */}
       <div 
         className={cn(
-          "flex flex-col min-h-screen transition-all duration-300 ease-in-out bg-slate-950",
+          "flex flex-col min-h-screen transition-all duration-300 ease-in-out bg-background",
           isSidebarOpen ? "md:pl-64" : "md:pl-20"
         )}
       >
@@ -74,7 +73,7 @@ const Layout: React.FC = () => {
         />
         
         {/* Main Content */}
-        <main className="flex-1 container mx-auto px-4 py-8">
+        <main className="flex-1 container mx-auto px-4 py-6">
           <Outlet />
         </main>
       </div>

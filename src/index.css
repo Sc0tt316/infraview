@@ -5,7 +5,7 @@
 
 @layer base {
   :root {
-    --background: 210 40% 98%;
+    --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
 
     --card: 0 0% 100%;
@@ -58,7 +58,7 @@
     --accent: 217.2 32.6% 17.5%;
     --accent-foreground: 210 40% 98%;
 
-    --destructive: 0 62.8% 30.6%;
+    --destructive: 0 84.2% 30.6%;
     --destructive-foreground: 210 40% 98%;
 
     --border: 217.2 32.6% 17.5%;
@@ -86,11 +86,6 @@
   ::selection {
     @apply bg-primary/20 text-primary;
   }
-}
-
-/* Apply dark theme by default */
-html {
-  @apply dark;
 }
 
 /* Custom transition classes */
@@ -140,6 +135,10 @@ html {
   @apply bg-amber-500 text-white;
 }
 
+.status-maintenance {
+  @apply bg-blue-500 text-white;
+}
+
 /* Progress bar animation */
 @keyframes progressAnimation {
   0% {
@@ -152,15 +151,15 @@ html {
 
 /* Glass morphism */
 .glass-card {
-  @apply bg-slate-950/80 backdrop-blur-md border border-white/10 shadow-lg;
+  @apply bg-background/80 backdrop-blur-md border border-border shadow-lg;
 }
 
 .dark-card {
-  @apply bg-slate-900 border border-slate-800 shadow-md;
+  @apply bg-card border border-border shadow-md;
 }
 
 .dark-card-hover {
-  @apply hover:bg-slate-800/70 transition-all duration-200;
+  @apply hover:bg-muted/50 transition-all duration-200;
 }
 
 /* Remove blue highlight on mobile tap */
@@ -194,5 +193,45 @@ html {
 }
 
 .recharts-default-tooltip {
-  @apply !bg-slate-900 !border-slate-700 !shadow-lg !rounded-md !px-4;
+  @apply !bg-card !border-border !shadow-lg !rounded-md !px-4;
+}
+
+/* Button styling */
+.btn-primary {
+  @apply bg-primary text-primary-foreground hover:bg-primary/90 transition-colors;
+}
+
+.btn-secondary {
+  @apply bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors;
+}
+
+.btn-outline {
+  @apply border border-input bg-transparent hover:bg-accent hover:text-accent-foreground transition-colors;
+}
+
+.btn-ghost {
+  @apply hover:bg-accent hover:text-accent-foreground transition-colors;
+}
+
+/* Form controls */
+.form-input {
+  @apply bg-background border border-input rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring;
+}
+
+.form-select {
+  @apply bg-background border border-input rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring;
+}
+
+/* Login page */
+.login-page {
+  @apply min-h-screen flex items-center justify-center p-4 md:p-6 bg-background dark:bg-gray-900;
+}
+
+.login-card {
+  @apply w-full max-w-md p-6 rounded-lg border border-border bg-card shadow-sm;
+}
+
+/* Status indicators */
+.status-indicator {
+  @apply inline-flex h-2.5 w-2.5 rounded-full;
 }

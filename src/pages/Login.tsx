@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
 // Form schema validation
 const formSchema = z.object({
@@ -55,79 +56,87 @@ const Login = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 bg-background dark:bg-gray-900">
+    <div className="login-page">
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="w-full max-w-md space-y-8"
+        className="w-full max-w-md"
       >
-        <div className="flex flex-col items-center text-center mb-8">
-          <div className="h-12 w-12 bg-[#300054] flex items-center justify-center rounded-md border border-[#ff6b6b] mb-4">
-            <img 
-              src="/lovable-uploads/79c40e69-54c0-4cbd-a41c-369e4c8bb316.png" 
-              alt="M-Printer Manager Logo" 
-              className="h-10 w-10 object-contain"
-            />
-          </div>
-          <h1 className="text-2xl font-bold">Welcome to M-Printer Manager</h1>
-          <p className="text-muted-foreground mt-2">Sign in to your account to continue</p>
-        </div>
+        <Card className="border-border">
+          <CardHeader className="space-y-1 flex flex-col items-center">
+            <div className="h-12 w-12 bg-primary/10 flex items-center justify-center rounded-md border border-primary/20 mb-4">
+              <img 
+                src="/lovable-uploads/79c40e69-54c0-4cbd-a41c-369e4c8bb316.png" 
+                alt="M-Printer Manager Logo" 
+                className="h-10 w-10 object-contain"
+              />
+            </div>
+            <CardTitle className="text-2xl font-semibold text-center">Welcome Back</CardTitle>
+            <CardDescription className="text-center">
+              Sign in to your account to access M-Printer Manager
+            </CardDescription>
+          </CardHeader>
+          
+          <CardContent>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="Enter your email" 
+                          {...field}
+                          className="form-input"
+                          autoComplete="username"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input 
-                      placeholder="Enter your email" 
-                      {...field} 
-                      className="dark:bg-gray-800 dark:border-gray-700"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Password</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="password" 
+                          placeholder="Enter your password" 
+                          {...field}
+                          className="form-input" 
+                          autoComplete="current-password"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Password</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="password" 
-                      placeholder="Enter your password" 
-                      {...field} 
-                      className="dark:bg-gray-800 dark:border-gray-700"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                <Button 
+                  type="submit" 
+                  className="w-full" 
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Signing in..." : "Sign In"}
+                </Button>
+              </form>
+            </Form>
+          </CardContent>
 
-            <Button 
-              type="submit" 
-              className="w-full" 
-              disabled={isLoading}
-            >
-              {isLoading ? "Signing in..." : "Sign In"}
-            </Button>
-          </form>
-        </Form>
-
-        <div className="mt-6 text-center">
-          <p className="text-sm text-muted-foreground">
-            Demo credentials: <span className="font-semibold">admin@printerverse.com / admin123</span>
-          </p>
-        </div>
+          <CardFooter className="flex justify-center">
+            <p className="text-sm text-muted-foreground">
+              Demo credentials: <span className="font-medium">admin@printerverse.com / admin123</span>
+            </p>
+          </CardFooter>
+        </Card>
       </motion.div>
     </div>
   );

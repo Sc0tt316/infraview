@@ -1,9 +1,9 @@
 
 import React from 'react';
-import { ActivityContent } from '@/components/activity/ActivityContent';
-import { ActivityFilters } from '@/components/activity/ActivityFilters';
-import { ActivityHeader } from '@/components/activity/ActivityHeader';
-import { ActivityTable } from '@/components/activity/ActivityTable';
+import ActivityContent from '@/components/activity/ActivityContent';
+import ActivityFilters from '@/components/activity/ActivityFilters';
+import ActivityHeader from '@/components/activity/ActivityHeader';
+import ActivityTable from '@/components/activity/ActivityTable';
 import { useActivityLogs } from '@/hooks/useActivityLogs';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 
@@ -22,7 +22,7 @@ const Activity = () => {
     handleRefresh
   } = useActivityLogs();
 
-  const getActivityIcon = (type) => {
+  const getActivityIcon = (type: string) => {
     // Fix: Use string literals for comparison instead of enums
     if (type === "error" || type === "warning") {
       return <AlertTriangle className="text-amber-500" />;
@@ -35,7 +35,7 @@ const Activity = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <ActivityHeader />
       
       <ActivityFilters 

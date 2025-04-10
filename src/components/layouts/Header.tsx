@@ -1,10 +1,19 @@
 
 import React from 'react';
-import { Menu, Bell } from 'lucide-react';
+import { Menu, Bell, Sun, Moon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
+import { useTheme } from '@/context/ThemeContext';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useLocation } from 'react-router-dom';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface HeaderProps {
   toggleSidebar: () => void;
@@ -13,6 +22,7 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ toggleSidebar, openMobileSidebar }) => {
   const { user } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const location = useLocation();
   
   // Generate page title based on current path
@@ -31,34 +41,36 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, openMobileSidebar }) => 
       case '/printers':
         return 'Manage your network printers';
       case '/users':
-        return 'Manage your system users';
+        return 'Manage system users';
       case '/analytics':
-        return 'Monitor your printer usage and performance';
+        return 'Monitor printer usage and performance';
+      case '/activity':
+        return 'View recent system activity';
       case '/alerts':
         return 'View and manage system alerts';
       case '/settings':
-        return 'Configure your system settings';
+        return 'Configure system settings';
       default:
         return '';
     }
   }
 
   return (
-    <div className="border-b border-slate-800 bg-slate-950">
+    <div className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
       <div className="flex items-center justify-between p-4 lg:px-6">
         <div className="flex items-center space-x-4">
           <Button
             variant="ghost"
             size="icon"
             onClick={window.innerWidth >= 768 ? toggleSidebar : openMobileSidebar}
-            className="p-2 rounded-md text-slate-400 hover:bg-slate-800 hover:text-slate-50 transition-colors"
+            className="rounded-full"
           >
             <Menu size={20} />
           </Button>
           
           <div className="hidden md:block">
-            <h1 className="text-2xl font-semibold text-slate-100">{getPageTitle()}</h1>
-            <p className="text-sm text-slate-400">{getPageSubtitle()}</p>
+            <h1 className="text-xl font-semibold text-foreground">{getPageTitle()}</h1>
+            <p className="text-sm text-muted-foreground">{getPageSubtitle()}</p>
           </div>
         </div>
         
@@ -66,24 +78,45 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, openMobileSidebar }) => 
           <Button
             variant="ghost"
             size="icon"
-            className="relative p-2 rounded-md text-slate-400 hover:bg-slate-800 hover:text-slate-50 transition-colors"
+            onClick={toggleTheme}
+            className="rounded-full"
           >
-            <Bell size={20} />
+            {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
+          </Button>
+          
+          <Button
+            variant="ghost"
+            size="icon"
+            className="relative rounded-full"
+          >
+            <Bell size={18} />
             <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full"></span>
           </Button>
           
-          <Avatar className="h-8 w-8 bg-primary/20 border border-primary/10">
-            <AvatarFallback className="text-blue-400 text-sm font-medium">
-              {user?.name?.charAt(0) || 'A'}
-            </AvatarFallback>
-          </Avatar>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Avatar className="h-8 w-8 cursor-pointer">
+                <AvatarFallback className="bg-primary/20 text-primary text-sm">
+                  {user?.name?.charAt(0) || 'A'}
+                </AvatarFallback>
+              </Avatar>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>Profile</DropdownMenuItem>
+              <DropdownMenuItem>Settings</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>Logout</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
       
       {/* Mobile title - only shown on small screens */}
-      <div className="md:hidden px-4 pb-4">
-        <h1 className="text-xl font-semibold text-slate-100">{getPageTitle()}</h1>
-        <p className="text-xs text-slate-400">{getPageSubtitle()}</p>
+      <div className="md:hidden px-4 pb-3">
+        <h1 className="text-lg font-semibold text-foreground">{getPageTitle()}</h1>
+        <p className="text-xs text-muted-foreground">{getPageSubtitle()}</p>
       </div>
     </div>
   );

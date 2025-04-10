@@ -7,13 +7,15 @@ import {
   Printer, 
   Users, 
   BarChart2, 
-  BellRing, 
+  BellRing,
   Settings,
-  LogOut
+  LogOut,
+  Activity
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
 import { User } from '@/types/user';
+import { useTheme } from '@/context/ThemeContext';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -23,6 +25,7 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar, user }) => {
   const { logout } = useAuth();
+  const { theme } = useTheme();
 
   const handleLogout = () => {
     logout();
@@ -33,6 +36,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar, user }) => {
     { name: 'Printers', href: '/printers', icon: Printer },
     { name: 'Users', href: '/users', icon: Users },
     { name: 'Analytics', href: '/analytics', icon: BarChart2 },
+    { name: 'Activity', href: '/activity', icon: Activity },
     { name: 'Alerts', href: '/alerts', icon: BellRing },
   ];
 
@@ -53,21 +57,21 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar, user }) => {
   return (
     <aside 
       className={cn(
-        "fixed inset-y-0 left-0 z-50 flex flex-col w-64 transition-transform duration-300 bg-slate-900 border-r border-slate-800",
-        isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0 md:w-20"
+        "fixed inset-y-0 left-0 z-50 flex flex-col transition-transform duration-300 bg-card border-r border-border",
+        isOpen ? "translate-x-0 w-64" : "-translate-x-full md:translate-x-0 md:w-20"
       )}
     >
       {/* Logo and Brand */}
-      <div className="flex h-16 items-center px-4 border-b border-slate-800">
+      <div className="flex h-16 items-center px-4 border-b border-border">
         <div className={cn(
           "flex items-center transition-all duration-300", 
           isOpen ? "justify-start" : "justify-center w-full"
         )}>
-          <div className="h-10 w-10 bg-[#300054] flex items-center justify-center rounded-md border border-[#6e59a5]">
-            <span className="text-white font-bold text-xl">M</span>
+          <div className="h-10 w-10 bg-primary/10 flex items-center justify-center rounded-md border border-primary/20">
+            <span className="text-primary font-bold text-xl">M</span>
           </div>
           {isOpen && (
-            <span className="ml-3 text-xl font-semibold text-blue-400">M-Printer Manager</span>
+            <span className="ml-3 text-xl font-semibold text-primary">M-Printer Manager</span>
           )}
         </div>
       </div>
@@ -79,10 +83,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar, user }) => {
             key={item.name}
             to={item.href}
             className={({ isActive }) => cn(
-              isOpen ? "flex items-center px-4 py-3 rounded-lg text-sm" : "flex flex-col items-center justify-center px-2 py-3 rounded-lg text-xs",
+              isOpen ? "sidebar-link" : "flex flex-col items-center justify-center px-2 py-3 rounded-lg text-xs",
               isActive 
-                ? "bg-slate-800 text-blue-400" 
-                : "text-slate-400 hover:bg-slate-800 hover:text-slate-100",
+                ? "bg-primary/10 text-primary" 
+                : "text-muted-foreground hover:bg-accent hover:text-foreground",
               "transition-all duration-200 font-medium"
             )}
           >
@@ -95,21 +99,21 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar, user }) => {
       </nav>
       
       {/* User Section */}
-      <div className="p-4 border-t border-slate-800">
+      <div className="p-4 border-t border-border">
         <div className={cn(
           "flex items-center",
           isOpen ? "justify-between" : "flex-col"
         )}>
           <div className={cn("flex", isOpen ? "items-center" : "flex-col items-center")}>
-            <div className="h-8 w-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400">
+            <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary">
               {getUserInitials()}
             </div>
             {isOpen && (
               <div className="ml-3">
-                <p className="text-sm font-medium text-slate-100">
+                <p className="text-sm font-medium text-foreground">
                   {user?.name || 'Anonymous User'}
                 </p>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-muted-foreground">
                   {user?.email || 'no-email@example.com'}
                 </p>
               </div>
@@ -121,7 +125,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar, user }) => {
               <Button
                 variant="ghost"
                 size="icon"
-                className="text-slate-400 hover:bg-slate-800 hover:text-slate-100 h-8 w-8"
+                className="text-muted-foreground hover:bg-accent hover:text-foreground h-8 w-8"
               >
                 <Settings size={18} />
               </Button>
@@ -130,7 +134,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar, user }) => {
               variant="ghost"
               size="icon"
               onClick={handleLogout}
-              className="text-red-400 hover:bg-red-500/10 hover:text-red-300 h-8 w-8"
+              className="text-red-500 hover:bg-red-500/10 hover:text-red-600 h-8 w-8"
             >
               <LogOut size={18} />
             </Button>
