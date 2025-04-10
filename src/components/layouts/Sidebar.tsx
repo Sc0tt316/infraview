@@ -64,7 +64,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           <div className="h-10 w-10 bg-primary/10 flex items-center justify-center rounded-md border border-primary/20">
             <span className="text-primary font-bold text-xl">M</span>
           </div>
-          {isOpen && <span className="ml-3 text-xl font-semibold text-primary truncate max-w-[150px] my-0 py-0 px-0 mx-[11px] text-left">M-Printer</span>}
+          {isOpen && <span className="ml-3 text-xl font-semibold text-primary truncate max-w-[150px] my-0 py-0 px-0 text-center mx-[20px]">M-Printer</span>}
         </div>
       </div>
       
