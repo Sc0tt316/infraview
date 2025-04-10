@@ -2,9 +2,11 @@
 import React, { useState, useEffect, ChangeEvent } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { printerService } from '@/services/printer';
+import { analyticsService } from '@/services/analytics';
 import ActivityHeader from '@/components/activity/ActivityHeader';
 import ActivityFilters from '@/components/activity/ActivityFilters';
 import ActivityContent from '@/components/activity/ActivityContent';
+import ActivityTable from '@/components/activity/ActivityTable';
 import { Printer, AlertTriangle, Info, Settings } from 'lucide-react';
 import { ActivityLogData } from '@/types/analytics';
 
@@ -14,18 +16,52 @@ const Activity = () => {
   const [filterType, setFilterType] = useState('all');
   const [sortBy, setSortBy] = useState('timestamp');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [processedLogs, setProcessedLogs] = useState<ActivityLogData[]>([]);
 
   // Fetch activity logs
   const { data: logs, isLoading, refetch } = useQuery({
     queryKey: ['activityLogs', { sortBy, sortOrder }],
-    queryFn: () => printerService.getAllActivities(),
+    queryFn: () => analyticsService.getActivityLogs({
+      sortBy,
+      sortOrder
+    }),
   });
+
+  // Process printer activities to match ActivityLogData format
+  useEffect(() => {
+    const fetchAndProcessActivities = async () => {
+      try {
+        const printerActivities = await printerService.getAllActivities();
+        
+        // Map printer activities to ActivityLogData format
+        const mappedActivities: ActivityLogData[] = printerActivities.map((activity) => ({
+          id: activity.id,
+          timestamp: activity.timestamp,
+          entityId: activity.printerId,
+          entityType: 'printer',
+          type: activity.status || 'info',
+          message: activity.action,
+          user: activity.user || 'system',
+          action: activity.action,
+          description: activity.details || '',
+          userName: activity.user || 'system'
+        }));
+        
+        setProcessedLogs(mappedActivities);
+      } catch (error) {
+        console.error('Error processing activities:', error);
+        setProcessedLogs([]);
+      }
+    };
+    
+    fetchAndProcessActivities();
+  }, []);
 
   // Filter and sort logs based on user selections
   const filteredLogs = React.useMemo(() => {
-    if (!logs) return [];
+    if (!processedLogs?.length) return [];
     
-    let filtered = [...logs];
+    let filtered = [...processedLogs];
     
     // Apply type filter
     if (filterType !== 'all') {
@@ -36,9 +72,8 @@ const Activity = () => {
     if (searchQuery) {
       filtered = filtered.filter(log => 
         log.action.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        log.details?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        log.user.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        log.printerName?.toLowerCase().includes(searchQuery.toLowerCase())
+        log.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        log.user.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
     
@@ -57,7 +92,7 @@ const Activity = () => {
     });
     
     return filtered;
-  }, [logs, searchQuery, filterType, sortBy, sortOrder]);
+  }, [processedLogs, searchQuery, filterType, sortBy, sortOrder]);
 
   // Get icon based on activity type
   const getActivityIcon = (type: string) => {
@@ -72,9 +107,13 @@ const Activity = () => {
     }
   };
 
+  const handleRefresh = () => {
+    refetch();
+  };
+
   return (
     <div className="space-y-6">
-      <ActivityHeader onRefresh={() => refetch()} />
+      <ActivityHeader onRefresh={handleRefresh} />
       
       <ActivityFilters 
         searchQuery={searchQuery}
@@ -87,18 +126,12 @@ const Activity = () => {
         onSortOrderChange={(value: 'asc' | 'desc') => setSortOrder(value)}
       />
       
-      <ActivityContent 
-        logs={filteredLogs} 
-        isLoading={isLoading}
-        searchQuery={searchQuery}
-        filterType={filterType}
-        sortBy={sortBy}
-        sortOrder={sortOrder}
-        onSearchChange={(e) => setSearchQuery(e.target.value)}
-        onFilterChange={(value) => setFilterType(value)}
-        onSortChange={(value) => setSortBy(value)}
-        onSortOrderChange={(value) => setSortOrder(value)}
-      />
+      <ActivityContent>
+        <ActivityTable 
+          logs={filteredLogs} 
+          isLoading={isLoading} 
+        />
+      </ActivityContent>
     </div>
   );
 };

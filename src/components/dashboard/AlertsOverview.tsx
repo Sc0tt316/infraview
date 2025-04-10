@@ -20,7 +20,7 @@ interface AlertsOverviewProps {
   onViewAllAlerts: () => void;
 }
 
-const AlertsOverview: React.FC<AlertsOverviewProps> = ({ alerts, onViewAllAlerts }) => {
+const AlertsOverview: React.FC<AlertsOverviewProps> = ({ alerts = [], onViewAllAlerts }) => {
   // Function to get badge for alert severity
   const getSeverityBadge = (severity: string) => {
     switch (severity) {
@@ -38,7 +38,7 @@ const AlertsOverview: React.FC<AlertsOverviewProps> = ({ alerts, onViewAllAlerts
   };
   
   // Filter for only unresolved alerts
-  const unresolvedAlerts = alerts.filter(a => !a.isResolved).slice(0, 5);
+  const unresolvedAlerts = alerts?.filter(a => !a.isResolved)?.slice(0, 5) || [];
   
   return (
     <Card>

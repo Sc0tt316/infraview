@@ -9,14 +9,14 @@ interface PrinterStatusSummaryProps {
   printers: PrinterData[];
 }
 
-const PrinterStatusSummary: React.FC<PrinterStatusSummaryProps> = ({ printers }) => {
-  // Calculate printer status counts
+const PrinterStatusSummary: React.FC<PrinterStatusSummaryProps> = ({ printers = [] }) => {
+  // Calculate printer status counts with null check
   const statusCounts = {
-    online: printers.filter(p => p.status === 'online').length,
-    offline: printers.filter(p => p.status === 'offline').length,
-    error: printers.filter(p => p.status === 'error').length,
-    maintenance: printers.filter(p => p.status === 'maintenance').length,
-    warning: printers.filter(p => p.status === 'warning').length,
+    online: printers?.filter(p => p.status === 'online').length || 0,
+    offline: printers?.filter(p => p.status === 'offline').length || 0,
+    error: printers?.filter(p => p.status === 'error').length || 0,
+    maintenance: printers?.filter(p => p.status === 'maintenance').length || 0,
+    warning: printers?.filter(p => p.status === 'warning').length || 0,
   };
 
   const chartData = [

@@ -35,7 +35,7 @@ const Printers: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   
   const { user } = useAuth();
-  const isAdmin = user?.role === 'admin' || user?.role === 'manager';
+  const isAdmin = user?.role === 'admin';
   const canAddPrinter = user && user.role !== 'user';
   
   const form = useForm<PrinterFormValues>({

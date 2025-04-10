@@ -9,11 +9,11 @@ interface LowSuppliesWarningProps {
   printers: PrinterData[];
 }
 
-const LowSuppliesWarning: React.FC<LowSuppliesWarningProps> = ({ printers }) => {
+const LowSuppliesWarning: React.FC<LowSuppliesWarningProps> = ({ printers = [] }) => {
   // Find printers with low ink or paper
-  const printersWithLowSupplies = printers.filter(
+  const printersWithLowSupplies = printers?.filter(
     p => p.inkLevel < 15 || p.paperLevel < 15
-  );
+  ) || [];
   
   return (
     <Card>
