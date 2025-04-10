@@ -69,7 +69,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       </div>
       
       {/* Navigation */}
-      <nav className="flex-1 space-y-1 py-4 overflow-y-auto scrollbar-none mx-0 rounded-3xl px-[4px]">
+      <nav className="flex-1 space-y-1 py-4 overflow-y-auto scrollbar-none mx-0 px-[4px] rounded">
         {navigation.map(item => <NavLink key={item.name} to={item.href} className={({
         isActive
       }) => cn(isOpen ? "sidebar-link" : "flex flex-col items-center justify-center px-2 py-3 rounded-lg text-xs", isActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent hover:text-foreground", "transition-all duration-200 font-medium")}>
