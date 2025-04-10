@@ -53,7 +53,7 @@ const PrintingHistory: React.FC<PrintingHistoryProps> = ({ printerId }) => {
               <TableCell className="font-mono text-xs">
                 {format(new Date(log.timestamp), 'MMM dd, yyyy HH:mm')}
               </TableCell>
-              <TableCell>{log.message || 'Document'}</TableCell>
+              <TableCell>{log.fileName || 'Document'}</TableCell>
               <TableCell>
                 <div className="flex items-center">
                   <User className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
@@ -62,9 +62,9 @@ const PrintingHistory: React.FC<PrintingHistoryProps> = ({ printerId }) => {
               </TableCell>
               <TableCell>
                 <span className={`text-xs px-2 py-1 rounded-full ${
-                  log.type === 'error' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
+                  log.status === 'failed' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
                 }`}>
-                  {log.type === 'error' ? 'Failed' : 'Success'}
+                  {log.status === 'failed' ? 'Failed' : 'Success'}
                 </span>
               </TableCell>
             </TableRow>

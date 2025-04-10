@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { useAuth } from '@/context/AuthContext';
@@ -19,8 +18,8 @@ const Index = () => {
   const [recentAlerts, setRecentAlerts] = useState([]);
   const [printerData, setPrinterData] = useState([]);
   
-  // Fix the comparison by checking both admin and manager roles
-  const hasAdminAccess = user?.role === 'admin' || user?.role === 'manager';
+  // Fix the role comparison
+  const isAdmin = user?.role === 'admin' || user?.role === 'manager';
   
   useEffect(() => {
     if (alerts) {
@@ -325,7 +324,7 @@ const Index = () => {
               <Button onClick={() => navigate('/printers')} className="bg-blue-600 hover:bg-blue-700 text-white">
                 Manage Printers
               </Button>
-              {hasAdminAccess && (
+              {isAdmin && (
                 <Button onClick={() => navigate('/users')} className="bg-slate-700 hover:bg-slate-600 text-white">
                   Manage Users
                 </Button>

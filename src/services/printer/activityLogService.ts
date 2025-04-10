@@ -1,6 +1,6 @@
 
 import { apiService } from '../api';
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { PrintLog, PrinterActivity } from '@/types/printers';
 import { initializeLogs, initializeActivity } from './mockDataService';
 
@@ -12,7 +12,7 @@ export const getPrinterLogs = async (printerId: string): Promise<PrintLog[]> => 
     return logs?.filter(log => log.printerId === printerId) || [];
   } catch (error) {
     console.error(`Error fetching logs for printer ${printerId}:`, error);
-    toast({
+    useToast().toast({
       title: "Error",
       description: "Failed to fetch printer logs. Please try again.",
       variant: "destructive"
@@ -53,7 +53,7 @@ export const getPrinterActivity = async (printerId: string): Promise<PrinterActi
     return activities?.filter(activity => activity.printerId === printerId) || [];
   } catch (error) {
     console.error(`Error fetching activity for printer ${printerId}:`, error);
-    toast({
+    useToast().toast({
       title: "Error",
       description: "Failed to fetch printer activity. Please try again.",
       variant: "destructive"
@@ -87,14 +87,14 @@ export const addActivity = async (activityData: Omit<PrinterActivity, 'id'>): Pr
 };
 
 // Get all logs (for activity page)
-export const getAllLogs = async (): Promise<PrinterLog[]> => {
+export const getAllLogs = async (): Promise<PrintLog[]> => {
   try {
     await initializeLogs();
-    const logs = await apiService.get<PrinterLog[]>('printerLogs');
+    const logs = await apiService.get<PrintLog[]>('printerLogs');
     return logs || [];
   } catch (error) {
     console.error('Error fetching all logs:', error);
-    toast({
+    useToast().toast({
       title: "Error",
       description: "Failed to fetch logs. Please try again.",
       variant: "destructive"
@@ -111,7 +111,7 @@ export const getAllActivities = async (): Promise<PrinterActivity[]> => {
     return activities || [];
   } catch (error) {
     console.error('Error fetching all activities:', error);
-    toast({
+    useToast().toast({
       title: "Error",
       description: "Failed to fetch activities. Please try again.",
       variant: "destructive"
