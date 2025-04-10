@@ -1,24 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader,
-  TableRow 
-} from '@/components/ui/table';
-import { 
-  Dialog,
-  DialogContent, 
-  DialogDescription, 
-  DialogHeader,
-  DialogTitle,
-  DialogFooter
-} from '@/components/ui/dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -27,7 +12,6 @@ import { PlusCircle, Search, UserPlus, RefreshCw, Eye, EyeOff } from 'lucide-rea
 import { UserData } from '@/types/user';
 import { userService } from '@/services/userService';
 import { Badge } from '@/components/ui/badge';
-
 const Users = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredUsers, setFilteredUsers] = useState<UserData[]>([]);
@@ -45,18 +29,23 @@ const Users = () => {
     password: '',
     status: 'active' as 'active' | 'inactive' | 'pending'
   });
-
-  const { user: loggedInUser } = useAuth();
-  const { toast } = useToast();
+  const {
+    user: loggedInUser
+  } = useAuth();
+  const {
+    toast
+  } = useToast();
   const queryClient = useQueryClient();
-
-  const { data: users, isLoading, refetch } = useQuery({
+  const {
+    data: users,
+    isLoading,
+    refetch
+  } = useQuery({
     queryKey: ['users'],
     queryFn: async () => {
       return userService.getAllUsers();
-    },
+    }
   });
-
   const addUserMutation = useMutation({
     mutationFn: (userData: typeof newUser) => {
       return userService.addUserWithPassword({
@@ -70,22 +59,23 @@ const Users = () => {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({
+        queryKey: ['users']
+      });
       toast({
         title: "User Added",
-        description: `User ${newUser.name} has been added successfully.`,
+        description: `User ${newUser.name} has been added successfully.`
       });
       handleCloseAddUserModal();
     },
-    onError: (error) => {
+    onError: error => {
       toast({
         variant: "destructive",
         title: "Error",
-        description: `Failed to add user: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        description: `Failed to add user: ${error instanceof Error ? error.message : 'Unknown error'}`
       });
     }
   });
-
   useEffect(() => {
     if (users) {
       let filtered = users;
@@ -93,11 +83,7 @@ const Users = () => {
       // Apply search filter
       if (searchTerm) {
         const lowerSearchTerm = searchTerm.toLowerCase();
-        filtered = filtered.filter(user =>
-          user.name.toLowerCase().includes(lowerSearchTerm) ||
-          user.email.toLowerCase().includes(lowerSearchTerm) ||
-          user.department?.toLowerCase().includes(lowerSearchTerm)
-        );
+        filtered = filtered.filter(user => user.name.toLowerCase().includes(lowerSearchTerm) || user.email.toLowerCase().includes(lowerSearchTerm) || user.department?.toLowerCase().includes(lowerSearchTerm));
       }
 
       // Apply role filter
@@ -109,28 +95,22 @@ const Users = () => {
       if (statusFilter !== 'all') {
         filtered = filtered.filter(user => user.status === statusFilter);
       }
-
       setFilteredUsers(filtered);
     }
   }, [users, searchTerm, roleFilter, statusFilter]);
-
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
   };
-
   const handleRoleFilterChange = (role: string) => {
     setRoleFilter(role);
   };
-
   const handleStatusFilterChange = (status: string) => {
     setStatusFilter(status);
   };
-
   const handleOpenAddUserModal = () => {
     setShowAddUserModal(true);
     setShowPassword(false);
   };
-
   const handleCloseAddUserModal = () => {
     setShowAddUserModal(false);
     setNewUser({
@@ -143,75 +123,57 @@ const Users = () => {
       status: 'active'
     });
   };
-
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
+    const {
+      name,
+      value
+    } = e.target;
     setNewUser(prevUser => ({
       ...prevUser,
-      [name]: value,
+      [name]: value
     }));
   };
-
   const handleRoleChange = (value: 'admin' | 'user' | 'manager') => {
     setNewUser(prevUser => ({
       ...prevUser,
-      role: value,
+      role: value
     }));
   };
-
   const handleStatusChange = (value: 'active' | 'inactive' | 'pending') => {
     setNewUser(prevUser => ({
       ...prevUser,
-      status: value,
+      status: value
     }));
   };
-
   const handleAddUser = (e: React.FormEvent) => {
     e.preventDefault();
     addUserMutation.mutate(newUser);
   };
-
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
-
   const isAdmin = loggedInUser?.role === 'admin';
-
-  return (
-    <div className="space-y-6">
+  return <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Users</h1>
-          <p className="text-muted-foreground mt-1">Manage your system users</p>
+          
+          
         </div>
         <div className="flex items-center gap-3">
-          <Button 
-            onClick={() => refetch()} 
-            variant="outline" 
-            size="icon"
-            className="h-10 w-10"
-          >
+          <Button onClick={() => refetch()} variant="outline" size="icon" className="h-10 w-10">
             <RefreshCw className="h-4 w-4" />
           </Button>
-          {isAdmin && (
-            <Button onClick={handleOpenAddUserModal}>
+          {isAdmin && <Button onClick={handleOpenAddUserModal}>
               <UserPlus className="w-4 h-4 mr-2" />
               Add User
-            </Button>
-          )}
+            </Button>}
         </div>
       </div>
 
       <div className="flex flex-col md:flex-row gap-4">
         <div className="relative flex-grow">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Search users..."
-            className="pl-8"
-            value={searchTerm}
-            onChange={handleSearchChange}
-          />
+          <Input type="search" placeholder="Search users..." className="pl-8" value={searchTerm} onChange={handleSearchChange} />
         </div>
 
         <div className="w-full md:w-[200px]">
@@ -243,12 +205,9 @@ const Users = () => {
         </div>
       </div>
 
-      {isLoading ? (
-        <div className="flex justify-center items-center h-64">
+      {isLoading ? <div className="flex justify-center items-center h-64">
           <RefreshCw className="h-8 w-8 animate-spin text-primary/70" />
-        </div>
-      ) : filteredUsers && filteredUsers.length > 0 ? (
-        <div className="rounded-md border">
+        </div> : filteredUsers && filteredUsers.length > 0 ? <div className="rounded-md border">
           <Table>
             <TableHeader>
               <TableRow>
@@ -260,40 +219,27 @@ const Users = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredUsers.map((user) => (
-                <TableRow key={user.id}>
+              {filteredUsers.map(user => <TableRow key={user.id}>
                   <TableCell className="font-medium">{user.name}</TableCell>
                   <TableCell>{user.email}</TableCell>
                   <TableCell>
-                    <Badge className={
-                      user.role === 'admin' ? 'bg-red-100 text-red-800' :
-                      user.role === 'manager' ? 'bg-blue-100 text-blue-800' :
-                      'bg-green-100 text-green-800'
-                    }>
+                    <Badge className={user.role === 'admin' ? 'bg-red-100 text-red-800' : user.role === 'manager' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'}>
                       {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
                     </Badge>
                   </TableCell>
                   <TableCell>{user.department || 'N/A'}</TableCell>
                   <TableCell>
-                    <Badge className={
-                      user.status === 'active' ? 'bg-green-100 text-green-800' :
-                      user.status === 'inactive' ? 'bg-gray-100 text-gray-800' :
-                      'bg-yellow-100 text-yellow-800'
-                    }>
+                    <Badge className={user.status === 'active' ? 'bg-green-100 text-green-800' : user.status === 'inactive' ? 'bg-gray-100 text-gray-800' : 'bg-yellow-100 text-yellow-800'}>
                       {user.status?.charAt(0).toUpperCase() + user.status?.slice(1) || 'N/A'}
                     </Badge>
                   </TableCell>
-                </TableRow>
-              ))}
+                </TableRow>)}
             </TableBody>
           </Table>
-        </div>
-      ) : (
-        <div className="flex flex-col items-center justify-center h-64">
+        </div> : <div className="flex flex-col items-center justify-center h-64">
           <PlusCircle className="w-10 h-10 text-muted-foreground mb-3" />
           <p className="text-muted-foreground">No users found.</p>
-        </div>
-      )}
+        </div>}
 
       <Dialog open={showAddUserModal} onOpenChange={handleCloseAddUserModal}>
         <DialogContent className="sm:max-w-[425px]">
@@ -309,45 +255,21 @@ const Users = () => {
                 <Label htmlFor="name" className="text-right">
                   Name
                 </Label>
-                <Input
-                  type="text"
-                  id="name"
-                  name="name"
-                  value={newUser.name}
-                  onChange={handleInputChange}
-                  className="col-span-3"
-                  required
-                />
+                <Input type="text" id="name" name="name" value={newUser.name} onChange={handleInputChange} className="col-span-3" required />
               </div>
 
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="email" className="text-right">
                   Email
                 </Label>
-                <Input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={newUser.email}
-                  onChange={handleInputChange}
-                  className="col-span-3"
-                  required
-                />
+                <Input type="email" id="email" name="email" value={newUser.email} onChange={handleInputChange} className="col-span-3" required />
               </div>
 
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="phone" className="text-right">
                   Phone
                 </Label>
-                <Input
-                  type="tel"
-                  id="phone"
-                  name="phone"
-                  value={newUser.phone}
-                  onChange={handleInputChange}
-                  className="col-span-3"
-                  required
-                />
+                <Input type="tel" id="phone" name="phone" value={newUser.phone} onChange={handleInputChange} className="col-span-3" required />
               </div>
 
               <div className="grid grid-cols-4 items-center gap-4">
@@ -386,14 +308,7 @@ const Users = () => {
                 <Label htmlFor="department" className="text-right">
                   Department
                 </Label>
-                <Input
-                  type="text"
-                  id="department"
-                  name="department"
-                  value={newUser.department}
-                  onChange={handleInputChange}
-                  className="col-span-3"
-                />
+                <Input type="text" id="department" name="department" value={newUser.department} onChange={handleInputChange} className="col-span-3" />
               </div>
 
               <div className="grid grid-cols-4 items-center gap-4">
@@ -401,22 +316,8 @@ const Users = () => {
                   Password
                 </Label>
                 <div className="relative col-span-3">
-                  <Input
-                    type={showPassword ? "text" : "password"}
-                    id="password"
-                    name="password"
-                    value={newUser.password}
-                    onChange={handleInputChange}
-                    className="pr-10"
-                    required
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-0 top-0 h-full"
-                    onClick={togglePasswordVisibility}
-                  >
+                  <Input type={showPassword ? "text" : "password"} id="password" name="password" value={newUser.password} onChange={handleInputChange} className="pr-10" required />
+                  <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-full" onClick={togglePasswordVisibility}>
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </Button>
                 </div>
@@ -431,8 +332,6 @@ const Users = () => {
           </form>
         </DialogContent>
       </Dialog>
-    </div>
-  );
+    </div>;
 };
-
 export default Users;
