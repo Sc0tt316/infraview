@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertFilter, AlertSeverity } from '@/types/alerts';
@@ -92,8 +93,11 @@ export const useAlerts = () => {
         low: 3 
       };
       
-      // @ts-ignore - We know the severity values are valid keys
-      return severityOrder[a.severity] - severityOrder[b.severity];
+      // Type casting to make TypeScript happy
+      const aSeverity = a.severity as keyof typeof severityOrder;
+      const bSeverity = b.severity as keyof typeof severityOrder;
+      
+      return severityOrder[aSeverity] - severityOrder[bSeverity];
     });
     
     setFilteredAlerts(result);

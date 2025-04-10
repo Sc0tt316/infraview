@@ -1,8 +1,9 @@
 
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { printerService, PrinterData } from '@/services/printer';
+import { printerService } from '@/services/printer';
 import { useToast } from '@/hooks/use-toast';
+import { PrinterData } from '@/types/printers';
 
 export const usePrinters = () => {
   const [printers, setPrinters] = useState<PrinterData[]>([]);

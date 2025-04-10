@@ -88,6 +88,11 @@
   }
 }
 
+/* Apply dark theme by default */
+html {
+  @apply dark;
+}
+
 /* Custom transition classes */
 .page-fade-in {
   animation: pageFadeIn 0.4s ease forwards;
@@ -109,6 +114,32 @@
   }
 }
 
+/* Sidebar custom styling */
+.sidebar-active-link {
+  @apply bg-primary/10 text-primary;
+}
+
+.sidebar-link {
+  @apply flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 text-muted-foreground hover:bg-accent hover:text-foreground;
+}
+
+/* Card status colors */
+.status-online {
+  @apply bg-green-500 text-white;
+}
+
+.status-offline {
+  @apply bg-gray-500 text-white;
+}
+
+.status-error {
+  @apply bg-red-500 text-white;
+}
+
+.status-warning {
+  @apply bg-amber-500 text-white;
+}
+
 /* Progress bar animation */
 @keyframes progressAnimation {
   0% {
@@ -121,7 +152,15 @@
 
 /* Glass morphism */
 .glass-card {
-  @apply bg-white/80 backdrop-blur-md border border-white/20 shadow-lg;
+  @apply bg-slate-950/80 backdrop-blur-md border border-white/10 shadow-lg;
+}
+
+.dark-card {
+  @apply bg-slate-900 border border-slate-800 shadow-md;
+}
+
+.dark-card-hover {
+  @apply hover:bg-slate-800/70 transition-all duration-200;
 }
 
 /* Remove blue highlight on mobile tap */
@@ -147,4 +186,13 @@
 
 ::-webkit-scrollbar-thumb:hover {
   @apply bg-muted-foreground/40;
+}
+
+/* Chart custom styling */
+.recharts-surface {
+  overflow: visible;
+}
+
+.recharts-default-tooltip {
+  @apply !bg-slate-900 !border-slate-700 !shadow-lg !rounded-md !px-4;
 }

@@ -1,166 +1,126 @@
 
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import {
-  ChevronLeft,
-  ChevronRight,
-  LayoutDashboard,
-  Printer,
-  Bell,
-  Users,
-  ActivityIcon,
-  LogOut,
+import { 
+  Home, 
+  Printer, 
+  Users, 
+  BarChart2, 
+  BellRing, 
   Settings,
+  LogOut
 } from 'lucide-react';
-
-import Logo from '@/components/common/Logo';
-import { UserData } from '@/types/user';
+import { Button } from '@/components/ui/button';
+import { useAuth } from '@/context/AuthContext';
+import { User } from '@/types/user';
 
 interface SidebarProps {
   isOpen: boolean;
   toggleSidebar: () => void;
-  user: UserData;
+  user: User;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({
-  isOpen,
-  toggleSidebar,
-  user,
-}) => {
-  const location = useLocation();
-  
-  // Get initials from user name
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(part => part[0])
-      .join('')
-      .toUpperCase();
+const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar, user }) => {
+  const { logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
   };
   
-  const navigationItems = [
-    { name: 'Dashboard', icon: LayoutDashboard, path: '/' },
-    { name: 'Printers', icon: Printer, path: '/printers' },
-    { name: 'Alerts', icon: Bell, path: '/alerts' },
-    { name: 'Activity', icon: ActivityIcon, path: '/activity' },
+  const navigation = [
+    { name: 'Dashboard', href: '/', icon: Home },
+    { name: 'Printers', href: '/printers', icon: Printer },
+    { name: 'Users', href: '/users', icon: Users },
+    { name: 'Analytics', href: '/analytics', icon: BarChart2 },
+    { name: 'Alerts', href: '/alerts', icon: BellRing },
   ];
-  
-  // Add Users menu item only for admin users
-  if (user.role === 'admin') {
-    navigationItems.push({ name: 'Users', icon: Users, path: '/users' });
-  }
-  
+
   return (
-    <aside
+    <aside 
       className={cn(
-        'fixed top-0 left-0 z-30 h-full bg-card border-r border-r-border transition-all duration-300 ease-in-out',
-        isOpen ? 'w-64' : 'w-20'
+        "fixed inset-y-0 left-0 z-50 flex flex-col w-64 transition-transform duration-300 bg-slate-900 border-r border-slate-800",
+        isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0 md:w-20"
       )}
     >
-      <div className="flex h-full flex-col justify-between py-4">
-        {/* Logo and toggle */}
-        <div className="px-4">
-          <div className="flex items-center justify-between mb-8">
-            {isOpen ? <Logo /> : <Logo iconOnly />}
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={toggleSidebar}
-              className="rounded-full"
+      {/* Logo and Brand */}
+      <div className="flex h-16 items-center px-4 border-b border-slate-800">
+        <div className={cn(
+          "flex items-center transition-all duration-300", 
+          isOpen ? "justify-start" : "justify-center w-full"
+        )}>
+          <div className="h-10 w-10 bg-[#300054] flex items-center justify-center rounded-md border border-[#6e59a5]">
+            <span className="text-white font-bold text-xl">M</span>
+          </div>
+          {isOpen && (
+            <span className="ml-3 text-xl font-semibold text-blue-400">M-Printer Manager</span>
+          )}
+        </div>
+      </div>
+      
+      {/* Navigation */}
+      <nav className="flex-1 space-y-1 px-2 py-4 overflow-y-auto scrollbar-none">
+        {navigation.map((item) => (
+          <NavLink
+            key={item.name}
+            to={item.href}
+            className={({ isActive }) => cn(
+              isOpen ? "flex items-center px-4 py-3 rounded-lg text-sm" : "flex flex-col items-center justify-center px-2 py-3 rounded-lg text-xs",
+              isActive 
+                ? "bg-slate-800 text-blue-400" 
+                : "text-slate-400 hover:bg-slate-800 hover:text-slate-100",
+              "transition-all duration-200 font-medium"
+            )}
+          >
+            <item.icon className={cn("flex-shrink-0", isOpen ? "h-5 w-5 mr-3" : "h-5 w-5 mb-1")} />
+            <span className={cn("whitespace-nowrap", !isOpen && "mt-1")}>
+              {item.name}
+            </span>
+          </NavLink>
+        ))}
+      </nav>
+      
+      {/* User Section */}
+      <div className="p-4 border-t border-slate-800">
+        <div className={cn(
+          "flex items-center",
+          isOpen ? "justify-between" : "flex-col"
+        )}>
+          <div className={cn("flex", isOpen ? "items-center" : "flex-col items-center")}>
+            <div className="h-8 w-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400">
+              {user?.name?.charAt(0) || 'A'}
+            </div>
+            {isOpen && (
+              <div className="ml-3">
+                <p className="text-sm font-medium text-slate-100">
+                  Admin User
+                </p>
+                <p className="text-xs text-slate-400">
+                  {user?.email || 'admin@example.com'}
+                </p>
+              </div>
+            )}
+          </div>
+          
+          <div className={cn("flex", isOpen ? "space-x-2" : "flex-col mt-4 space-y-2")}>
+            <NavLink to="/settings">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-slate-400 hover:bg-slate-800 hover:text-slate-100 h-8 w-8"
+              >
+                <Settings size={18} />
+              </Button>
+            </NavLink>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleLogout}
+              className="text-red-400 hover:bg-red-500/10 hover:text-red-300 h-8 w-8"
             >
-              {isOpen ? (
-                <ChevronLeft className="h-5 w-5" />
-              ) : (
-                <ChevronRight className="h-5 w-5" />
-              )}
+              <LogOut size={18} />
             </Button>
           </div>
-        </div>
-        
-        {/* Navigation */}
-        <div className="flex-1 overflow-y-auto px-3">
-          <div className="space-y-1">
-            {navigationItems.map((item) => (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                className={({ isActive }) =>
-                  cn(
-                    'flex items-center rounded-md px-3 py-2 text-sm transition-colors',
-                    isActive
-                      ? 'bg-primary/10 text-primary'
-                      : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-                    !isOpen && 'justify-center'
-                  )
-                }
-              >
-                <item.icon className={cn('h-5 w-5', !isOpen ? 'mx-auto' : 'mr-3')} />
-                {isOpen && <span>{item.name}</span>}
-              </NavLink>
-            ))}
-          </div>
-        </div>
-        
-        {/* User and logout */}
-        <div className="mt-auto px-3 space-y-3">
-          {/* Settings link */}
-          <NavLink
-            to="/settings"
-            className={({ isActive }) =>
-              cn(
-                'flex items-center rounded-md px-3 py-2 text-sm transition-colors',
-                isActive
-                  ? 'bg-primary/10 text-primary'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-                !isOpen && 'justify-center'
-              )
-            }
-          >
-            <Settings className={cn('h-5 w-5', !isOpen ? 'mx-auto' : 'mr-3')} />
-            {isOpen && <span>Settings</span>}
-          </NavLink>
-          
-          {/* Logout button */}
-          <Button
-            variant="ghost"
-            className={cn(
-              'w-full justify-start rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground',
-              !isOpen && 'justify-center'
-            )}
-            onClick={() => {
-              // Add logout logic
-            }}
-          >
-            <LogOut className={cn('h-5 w-5', !isOpen ? 'mx-auto' : 'mr-3')} />
-            {isOpen && <span>Logout</span>}
-          </Button>
-          
-          {/* User profile */}
-          {isOpen && (
-            <div className="mt-3 flex items-center px-3 py-2">
-              <Avatar className="h-8 w-8 mr-2">
-                <AvatarImage src={user.avatar} />
-                <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
-              </Avatar>
-              <div className="truncate">
-                <p className="text-sm font-medium">{user.name}</p>
-                <p className="text-xs text-muted-foreground">{user.role}</p>
-              </div>
-            </div>
-          )}
-          
-          {!isOpen && (
-            <div className="flex justify-center py-2">
-              <Avatar className="h-8 w-8">
-                <AvatarImage src={user.avatar} />
-                <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
-              </Avatar>
-            </div>
-          )}
         </div>
       </div>
     </aside>

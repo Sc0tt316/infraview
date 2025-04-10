@@ -27,7 +27,7 @@ const PrinterDetailModal: React.FC<PrinterDetailModalProps> = ({
   
   const { data: printer, error, isLoading } = useQuery({
     queryKey: ['printer', printerId],
-    queryFn: () => printerService.getPrinterById(printerId),
+    queryFn: () => printerService.getPrinter(printerId),
   });
   
   // Update printer levels when modal opens
@@ -53,34 +53,34 @@ const PrinterDetailModal: React.FC<PrinterDetailModalProps> = ({
   
   const renderTabContent = () => {
     if (error) {
-      return <PrinterNotFound onClose={onClose} />;
+      return <PrinterNotFound />;
     }
     
     if (isLoading || !printer) {
-      return <LoadingSpinner />;
+      return <LoadingSpinner message="Loading printer details..." />;
     }
     
     switch (activeTab) {
       case "overview":
-        return <PrinterOverview printer={printer} isAdmin={isAdmin} />;
+        return <PrinterOverview printer={printer} />;
       case "logs":
         return <PrintLogs printerId={printerId} />;
       case "maintenance":
         return <MaintenanceHistory printerId={printerId} />;
       default:
-        return <PrinterOverview printer={printer} isAdmin={isAdmin} />;
+        return <PrinterOverview printer={printer} />;
     }
   };
 
   return (
     <Dialog open={!!printerId} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[700px] p-0 overflow-hidden">
+      <DialogContent className="sm:max-w-[700px] p-0 overflow-hidden bg-slate-900 border-slate-800">
         <ModalHeader 
           title={printer?.name || 'Printer Details'} 
           subtitle={printer?.model || 'Loading...'}
         />
         
-        <TabsNavigation activeTab={activeTab} setActiveTab={setActiveTab} />
+        <TabsNavigation activeTab={activeTab} onChange={setActiveTab} />
         
         <div className="p-6">
           {renderTabContent()}

@@ -1,26 +1,27 @@
 
-export interface UserData {
-  id: string;
-  name: string;
-  email: string;
-  role: 'admin' | 'user' | 'manager';
-  avatar?: string;
-  department?: string;
-  lastActive?: string;
-  status?: 'active' | 'inactive' | 'pending';
-  phone: string;
-  password?: string;
-}
-
-// This is to match the User type from AuthContext with UserData
 export interface User {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'user' | 'manager';
-  avatar?: string;
+  role: 'admin' | 'manager' | 'user';
   department?: string;
-  lastActive?: string;
+  phone?: string;
   status?: 'active' | 'inactive' | 'pending';
+}
+
+export interface UserData {
+  id: string;
+  name: string;
+  email: string;
+  role: 'admin' | 'manager' | 'user';
+  department?: string;
   phone: string;
+  status: 'active' | 'inactive' | 'pending';
+  createdAt?: string;
+  lastLogin?: string;
+}
+
+export interface LoginCredentials {
+  email: string;
+  password: string;
 }

@@ -1,42 +1,115 @@
 
 import React from 'react';
-import { X } from 'lucide-react';
+import { NavLink } from 'react-router-dom';
+import {
+  Dialog,
+  DialogContent,
+} from '@/components/ui/dialog';
+import {
+  Home,
+  Printer,
+  Users,
+  BarChart2,
+  BellRing,
+  Settings,
+  X,
+  LogOut
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent } from '@/components/ui/sheet';
+import { useAuth } from '@/context/AuthContext';
+import { User } from '@/types/user';
 
 interface MobileSidebarProps {
   isOpen: boolean;
   onClose: () => void;
-  user: any;
+  user: User;
 }
 
 const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOpen, onClose, user }) => {
+  const { logout } = useAuth();
+  
+  const navigation = [
+    { name: 'Dashboard', href: '/', icon: Home },
+    { name: 'Printers', href: '/printers', icon: Printer },
+    { name: 'Users', href: '/users', icon: Users },
+    { name: 'Analytics', href: '/analytics', icon: BarChart2 },
+    { name: 'Alerts', href: '/alerts', icon: BellRing },
+  ];
+  
+  const handleLogout = () => {
+    logout();
+    onClose();
+  };
+  
   return (
-    <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent side="left" className="p-0">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="bg-slate-900 p-0 border-slate-800 h-[100dvh] w-[80vw] max-w-[300px] left-0 translate-x-0">
         <div className="flex flex-col h-full">
-          <div className="flex justify-between items-center p-4 border-b">
-            <div className="font-semibold">M-Printer Manager</div>
-            <Button variant="ghost" size="icon" onClick={onClose}>
-              <X className="h-4 w-4" />
+          <div className="flex items-center justify-between p-4 border-b border-slate-800">
+            <div className="flex items-center">
+              <div className="h-10 w-10 bg-[#300054] flex items-center justify-center rounded-md border border-[#6e59a5]">
+                <span className="text-white font-bold text-xl">M</span>
+              </div>
+              <span className="ml-3 text-lg font-semibold text-blue-400">M-Printer Manager</span>
+            </div>
+            <Button variant="ghost" size="icon" onClick={onClose} className="text-slate-400 hover:text-slate-100">
+              <X size={20} />
             </Button>
           </div>
           
-          <div className="flex-1 overflow-y-auto p-4">
-            {/* Mobile navigation items can be added here */}
+          <div className="flex-1 overflow-auto">
+            <nav className="space-y-1 px-2 py-4">
+              {navigation.map((item) => (
+                <NavLink
+                  key={item.name}
+                  to={item.href}
+                  className={({ isActive }) => `
+                    flex items-center px-4 py-3 rounded-lg text-sm font-medium
+                    ${isActive ? 'bg-slate-800 text-blue-400' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100'}
+                  `}
+                  onClick={onClose}
+                >
+                  <item.icon className="flex-shrink-0 h-5 w-5 mr-3" />
+                  <span>{item.name}</span>
+                </NavLink>
+              ))}
+            </nav>
           </div>
           
-          <div className="border-t p-4">
-            <div className="flex items-center">
-              <div className="ml-3">
-                <p className="text-sm font-medium">{user?.name}</p>
-                <p className="text-xs text-muted-foreground">{user?.email}</p>
+          <div className="p-4 border-t border-slate-800">
+            <div className="flex items-center mb-4">
+              <div className="h-8 w-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400">
+                {user?.name?.charAt(0) || 'A'}
               </div>
+              <div className="ml-3">
+                <p className="text-sm font-medium text-slate-100">Admin User</p>
+                <p className="text-xs text-slate-400">{user?.email || 'admin@example.com'}</p>
+              </div>
+            </div>
+            
+            <div className="flex space-x-2">
+              <NavLink to="/settings" onClick={onClose} className="flex-1">
+                <Button
+                  variant="outline"
+                  className="w-full bg-transparent border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-slate-100"
+                >
+                  <Settings size={16} className="mr-2" />
+                  Settings
+                </Button>
+              </NavLink>
+              <Button
+                variant="outline"
+                onClick={handleLogout}
+                className="flex-1 bg-transparent border-red-900/30 text-red-400 hover:bg-red-900/20 hover:text-red-300"
+              >
+                <LogOut size={16} className="mr-2" />
+                Logout
+              </Button>
             </div>
           </div>
         </div>
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   );
 };
 
