@@ -40,7 +40,7 @@ const Layout: React.FC = () => {
   }, []);
   
   // If still loading authentication or no user, don't render layout yet
-  if (!isAuthenticated || !user) {
+  if (!isAuthenticated) {
     return null;
   }
   

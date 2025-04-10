@@ -22,7 +22,7 @@ import { User } from '@/types/user';
 interface MobileSidebarProps {
   isOpen: boolean;
   onClose: () => void;
-  user: User;
+  user: User | null;
 }
 
 const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOpen, onClose, user }) => {
@@ -41,10 +41,18 @@ const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOpen, onClose, user }) 
     onClose();
   };
 
-  // Get user initials safely
+  // Safe implementation of getting user initials
   const getUserInitials = () => {
-    if (!user || !user.name) return 'A';
-    return user.name.charAt(0) || 'A'; // Provide fallback
+    if (!user || !user.name) return 'U';
+    
+    const nameParts = user.name.trim().split(' ');
+    if (nameParts.length === 0 || !nameParts[0]) return 'U';
+    
+    if (nameParts.length === 1 || !nameParts[1]) {
+      return nameParts[0].charAt(0) || 'U';
+    }
+    
+    return `${nameParts[0].charAt(0)}${nameParts[1].charAt(0)}`;
   };
   
   return (
@@ -88,8 +96,8 @@ const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOpen, onClose, user }) 
                 {getUserInitials()}
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-slate-100">{user?.name || 'Admin User'}</p>
-                <p className="text-xs text-slate-400">{user?.email || 'admin@example.com'}</p>
+                <p className="text-sm font-medium text-slate-100">{user?.name || 'Anonymous User'}</p>
+                <p className="text-xs text-slate-400">{user?.email || 'no-email@example.com'}</p>
               </div>
             </div>
             

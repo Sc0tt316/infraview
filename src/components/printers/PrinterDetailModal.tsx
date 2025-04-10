@@ -87,7 +87,8 @@ const PrinterDetailModal: React.FC<PrinterDetailModalProps> = ({
                  isRestarting={isRestarting} 
                  onRestartPrinter={handleRestartPrinter} />;
       case "logs":
-        return <PrintLogs printerId={printerId} />;
+        // Fix: Pass the correct prop name that PrintLogs expects
+        return <PrintLogs printer={printer} />;
       case "maintenance":
         return <MaintenanceHistory printerId={printerId} />;
       default:
