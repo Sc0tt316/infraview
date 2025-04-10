@@ -40,6 +40,12 @@ const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOpen, onClose, user }) 
     logout();
     onClose();
   };
+
+  // Get user initials safely
+  const getUserInitials = () => {
+    if (!user || !user.name) return 'A';
+    return user.name.charAt(0) || 'A'; // Provide fallback
+  };
   
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -79,10 +85,10 @@ const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOpen, onClose, user }) 
           <div className="p-4 border-t border-slate-800">
             <div className="flex items-center mb-4">
               <div className="h-8 w-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400">
-                {user?.name?.charAt(0) || 'A'}
+                {getUserInitials()}
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-slate-100">Admin User</p>
+                <p className="text-sm font-medium text-slate-100">{user?.name || 'Admin User'}</p>
                 <p className="text-xs text-slate-400">{user?.email || 'admin@example.com'}</p>
               </div>
             </div>

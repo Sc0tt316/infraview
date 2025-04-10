@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { useAuth } from '@/context/AuthContext';
@@ -19,11 +18,9 @@ const Index = () => {
   const [recentAlerts, setRecentAlerts] = useState([]);
   const [printerData, setPrinterData] = useState([]);
   
-  // Check if user is admin or manager
   const hasAdminAccess = user?.role === 'admin' || user?.role === 'manager';
   
   useEffect(() => {
-    // Sort alerts by timestamp and get the 5 most recent
     if (alerts) {
       const sortedAlerts = [...alerts].sort((a, b) => 
         new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
@@ -33,33 +30,28 @@ const Index = () => {
   }, [alerts]);
   
   useEffect(() => {
-    // Fetch printer data
-    if (!printersLoading) {
+    if (!printersLoading && printers) {
       setPrinterData(printers);
     }
   }, [printers, printersLoading]);
   
-  // Count printers by status
-  const onlinePrinters = printerData.filter(p => p.status === 'online').length;
-  const errorPrinters = printerData.filter(p => p.status === 'error').length;
-  const warningPrinters = printerData.filter(p => p.status === 'warning').length;
-  const offlinePrinters = printerData.filter(p => p.status === 'offline').length;
+  const onlinePrinters = printerData?.filter(p => p.status === 'online')?.length || 0;
+  const errorPrinters = printerData?.filter(p => p.status === 'error')?.length || 0;
+  const warningPrinters = printerData?.filter(p => p.status === 'warning')?.length || 0;
+  const offlinePrinters = printerData?.filter(p => p.status === 'offline')?.length || 0;
   
-  // Count active alerts
-  const activeAlerts = alerts.filter(a => !a.isResolved).length;
+  const activeAlerts = alerts?.filter(a => !a.isResolved)?.length || 0;
   
-  // Mock print jobs count
   const printJobsToday = 178;
   
   return (
     <div className="space-y-6">
       <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
-        {/* Total Printers */}
         <Card className="dark-card">
           <CardContent className="p-6 flex items-center justify-between">
             <div>
               <p className="text-sm text-slate-400">Total Printers</p>
-              <h3 className="text-3xl font-semibold text-slate-100 mt-1">{printerData.length}</h3>
+              <h3 className="text-3xl font-semibold text-slate-100 mt-1">{printerData?.length || 0}</h3>
             </div>
             <div className="h-12 w-12 rounded-full flex items-center justify-center bg-blue-900/20">
               <Printer className="h-6 w-6 text-blue-400" />
@@ -67,7 +59,6 @@ const Index = () => {
           </CardContent>
         </Card>
         
-        {/* Online Printers */}
         <Card className="dark-card">
           <CardContent className="p-6 flex items-center justify-between">
             <div>
@@ -80,7 +71,6 @@ const Index = () => {
           </CardContent>
         </Card>
         
-        {/* Print Jobs Today */}
         <Card className="dark-card">
           <CardContent className="p-6 flex items-center justify-between">
             <div>
@@ -94,7 +84,6 @@ const Index = () => {
           </CardContent>
         </Card>
         
-        {/* Active Alerts */}
         <Card className="dark-card">
           <CardContent className="p-6 flex items-center justify-between">
             <div>
@@ -110,7 +99,6 @@ const Index = () => {
       </div>
       
       <div className="grid gap-6 grid-cols-1 md:grid-cols-3">
-        {/* Printer Status */}
         <Card className="dark-card row-span-2">
           <CardHeader className="pb-2">
             <CardTitle className="text-lg font-medium text-slate-100 flex items-center">
@@ -119,7 +107,7 @@ const Index = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {printerData.length > 0 ? (
+            {printerData && printerData.length > 0 ? (
               <div className="pt-6">
                 <div className="relative w-full h-[200px]">
                   <div className="absolute inset-0 flex items-center justify-center">
@@ -139,7 +127,6 @@ const Index = () => {
                       stroke="#1e293b" 
                       strokeWidth="10"
                     />
-                    {/* Online Arc */}
                     <circle 
                       cx="50" 
                       cy="50" 
@@ -200,7 +187,6 @@ const Index = () => {
           </CardContent>
         </Card>
         
-        {/* Recent Alerts */}
         <Card className="dark-card md:col-span-2">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-lg font-medium text-slate-100">Recent Alerts</CardTitle>
@@ -210,7 +196,7 @@ const Index = () => {
             </Button>
           </CardHeader>
           <CardContent className="px-2">
-            {recentAlerts.length > 0 ? (
+            {recentAlerts && recentAlerts.length > 0 ? (
               <div className="overflow-auto max-h-[300px]">
                 <table className="w-full border-collapse">
                   <thead>
@@ -273,7 +259,6 @@ const Index = () => {
           </CardContent>
         </Card>
         
-        {/* Low Supplies Warning */}
         <Card className="dark-card md:col-span-2">
           <CardHeader className="pb-2">
             <CardTitle className="text-lg font-medium text-slate-100 flex items-center">
@@ -282,7 +267,7 @@ const Index = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {printerData.filter(p => p.inkLevel < 15 || p.paperLevel < 15).length > 0 ? (
+            {printerData && printerData.filter(p => p.inkLevel < 15 || p.paperLevel < 15).length > 0 ? (
               <div className="space-y-4">
                 {printerData
                   .filter(p => p.inkLevel < 15 || p.paperLevel < 15)
@@ -299,13 +284,7 @@ const Index = () => {
                             <span className="text-slate-400">Ink Level</span>
                             <span className="text-red-400 font-medium">{printer.inkLevel}%</span>
                           </div>
-                          <Progress value={printer.inkLevel} className="h-2 bg-slate-700" 
-                            style={{
-                              '--tw-bg-opacity': '1',
-                              backgroundImage: 'linear-gradient(to right, rgb(239 68 68), rgb(239 68 68))',
-                              backgroundSize: `${printer.inkLevel}% 100%`,
-                              backgroundRepeat: 'no-repeat',
-                            }} />
+                          <Progress value={printer.inkLevel} className="h-2 bg-slate-700" />
                         </div>
                       )}
                       
@@ -315,13 +294,7 @@ const Index = () => {
                             <span className="text-slate-400">Paper Level</span>
                             <span className="text-red-400 font-medium">{printer.paperLevel}%</span>
                           </div>
-                          <Progress value={printer.paperLevel} className="h-2 bg-slate-700" 
-                            style={{
-                              '--tw-bg-opacity': '1',
-                              backgroundImage: 'linear-gradient(to right, rgb(239 68 68), rgb(239 68 68))',
-                              backgroundSize: `${printer.paperLevel}% 100%`,
-                              backgroundRepeat: 'no-repeat',
-                            }} />
+                          <Progress value={printer.paperLevel} className="h-2 bg-slate-700" />
                         </div>
                       )}
                     </div>
@@ -336,7 +309,6 @@ const Index = () => {
           </CardContent>
         </Card>
         
-        {/* Quick Actions */}
         <Card className="dark-card">
           <CardHeader className="pb-2">
             <CardTitle className="text-lg font-medium text-slate-100">Quick Actions</CardTitle>

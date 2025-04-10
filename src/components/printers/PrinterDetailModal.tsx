@@ -5,12 +5,15 @@ import { useQuery } from '@tanstack/react-query';
 import { printerService } from '@/services/printer';
 import PrinterNotFound from './printer-detail/PrinterNotFound';
 import LoadingSpinner from './printer-detail/LoadingSpinner';
-import TabsNavigation from './printer-detail/TabsNavigation';
 import PrinterOverview from './printer-detail/PrinterOverview';
 import PrintLogs from './printer-detail/PrintLogs';
 import MaintenanceHistory from './printer-detail/MaintenanceHistory';
-import ModalHeader from './printer-detail/ModalHeader';
 import { updatePrinterLevels } from '@/services/printer/management/autoPrinterLevels';
+import { PrinterData } from '@/types/printers';
+
+// Import the missing components with correct props
+import ModalHeader from './printer-detail/ModalHeader';
+import TabsNavigation from './printer-detail/TabsNavigation';
 
 interface PrinterDetailModalProps {
   printerId: string;
@@ -24,8 +27,9 @@ const PrinterDetailModal: React.FC<PrinterDetailModalProps> = ({
   isAdmin
 }) => {
   const [activeTab, setActiveTab] = useState("overview");
+  const [isRestarting, setIsRestarting] = useState(false);
   
-  const { data: printer, error, isLoading } = useQuery({
+  const { data: printer, error, isLoading, refetch } = useQuery({
     queryKey: ['printer', printerId],
     queryFn: () => printerService.getPrinter(printerId),
   });
@@ -50,6 +54,22 @@ const PrinterDetailModal: React.FC<PrinterDetailModalProps> = ({
       updateLevels();
     }
   }, [printer]);
+
+  const handleRestartPrinter = async () => {
+    if (printer) {
+      setIsRestarting(true);
+      try {
+        await printerService.restartPrinter(printer.id);
+        setTimeout(() => {
+          refetch();
+          setIsRestarting(false);
+        }, 2000);
+      } catch (error) {
+        console.error('Failed to restart printer:', error);
+        setIsRestarting(false);
+      }
+    }
+  };
   
   const renderTabContent = () => {
     if (error) {
@@ -62,13 +82,19 @@ const PrinterDetailModal: React.FC<PrinterDetailModalProps> = ({
     
     switch (activeTab) {
       case "overview":
-        return <PrinterOverview printer={printer} />;
+        return <PrinterOverview 
+                 printer={printer} 
+                 isRestarting={isRestarting} 
+                 onRestartPrinter={handleRestartPrinter} />;
       case "logs":
         return <PrintLogs printerId={printerId} />;
       case "maintenance":
         return <MaintenanceHistory printerId={printerId} />;
       default:
-        return <PrinterOverview printer={printer} />;
+        return <PrinterOverview 
+                 printer={printer}
+                 isRestarting={isRestarting} 
+                 onRestartPrinter={handleRestartPrinter} />;
     }
   };
 
@@ -76,11 +102,14 @@ const PrinterDetailModal: React.FC<PrinterDetailModalProps> = ({
     <Dialog open={!!printerId} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[700px] p-0 overflow-hidden bg-slate-900 border-slate-800">
         <ModalHeader 
-          title={printer?.name || 'Printer Details'} 
-          subtitle={printer?.model || 'Loading...'}
+          printer={printer} 
+          isLoading={isLoading} 
         />
         
-        <TabsNavigation activeTab={activeTab} onChange={setActiveTab} />
+        <TabsNavigation 
+          activeTab={activeTab} 
+          onTabChange={setActiveTab} 
+        />
         
         <div className="p-6">
           {renderTabContent()}

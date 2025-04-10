@@ -36,6 +36,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar, user }) => {
     { name: 'Alerts', href: '/alerts', icon: BellRing },
   ];
 
+  // Get user initials safely
+  const getUserInitials = () => {
+    if (!user || !user.name) return 'A';
+    return user.name.charAt(0) || 'A'; // Provide fallback
+  };
+
   return (
     <aside 
       className={cn(
@@ -88,12 +94,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar, user }) => {
         )}>
           <div className={cn("flex", isOpen ? "items-center" : "flex-col items-center")}>
             <div className="h-8 w-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400">
-              {user?.name?.charAt(0) || 'A'}
+              {getUserInitials()}
             </div>
             {isOpen && (
               <div className="ml-3">
                 <p className="text-sm font-medium text-slate-100">
-                  Admin User
+                  {user?.name || 'Admin User'}
                 </p>
                 <p className="text-xs text-slate-400">
                   {user?.email || 'admin@example.com'}

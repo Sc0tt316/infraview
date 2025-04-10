@@ -35,7 +35,7 @@ export const usePrinters = () => {
   }, [error, toast]);
 
   return {
-    printers,
+    printers: printers || [],
     isLoading,
     error,
     refetch
