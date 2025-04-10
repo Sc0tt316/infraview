@@ -59,7 +59,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   };
   return <aside className={cn("fixed inset-y-0 left-0 z-50 flex flex-col transition-transform duration-300 bg-card border-r border-border", isOpen ? "translate-x-0 w-64" : "-translate-x-full md:translate-x-0 md:w-20")}>
       {/* Logo and Brand */}
-      <div className="flex h-16 items-center px-4 border-b border-border py-0 mx-0 my-[20px] rounded">
+      <div className="flex h-16 items-center px-4 border-b border-border">
         <div className={cn("flex items-center transition-all duration-300", isOpen ? "justify-start" : "justify-center w-full")}>
           <div className="h-10 w-10 bg-primary/10 flex items-center justify-center rounded-md border border-primary/20">
             <span className="text-primary font-bold text-xl">M</span>
@@ -69,7 +69,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       </div>
       
       {/* Navigation */}
-      <nav className="flex-1 space-y-1 py-4 overflow-y-auto scrollbar-none px-[4px] mx-[4px] my-[13px]">
+      <nav className="flex-1 space-y-1 py-4 overflow-y-auto scrollbar-none px-[4px]">
         {navigation.map(item => <NavLink key={item.name} to={item.href} className={({
         isActive
       }) => cn(isOpen ? "sidebar-link" : "flex flex-col items-center justify-center px-2 py-3 rounded-lg text-xs", isActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent hover:text-foreground", "transition-all duration-200 font-medium")}>
@@ -81,14 +81,14 @@ const Sidebar: React.FC<SidebarProps> = ({
       </nav>
       
       {/* User Section */}
-      <div className="p-4 border-t border-border mx-0 my-0 px-[10px]">
+      <div className="p-4 border-t border-border py-[20px] px-[4px]">
         <div className={cn("flex items-center", isOpen ? "justify-between" : "flex-col")}>
           <div className={cn("flex", isOpen ? "items-center" : "flex-col items-center")}>
-            <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary mx-0 px-0 py-0">
+            <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary px-[15px]">
               {getUserInitials()}
             </div>
             {isOpen && <div className="ml-3">
-                <p className="text-foreground text-sm font-medium text-center">
+                <p className="text-sm font-medium text-foreground">
                   {user?.name || 'Anonymous User'}
                 </p>
                 <p className="text-xs text-muted-foreground">
@@ -103,7 +103,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 <Settings size={18} />
               </Button>
             </NavLink>
-            <Button variant="ghost" size="icon" onClick={handleLogout} className="text-red-500 hover:bg-red-500/10 hover:text-red-600 h-8 w-8 flex-shrink-0 mx-0 my-[2px] py-0 px-0 text-center">
+            <Button variant="ghost" size="icon" onClick={handleLogout} className="text-red-500 hover:bg-red-500/10 hover:text-red-600 h-8 w-8 flex-shrink-0">
               <LogOut size={18} />
             </Button>
           </div>
