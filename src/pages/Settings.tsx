@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -11,22 +10,12 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { 
-  NavigationMenu,
-  NavigationMenuContent,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  NavigationMenuTrigger,
-  navigationMenuTriggerStyle,
-} from "@/components/ui/navigation-menu";
+import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, NavigationMenuTrigger, navigationMenuTriggerStyle } from "@/components/ui/navigation-menu";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
-
 type SettingsTab = "account" | "appearance" | "notifications" | "security";
-
 const Settings = () => {
   const [activeTab, setActiveTab] = useState<SettingsTab>("account");
   const [name, setName] = useState("");
@@ -39,9 +28,13 @@ const Settings = () => {
   const [avatarUrl, setAvatarUrl] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
-  const { user } = useAuth();
-  const { theme, toggleTheme } = useTheme();
+  const {
+    user
+  } = useAuth();
+  const {
+    theme,
+    toggleTheme
+  } = useTheme();
   const navigate = useNavigate();
   const isDarkMode = theme === 'dark';
 
@@ -62,7 +55,7 @@ const Settings = () => {
         setPushNotifications(parsedSettings.pushNotifications || true);
         setPasswordUpdates(parsedSettings.passwordUpdates || true);
         setTwoFactorAuth(parsedSettings.twoFactorAuth || false);
-        
+
         // Load avatar URL if it exists
         if (parsedSettings.avatarUrl) {
           setAvatarUrl(parsedSettings.avatarUrl);
@@ -87,16 +80,15 @@ const Settings = () => {
       // In a real app, you would upload this file to a server
       // For now, we'll create a data URL
       const reader = new FileReader();
-      reader.onload = (event) => {
+      reader.onload = event => {
         const dataUrl = event.target?.result as string;
         setAvatarUrl(dataUrl);
-        
+
         // Update the settings in localStorage
         const savedSettings = localStorage.getItem('user_settings');
         const settings = savedSettings ? JSON.parse(savedSettings) : {};
         settings.avatarUrl = dataUrl;
         localStorage.setItem('user_settings', JSON.stringify(settings));
-        
         toast.success("Avatar updated successfully");
       };
       reader.readAsDataURL(file);
@@ -106,7 +98,6 @@ const Settings = () => {
   // Save settings to localStorage
   const saveSettings = () => {
     setIsSubmitting(true);
-    
     setTimeout(() => {
       const settings = {
         isDarkMode,
@@ -116,80 +107,50 @@ const Settings = () => {
         twoFactorAuth,
         avatarUrl
       };
-      
       localStorage.setItem('user_settings', JSON.stringify(settings));
-      
       toast.success("Settings saved successfully");
       setIsSubmitting(false);
     }, 600);
   };
-  
-  return (
-    <div className="container mx-auto pt-4 pb-8 max-w-6xl">
+  return <div className="container mx-auto pt-4 pb-8 max-w-6xl">
       <div className="mb-8">
-        <motion.h1 
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-3xl font-bold mb-2"
-        >
-          Settings
-        </motion.h1>
-        <motion.p 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1, transition: { delay: 0.1 } }}
-          className="text-muted-foreground"
-        >
-          Manage your account settings and preferences
-        </motion.p>
+        
+        
       </div>
       
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Navigation Sidebar */}
-        <motion.div 
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="w-full lg:w-1/4 space-y-4"
-        >
+        <motion.div initial={{
+        opacity: 0,
+        x: -20
+      }} animate={{
+        opacity: 1,
+        x: 0
+      }} className="w-full lg:w-1/4 space-y-4">
           <Card>
             <CardContent className="p-4">
               <NavigationMenu orientation="vertical" className="flex flex-col w-full max-w-none">
                 <NavigationMenuList className="flex flex-col space-y-1 items-start w-full">
                   <NavigationMenuItem className="w-full">
-                    <Button 
-                      variant={activeTab === "account" ? "default" : "ghost"} 
-                      className="w-full justify-start"
-                      onClick={() => setActiveTab("account")}
-                    >
+                    <Button variant={activeTab === "account" ? "default" : "ghost"} className="w-full justify-start" onClick={() => setActiveTab("account")}>
                       <User className="mr-2 h-4 w-4" />
                       Account
                     </Button>
                   </NavigationMenuItem>
                   <NavigationMenuItem className="w-full">
-                    <Button 
-                      variant={activeTab === "appearance" ? "default" : "ghost"} 
-                      className="w-full justify-start"
-                      onClick={() => setActiveTab("appearance")}
-                    >
+                    <Button variant={activeTab === "appearance" ? "default" : "ghost"} className="w-full justify-start" onClick={() => setActiveTab("appearance")}>
                       <UserCog className="mr-2 h-4 w-4" />
                       Appearance
                     </Button>
                   </NavigationMenuItem>
                   <NavigationMenuItem className="w-full">
-                    <Button 
-                      variant={activeTab === "notifications" ? "default" : "ghost"} 
-                      className="w-full justify-start"
-                      onClick={() => setActiveTab("notifications")}
-                    >
+                    <Button variant={activeTab === "notifications" ? "default" : "ghost"} className="w-full justify-start" onClick={() => setActiveTab("notifications")}>
                       <Bell className="mr-2 h-4 w-4" />
                       Notifications
                     </Button>
                   </NavigationMenuItem>
                   <NavigationMenuItem className="w-full">
-                    <Button 
-                      variant={activeTab === "security" ? "default" : "ghost"} 
-                      className="w-full justify-start"
-                      onClick={() => setActiveTab("security")}
-                    >
+                    <Button variant={activeTab === "security" ? "default" : "ghost"} className="w-full justify-start" onClick={() => setActiveTab("security")}>
                       <Shield className="mr-2 h-4 w-4" />
                       Security
                     </Button>
@@ -201,16 +162,17 @@ const Settings = () => {
         </motion.div>
         
         {/* Main Content Area */}
-        <motion.div 
-          key={activeTab}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-          className="w-full lg:w-3/4"
-        >
+        <motion.div key={activeTab} initial={{
+        opacity: 0,
+        y: 20
+      }} animate={{
+        opacity: 1,
+        y: 0
+      }} transition={{
+        duration: 0.3
+      }} className="w-full lg:w-3/4">
           {/* Account Settings */}
-          {activeTab === "account" && (
-            <Card>
+          {activeTab === "account" && <Card>
               <CardHeader>
                 <CardTitle>Account Settings</CardTitle>
                 <CardDescription>
@@ -231,34 +193,17 @@ const Settings = () => {
                         <Camera className="h-6 w-6 text-white" />
                       </div>
                     </div>
-                    <input 
-                      type="file" 
-                      ref={fileInputRef}
-                      onChange={handleAvatarChange}
-                      accept="image/*"
-                      className="hidden"
-                    />
+                    <input type="file" ref={fileInputRef} onChange={handleAvatarChange} accept="image/*" className="hidden" />
                     <span className="text-xs text-muted-foreground">Click to change avatar</span>
                   </div>
                   <div className="flex-1 space-y-4">
                     <div className="grid gap-2">
                       <Label htmlFor="name">Display Name</Label>
-                      <Input 
-                        id="name" 
-                        value={name} 
-                        onChange={(e) => setName(e.target.value)} 
-                        placeholder="Your name"
-                      />
+                      <Input id="name" value={name} onChange={e => setName(e.target.value)} placeholder="Your name" />
                     </div>
                     <div className="grid gap-2">
                       <Label htmlFor="email">Email Address</Label>
-                      <Input 
-                        id="email" 
-                        type="email" 
-                        value={email} 
-                        onChange={(e) => setEmail(e.target.value)} 
-                        placeholder="your.email@example.com"
-                      />
+                      <Input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="your.email@example.com" />
                     </div>
                     <div className="grid gap-2">
                       <Label>Account Type</Label>
@@ -272,8 +217,7 @@ const Settings = () => {
               </CardContent>
               <CardFooter className="flex justify-end">
                 <Button onClick={saveSettings} disabled={isSubmitting}>
-                  {isSubmitting ? (
-                    <span className="flex items-center">
+                  {isSubmitting ? <span className="flex items-center">
                       <span className="animate-spin mr-2">
                         <svg className="h-4 w-4" viewBox="0 0 24 24">
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
@@ -281,16 +225,13 @@ const Settings = () => {
                         </svg>
                       </span>
                       Saving...
-                    </span>
-                  ) : "Save Changes"}
+                    </span> : "Save Changes"}
                 </Button>
               </CardFooter>
-            </Card>
-          )}
+            </Card>}
           
           {/* Appearance Settings */}
-          {activeTab === "appearance" && (
-            <Card>
+          {activeTab === "appearance" && <Card>
               <CardHeader>
                 <CardTitle>Appearance Settings</CardTitle>
                 <CardDescription>
@@ -303,17 +244,12 @@ const Settings = () => {
                     <Label htmlFor="dark-mode" className="font-medium">Dark Mode</Label>
                     <p className="text-sm text-muted-foreground">Enable dark mode for reduced eye strain</p>
                   </div>
-                  <Switch 
-                    id="dark-mode" 
-                    checked={isDarkMode} 
-                    onCheckedChange={toggleTheme} 
-                  />
+                  <Switch id="dark-mode" checked={isDarkMode} onCheckedChange={toggleTheme} />
                 </div>
               </CardContent>
               <CardFooter className="flex justify-end">
                 <Button onClick={saveSettings} disabled={isSubmitting}>
-                  {isSubmitting ? (
-                    <span className="flex items-center">
+                  {isSubmitting ? <span className="flex items-center">
                       <span className="animate-spin mr-2">
                         <svg className="h-4 w-4" viewBox="0 0 24 24">
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
@@ -321,16 +257,13 @@ const Settings = () => {
                         </svg>
                       </span>
                       Saving...
-                    </span>
-                  ) : "Save Changes"}
+                    </span> : "Save Changes"}
                 </Button>
               </CardFooter>
-            </Card>
-          )}
+            </Card>}
           
           {/* Notification Settings */}
-          {activeTab === "notifications" && (
-            <Card>
+          {activeTab === "notifications" && <Card>
               <CardHeader>
                 <CardTitle>Notification Settings</CardTitle>
                 <CardDescription>
@@ -343,28 +276,19 @@ const Settings = () => {
                     <Label htmlFor="email-notifications" className="font-medium">Email Notifications</Label>
                     <p className="text-sm text-muted-foreground">Receive notifications via email</p>
                   </div>
-                  <Switch 
-                    id="email-notifications" 
-                    checked={emailNotifications} 
-                    onCheckedChange={setEmailNotifications} 
-                  />
+                  <Switch id="email-notifications" checked={emailNotifications} onCheckedChange={setEmailNotifications} />
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
                     <Label htmlFor="push-notifications" className="font-medium">Push Notifications</Label>
                     <p className="text-sm text-muted-foreground">Receive in-app notifications</p>
                   </div>
-                  <Switch 
-                    id="push-notifications" 
-                    checked={pushNotifications} 
-                    onCheckedChange={setPushNotifications} 
-                  />
+                  <Switch id="push-notifications" checked={pushNotifications} onCheckedChange={setPushNotifications} />
                 </div>
               </CardContent>
               <CardFooter className="flex justify-end">
                 <Button onClick={saveSettings} disabled={isSubmitting}>
-                  {isSubmitting ? (
-                    <span className="flex items-center">
+                  {isSubmitting ? <span className="flex items-center">
                       <span className="animate-spin mr-2">
                         <svg className="h-4 w-4" viewBox="0 0 24 24">
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
@@ -372,16 +296,13 @@ const Settings = () => {
                         </svg>
                       </span>
                       Saving...
-                    </span>
-                  ) : "Save Changes"}
+                    </span> : "Save Changes"}
                 </Button>
               </CardFooter>
-            </Card>
-          )}
+            </Card>}
           
           {/* Security Settings */}
-          {activeTab === "security" && (
-            <Card>
+          {activeTab === "security" && <Card>
               <CardHeader>
                 <CardTitle>Security Settings</CardTitle>
                 <CardDescription>
@@ -394,22 +315,14 @@ const Settings = () => {
                     <Label htmlFor="password-updates" className="font-medium">Password Updates</Label>
                     <p className="text-sm text-muted-foreground">Get notified about password changes</p>
                   </div>
-                  <Switch 
-                    id="password-updates" 
-                    checked={passwordUpdates} 
-                    onCheckedChange={setPasswordUpdates} 
-                  />
+                  <Switch id="password-updates" checked={passwordUpdates} onCheckedChange={setPasswordUpdates} />
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
                     <Label htmlFor="two-factor-auth" className="font-medium">Two-Factor Authentication</Label>
                     <p className="text-sm text-muted-foreground">Adds an extra layer of security to your account</p>
                   </div>
-                  <Switch 
-                    id="two-factor-auth" 
-                    checked={twoFactorAuth} 
-                    onCheckedChange={setTwoFactorAuth} 
-                  />
+                  <Switch id="two-factor-auth" checked={twoFactorAuth} onCheckedChange={setTwoFactorAuth} />
                 </div>
                 <div className="pt-4">
                   <Button variant="outline" className="w-full md:w-auto">Change Password</Button>
@@ -417,8 +330,7 @@ const Settings = () => {
               </CardContent>
               <CardFooter className="flex justify-end">
                 <Button onClick={saveSettings} disabled={isSubmitting}>
-                  {isSubmitting ? (
-                    <span className="flex items-center">
+                  {isSubmitting ? <span className="flex items-center">
                       <span className="animate-spin mr-2">
                         <svg className="h-4 w-4" viewBox="0 0 24 24">
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
@@ -426,16 +338,12 @@ const Settings = () => {
                         </svg>
                       </span>
                       Saving...
-                    </span>
-                  ) : "Save Changes"}
+                    </span> : "Save Changes"}
                 </Button>
               </CardFooter>
-            </Card>
-          )}
+            </Card>}
         </motion.div>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default Settings;
