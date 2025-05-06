@@ -9,6 +9,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Alert } from '@/types/alerts';
+import { useAuth } from '@/context/AuthContext';
 
 interface AlertsTableProps {
   alerts: Alert[];
@@ -21,19 +22,17 @@ const AlertsTable: React.FC<AlertsTableProps> = ({
   onResolveAlert,
   onViewDetails
 }) => {
-  // Function to render severity badge
-  const renderSeverityBadge = (severity: string) => {
-    switch (severity) {
-      case 'low':
-        return <Badge className="bg-blue-500">Low</Badge>;
-      case 'medium':
-        return <Badge className="bg-amber-500">Medium</Badge>;
-      case 'high':
-        return <Badge className="bg-orange-500">High</Badge>;
-      case 'critical':
-        return <Badge variant="destructive">Critical</Badge>;
-      default:
-        return <Badge variant="outline">Unknown</Badge>;
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
+  
+  // Function to determine source type badge
+  const renderSourceBadge = (alert: Alert) => {
+    if (alert.printer) {
+      return <Badge className="bg-blue-500">Printer</Badge>;
+    } else if (alert.user) {
+      return <Badge className="bg-purple-500">User</Badge>;
+    } else {
+      return <Badge variant="outline">System</Badge>;
     }
   };
 
@@ -43,9 +42,9 @@ const AlertsTable: React.FC<AlertsTableProps> = ({
         <TableHeader>
           <TableRow>
             <TableHead>Status</TableHead>
-            <TableHead>Severity</TableHead>
+            <TableHead>Source</TableHead>
             <TableHead>Alert</TableHead>
-            <TableHead>Printer</TableHead>
+            <TableHead>Affected</TableHead>
             <TableHead>Time</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
@@ -67,7 +66,7 @@ const AlertsTable: React.FC<AlertsTableProps> = ({
                     </div>
                   )}
                 </TableCell>
-                <TableCell>{renderSeverityBadge(alert.severity)}</TableCell>
+                <TableCell>{renderSourceBadge(alert)}</TableCell>
                 <TableCell>
                   <div className="font-medium">{alert.title}</div>
                   <div className="text-sm text-muted-foreground truncate max-w-xs">
@@ -80,6 +79,13 @@ const AlertsTable: React.FC<AlertsTableProps> = ({
                       <div className="font-medium">{alert.printer.name}</div>
                       <div className="text-xs text-muted-foreground">
                         {alert.printer.location}
+                      </div>
+                    </div>
+                  ) : alert.user ? (
+                    <div>
+                      <div className="font-medium">{alert.user.name}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {alert.user.email}
                       </div>
                     </div>
                   ) : (
@@ -98,7 +104,7 @@ const AlertsTable: React.FC<AlertsTableProps> = ({
                     >
                       Details
                     </Button>
-                    {!alert.isResolved && (
+                    {!alert.isResolved && isAdmin && (
                       <Button
                         variant="outline"
                         size="sm"

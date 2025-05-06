@@ -38,12 +38,7 @@ const Index: React.FC = () => {
     fetchAlerts();
   }, []);
 
-  // Redirect based on user role
-  useEffect(() => {
-    if (user && user.role === 'user') {
-      navigate('/printers');
-    }
-  }, [user, navigate]);
+  // Removed redirection for user role - allow all users to see dashboard
 
   const handleViewAllAlerts = () => {
     navigate('/alerts');

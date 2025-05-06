@@ -15,12 +15,14 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { notificationService, Notification } from "@/services/notificationService";
 import { formatDistanceToNow } from "date-fns";
+import { useToast } from "@/hooks/use-toast";
 
 const NotificationDropdown = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   // Fetch notifications on mount and when dropdown opens
   useEffect(() => {
@@ -53,23 +55,39 @@ const NotificationDropdown = () => {
     
     // Navigate to appropriate page based on notification type
     if (type) {
-      switch(type) {
-        case "printer":
-          navigate(`/printers${resourceId ? `?id=${resourceId}` : ''}`);
-          break;
-        case "user":
-          navigate(`/users${resourceId ? `?id=${resourceId}` : ''}`);
-          break;
-        case "alert":
-          navigate(`/alerts${resourceId ? `?id=${resourceId}` : ''}`);
-          break;
-        case "analytics":
-          navigate('/analytics');
-          break;
-        default:
-          // Default to dashboard if type is unknown
-          navigate('/');
+      try {
+        switch(type) {
+          case "printer":
+            navigate(`/printers${resourceId ? `/${resourceId}` : ''}`);
+            break;
+          case "user":
+            navigate(`/users${resourceId ? `/${resourceId}` : ''}`);
+            break;
+          case "alert":
+            navigate(`/alerts${resourceId ? `/${resourceId}` : ''}`);
+            break;
+          case "analytics":
+            navigate('/analytics');
+            break;
+          default:
+            // Default to dashboard if type is unknown
+            navigate('/');
+        }
+        
+        toast({
+          title: "Navigating",
+          description: `Going to ${type} page`,
+        });
+        
+      } catch (error) {
+        console.error("Navigation error:", error);
+        toast({
+          variant: "destructive",
+          title: "Navigation Error",
+          description: "Failed to navigate to the requested page",
+        });
       }
+      
       setOpen(false);
     }
   };
@@ -122,7 +140,7 @@ const NotificationDropdown = () => {
             notifications.map((notification) => (
               <DropdownMenuItem 
                 key={notification.id} 
-                className={`px-4 py-3 cursor-default ${!notification.read ? 'bg-muted/50' : ''}`}
+                className={`px-4 py-3 cursor-pointer ${!notification.read ? 'bg-muted/50' : ''}`}
                 onClick={() => handleReadNotification(notification.id, notification.type, notification.resourceId)}
               >
                 <div className="space-y-1 w-full">

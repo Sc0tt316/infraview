@@ -13,7 +13,6 @@ import {
 import {
   MoreVertical,
   Printer,
-  Info,
   Pencil,
   RotateCw,
   Trash2
@@ -37,7 +36,11 @@ const PrinterCard: React.FC<PrinterCardProps> = ({
   isAdmin = false
 }) => {
   return (
-    <Card key={printer.id} className="overflow-hidden">
+    <Card 
+      key={printer.id} 
+      className="overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
+      onClick={() => onOpenDetails(printer.id)}
+    >
       <CardContent className="p-0">
         <div className="p-6 border-b bg-muted/20">
           <div className="flex justify-between items-start">
@@ -69,39 +72,41 @@ const PrinterCard: React.FC<PrinterCardProps> = ({
                   'Warning'}
               </Badge>
               
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => onOpenDetails(printer.id)}>
-                    <Info className="mr-2 h-4 w-4" />
-                    <span>View Details</span>
-                  </DropdownMenuItem>
-                  
-                  {isAdmin && (
-                    <>
-                      <DropdownMenuItem onClick={() => onOpenEdit(printer)}>
-                        <Pencil className="mr-2 h-4 w-4" />
-                        <span>Edit</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onRestart(printer.id)}>
-                        <RotateCw className="mr-2 h-4 w-4" />
-                        <span>Restart</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        onClick={() => onOpenDelete(printer)}
-                        className="text-red-600 focus:text-red-600"
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        <span>Delete</span>
-                      </DropdownMenuItem>
-                    </>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
+              {isAdmin && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={(e) => {
+                      e.stopPropagation();
+                      onOpenEdit(printer);
+                    }}>
+                      <Pencil className="mr-2 h-4 w-4" />
+                      <span>Edit</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={(e) => {
+                      e.stopPropagation();
+                      onRestart(printer.id);
+                    }}>
+                      <RotateCw className="mr-2 h-4 w-4" />
+                      <span>Restart</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onOpenDelete(printer);
+                      }}
+                      className="text-red-600 focus:text-red-600"
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      <span>Delete</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </div>
           </div>
         </div>
