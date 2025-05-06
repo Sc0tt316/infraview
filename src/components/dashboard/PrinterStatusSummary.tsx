@@ -49,7 +49,7 @@ const PrinterStatusSummary: React.FC<PrinterStatusSummaryProps> = ({ printers = 
               <div key={item.name} className="space-y-1">
                 <div className="flex justify-between text-sm">
                   <span>{item.name}</span>
-                  <span>{item.count} ({item.percentage}%)</span>
+                  <span>{item.count}</span>
                 </div>
                 <Progress 
                   value={item.percentage} 

@@ -4,7 +4,6 @@ import { Menu, Bell, Sun, Moon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useLocation } from 'react-router-dom';
 import {
   DropdownMenu,
@@ -21,7 +20,6 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ toggleSidebar, openMobileSidebar }) => {
-  const { user } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const location = useLocation();
   
@@ -112,24 +110,6 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, openMobileSidebar }) => 
               <DropdownMenuItem className="text-center">
                 View all notifications
               </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Avatar className="h-8 w-8 cursor-pointer">
-                <AvatarFallback className="bg-primary/20 text-primary text-sm">
-                  {user?.name?.charAt(0) || 'A'}
-                </AvatarFallback>
-              </Avatar>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>Profile</DropdownMenuItem>
-              <DropdownMenuItem>Settings</DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>Logout</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

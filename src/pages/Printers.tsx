@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { printerService, PrinterData } from '@/services/printer';
 import { useToast } from '@/hooks/use-toast';
 import PrinterDetailModal from '@/components/printers/PrinterDetailModal';
-import PrinterCard from '@/components/printers/PrinterCard';
+import EnhancedPrinterCard from '@/components/printers/EnhancedPrinterCard';
 import PrinterFilters from '@/components/printers/PrinterFilters';
 import EmptyPrinterState from '@/components/printers/EmptyPrinterState';
 import AddPrinterForm from '@/components/printers/AddPrinterForm';
@@ -17,6 +17,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { RefreshCw, Plus, ShieldAlert } from 'lucide-react';
 import { printerFormSchema, PrinterFormValues } from '@/types/printer';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+
 const Printers: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredPrinters, setFilteredPrinters] = useState<PrinterData[]>([]);
@@ -327,7 +328,15 @@ const Printers: React.FC = () => {
       {isLoading ? <div className="flex justify-center items-center h-64">
           <RefreshCw className="h-8 w-8 animate-spin text-primary/70" />
         </div> : filteredPrinters.length > 0 ? <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredPrinters.map(printer => <PrinterCard key={printer.id} printer={printer} onOpenDetails={id => setSelectedPrinterId(id)} onOpenEdit={handleOpenEditModal} onOpenDelete={handleOpenDeleteConfirmation} onRestart={handleRestartPrinter} isAdmin={isAdmin} />)}
+          {filteredPrinters.map(printer => <EnhancedPrinterCard 
+            key={printer.id} 
+            printer={printer} 
+            onOpenDetails={id => setSelectedPrinterId(id)} 
+            onOpenEdit={handleOpenEditModal} 
+            onOpenDelete={handleOpenDeleteConfirmation} 
+            onRestart={handleRestartPrinter} 
+            isAdmin={isAdmin} 
+          />)}
         </div> : <EmptyPrinterState onAddPrinter={() => setShowAddPrinterModal(true)} isAdmin={isAdmin} />}
 
       <Dialog open={showAddPrinterModal} onOpenChange={setShowAddPrinterModal}>
@@ -361,4 +370,5 @@ const Printers: React.FC = () => {
       {selectedPrinterId && <PrinterDetailModal printerId={selectedPrinterId} onClose={() => setSelectedPrinterId(null)} isAdmin={isAdmin} />}
     </div>;
 };
+
 export default Printers;

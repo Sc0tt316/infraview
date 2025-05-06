@@ -1,7 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { useNavigate } from 'react-router-dom';
 import MainDashboard from '@/components/dashboard/MainDashboard';
 import { usePrinters } from '@/hooks/usePrinters';
 import { useQuery } from '@tanstack/react-query';
@@ -13,7 +12,6 @@ import { analyticsService } from '@/services/analytics';
  */
 const Index: React.FC = () => {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const { printers = [] } = usePrinters();
   const [alerts, setAlerts] = useState([]);
 
@@ -38,18 +36,11 @@ const Index: React.FC = () => {
     fetchAlerts();
   }, []);
 
-  // Removed redirection for user role - allow all users to see dashboard
-
-  const handleViewAllAlerts = () => {
-    navigate('/alerts');
-  };
-
   return (
     <MainDashboard 
       printers={printers} 
       recentActivities={recentActivities} 
       alerts={alerts}
-      onViewAllAlerts={handleViewAllAlerts}
     />
   );
 };

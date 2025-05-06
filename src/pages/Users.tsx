@@ -21,6 +21,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { User } from '@/types/user';
+import { useAuth } from '@/context/AuthContext';
 
 const Users = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -28,6 +29,8 @@ const Users = () => {
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showUserDetails, setShowUserDetails] = useState(false);
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
   
   const { data: users = [], isLoading, refetch } = useQuery({
     queryKey: ['users'],
@@ -83,9 +86,11 @@ const Users = () => {
           >
             <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
           </Button>
-          <Button onClick={() => toast.info('Add user functionality is not implemented yet')}>
-            <Plus className="h-4 w-4 mr-2" /> Add User
-          </Button>
+          {isAdmin && (
+            <Button onClick={() => toast.info('Add user functionality is not implemented yet')}>
+              <Plus className="h-4 w-4 mr-2" /> Add User
+            </Button>
+          )}
         </div>
       </div>
 
@@ -229,9 +234,11 @@ const Users = () => {
                 <Button variant="outline" onClick={handleCloseUserDetails}>
                   Close
                 </Button>
-                <Button onClick={() => toast.info('Edit user functionality is not implemented yet')}>
-                  Edit User
-                </Button>
+                {isAdmin && (
+                  <Button onClick={() => toast.info('Edit user functionality is not implemented yet')}>
+                    Edit User
+                  </Button>
+                )}
               </div>
             </div>
           </DialogContent>
