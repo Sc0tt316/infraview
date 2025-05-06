@@ -1,5 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import MainDashboard from '@/components/dashboard/MainDashboard';
 import { usePrinters } from '@/hooks/usePrinters';
@@ -12,6 +13,7 @@ import { analyticsService } from '@/services/analytics';
  */
 const Index: React.FC = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { printers = [] } = usePrinters();
   const [alerts, setAlerts] = useState([]);
 
@@ -36,11 +38,17 @@ const Index: React.FC = () => {
     fetchAlerts();
   }, []);
 
+  // Handler to navigate to the alerts page
+  const handleViewAllAlerts = () => {
+    navigate('/alerts');
+  };
+
   return (
     <MainDashboard 
       printers={printers} 
       recentActivities={recentActivities} 
       alerts={alerts}
+      onViewAllAlerts={handleViewAllAlerts}
     />
   );
 };
