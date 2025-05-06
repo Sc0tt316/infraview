@@ -89,7 +89,7 @@ export interface AnalyticsServiceInterface {
     sortOrder?: 'asc' | 'desc' 
   }): Promise<AlertData[]>;
   resolveAlert(alertId: string): Promise<boolean>;
-  // Add these methods to match the analytics implementation
+  // Update the type to include 'custom'
   getPrintVolumeByDateRange(options: { from: Date; to: Date }): Promise<PrintVolumeData[]>;
-  getPrintVolumeByTimeRange(timeRange: 'day' | 'week' | 'month' | 'year'): Promise<PrintVolumeData[]>;
+  getPrintVolumeByTimeRange(timeRange: 'day' | 'week' | 'month' | 'year' | 'custom'): Promise<PrintVolumeData[]>;
 }

@@ -35,6 +35,7 @@ const Analytics = () => {
           to: dateRange.to,
         });
       } else {
+        // Now the function accepts 'custom' as a timeRange value
         return analyticsService.getPrintVolumeByTimeRange(timeRange);
       }
     },

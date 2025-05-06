@@ -71,12 +71,17 @@ export const printVolumeService = {
     }
   },
   
-  // Add missing methods to meet interface requirements
+  // Update the implementation to handle 'custom' case
   getPrintVolumeByDateRange: async ({ from, to }: { from: Date; to: Date }): Promise<PrintVolumeData[]> => {
     return printVolumeService.getPrintVolumeData({ from, to });
   },
   
-  getPrintVolumeByTimeRange: async (timeRange: 'day' | 'week' | 'month' | 'year'): Promise<PrintVolumeData[]> => {
+  getPrintVolumeByTimeRange: async (timeRange: 'day' | 'week' | 'month' | 'year' | 'custom'): Promise<PrintVolumeData[]> => {
+    // For 'custom' timeRange, return all data and let the caller filter it
+    if (timeRange === 'custom') {
+      return printVolumeService.getPrintVolumeData();
+    }
+    
     return printVolumeService.getPrintVolumeData({ timeRange });
   }
 };
