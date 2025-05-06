@@ -1,19 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { userService } from '@/services/userService';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Search, Plus, RefreshCw } from 'lucide-react';
@@ -22,75 +13,60 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { User } from '@/types/user';
 import { useAuth } from '@/context/AuthContext';
-
 const Users = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showUserDetails, setShowUserDetails] = useState(false);
-  const { user } = useAuth();
+  const {
+    user
+  } = useAuth();
   const isAdmin = user?.role === 'admin';
-  
-  const { data: users = [], isLoading, refetch } = useQuery({
+  const {
+    data: users = [],
+    isLoading,
+    refetch
+  } = useQuery({
     queryKey: ['users'],
-    queryFn: userService.getAllUsers,
+    queryFn: userService.getAllUsers
   });
 
   // Apply filters whenever search query, role filter, or users data changes
   useEffect(() => {
     let result = [...users];
-    
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      result = result.filter(user => 
-        user.name?.toLowerCase().includes(query) || 
-        user.email?.toLowerCase().includes(query)
-      );
+      result = result.filter(user => user.name?.toLowerCase().includes(query) || user.email?.toLowerCase().includes(query));
     }
-    
     if (roleFilter !== 'all') {
       result = result.filter(user => user.role === roleFilter);
     }
-    
     setFilteredUsers(result);
   }, [searchQuery, roleFilter, users]);
-
   const handleViewUser = (user: User) => {
     setSelectedUser(user);
     setShowUserDetails(true);
   };
-
   const handleCloseUserDetails = () => {
     setShowUserDetails(false);
     setTimeout(() => {
       setSelectedUser(null);
     }, 300);
   };
-
-  return (
-    <div className="space-y-6">
+  return <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Users</h1>
-          <p className="text-muted-foreground">
-            Manage user accounts and permissions.
-          </p>
+          
+          
         </div>
         <div className="flex items-center gap-2">
-          <Button 
-            variant="outline" 
-            size="icon" 
-            onClick={() => refetch()}
-            disabled={isLoading}
-          >
+          <Button variant="outline" size="icon" onClick={() => refetch()} disabled={isLoading}>
             <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
           </Button>
-          {isAdmin && (
-            <Button onClick={() => toast.info('Add user functionality is not implemented yet')}>
+          {isAdmin && <Button onClick={() => toast.info('Add user functionality is not implemented yet')}>
               <Plus className="h-4 w-4 mr-2" /> Add User
-            </Button>
-          )}
+            </Button>}
         </div>
       </div>
 
@@ -105,17 +81,9 @@ const Users = () => {
           <div className="flex flex-col md:flex-row gap-4 mb-6">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <Input 
-                placeholder="Search users..." 
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
-              />
+              <Input placeholder="Search users..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-9" />
             </div>
-            <Select 
-              value={roleFilter} 
-              onValueChange={setRoleFilter}
-            >
+            <Select value={roleFilter} onValueChange={setRoleFilter}>
               <SelectTrigger className="w-full md:w-[180px]">
                 <SelectValue placeholder="Filter by role" />
               </SelectTrigger>
@@ -127,16 +95,11 @@ const Users = () => {
             </Select>
           </div>
 
-          {isLoading ? (
-            <div className="flex justify-center py-8">
+          {isLoading ? <div className="flex justify-center py-8">
               <RefreshCw className="h-8 w-8 animate-spin text-primary/70" />
-            </div>
-          ) : filteredUsers.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
+            </div> : filteredUsers.length === 0 ? <div className="text-center py-8 text-muted-foreground">
               No users found. Adjust your search or filters.
-            </div>
-          ) : (
-            <Table>
+            </div> : <Table>
               <TableCaption>A list of all users in the system.</TableCaption>
               <TableHeader>
                 <TableRow>
@@ -148,8 +111,7 @@ const Users = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredUsers.map((user) => (
-                  <TableRow key={user.id}>
+                {filteredUsers.map(user => <TableRow key={user.id}>
                     <TableCell className="font-medium">
                       <div className="flex items-center gap-3">
                         <Avatar className="h-8 w-8">
@@ -172,24 +134,18 @@ const Users = () => {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button 
-                        variant="ghost"
-                        onClick={() => handleViewUser(user)}
-                      >
+                      <Button variant="ghost" onClick={() => handleViewUser(user)}>
                         View
                       </Button>
                     </TableCell>
-                  </TableRow>
-                ))}
+                  </TableRow>)}
               </TableBody>
-            </Table>
-          )}
+            </Table>}
         </CardContent>
       </Card>
 
       {/* User Detail Modal */}
-      {selectedUser && (
-        <Dialog open={showUserDetails} onOpenChange={handleCloseUserDetails}>
+      {selectedUser && <Dialog open={showUserDetails} onOpenChange={handleCloseUserDetails}>
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
               <DialogTitle>User Details</DialogTitle>
@@ -234,18 +190,13 @@ const Users = () => {
                 <Button variant="outline" onClick={handleCloseUserDetails}>
                   Close
                 </Button>
-                {isAdmin && (
-                  <Button onClick={() => toast.info('Edit user functionality is not implemented yet')}>
+                {isAdmin && <Button onClick={() => toast.info('Edit user functionality is not implemented yet')}>
                     Edit User
-                  </Button>
-                )}
+                  </Button>}
               </div>
             </div>
           </DialogContent>
-        </Dialog>
-      )}
-    </div>
-  );
+        </Dialog>}
+    </div>;
 };
-
 export default Users;
