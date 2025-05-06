@@ -15,14 +15,13 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { notificationService, Notification } from "@/services/notificationService";
 import { formatDistanceToNow } from "date-fns";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 const NotificationDropdown = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
-  const { toast } = useToast();
 
   // Fetch notifications on mount and when dropdown opens
   useEffect(() => {
@@ -61,10 +60,10 @@ const NotificationDropdown = () => {
             navigate(`/printers${resourceId ? `/${resourceId}` : ''}`);
             break;
           case "user":
-            navigate(`/users${resourceId ? `/${resourceId}` : ''}`);
+            navigate('/users');
             break;
           case "alert":
-            navigate(`/alerts${resourceId ? `/${resourceId}` : ''}`);
+            navigate('/alerts');
             break;
           case "analytics":
             navigate('/analytics');
@@ -74,21 +73,12 @@ const NotificationDropdown = () => {
             navigate('/');
         }
         
-        toast({
-          title: "Navigating",
-          description: `Going to ${type} page`,
-        });
-        
+        toast.success(`Navigating to ${type} page`);
+        setOpen(false);
       } catch (error) {
         console.error("Navigation error:", error);
-        toast({
-          variant: "destructive",
-          title: "Navigation Error",
-          description: "Failed to navigate to the requested page",
-        });
+        toast.error("Failed to navigate to the requested page");
       }
-      
-      setOpen(false);
     }
   };
 

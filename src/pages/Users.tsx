@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { userService } from '@/services/userService';
@@ -13,16 +14,17 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { User } from '@/types/user';
 import { useAuth } from '@/context/AuthContext';
+
 const Users = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showUserDetails, setShowUserDetails] = useState(false);
-  const {
-    user
-  } = useAuth();
+  
+  const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
+  
   const {
     data: users = [],
     isLoading,
@@ -44,16 +46,19 @@ const Users = () => {
     }
     setFilteredUsers(result);
   }, [searchQuery, roleFilter, users]);
+
   const handleViewUser = (user: User) => {
     setSelectedUser(user);
     setShowUserDetails(true);
   };
+
   const handleCloseUserDetails = () => {
     setShowUserDetails(false);
     setTimeout(() => {
       setSelectedUser(null);
     }, 300);
   };
+
   return <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -180,10 +185,6 @@ const Users = () => {
                     Active
                   </Badge>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Last Login:</span>
-                  <span>{new Date().toLocaleDateString()}</span>
-                </div>
               </div>
               
               <div className="flex gap-2 justify-end">
@@ -199,4 +200,5 @@ const Users = () => {
         </Dialog>}
     </div>;
 };
+
 export default Users;

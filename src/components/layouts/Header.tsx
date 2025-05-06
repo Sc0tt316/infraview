@@ -1,18 +1,10 @@
 
 import React from 'react';
-import { Menu, Bell, Sun, Moon } from 'lucide-react';
+import { Menu, Sun, Moon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
 import { useLocation } from 'react-router-dom';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import NotificationDropdown from './NotificationDropdown';
 
 interface HeaderProps {
   toggleSidebar: () => void;
@@ -80,38 +72,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, openMobileSidebar }) => 
             {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
           </Button>
           
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="relative rounded-full"
-              >
-                <Bell size={18} />
-                <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full"></span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Notifications</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <div className="text-sm">
-                  <p className="font-medium">New alert: Low toner</p>
-                  <p className="text-xs text-muted-foreground">5 minutes ago</p>
-                </div>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <div className="text-sm">
-                  <p className="font-medium">Printer maintenance required</p>
-                  <p className="text-xs text-muted-foreground">2 hours ago</p>
-                </div>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-center">
-                View all notifications
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <NotificationDropdown />
         </div>
       </div>
       

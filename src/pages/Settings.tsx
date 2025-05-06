@@ -54,7 +54,7 @@ const Settings = () => {
         {/* Account Settings */}
         <TabsContent value="account">
           <Card>
-            <CardHeader>
+            <CardHeader className="pb-2">
               <CardTitle className="flex items-center">
                 <User className="mr-2 h-5 w-5" />
                 Profile Information
@@ -63,27 +63,24 @@ const Settings = () => {
                 View and manage your account information
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="name">Name</Label>
-                  <Input id="name" value={user?.name || ''} readOnly className="mt-1" />
+                  <Label htmlFor="name" className="text-xs text-muted-foreground">Name</Label>
+                  <p className="text-sm font-medium">{user?.name || 'Not set'}</p>
                 </div>
                 <div>
-                  <Label htmlFor="email">Email</Label>
-                  <Input id="email" value={user?.email || ''} readOnly className="mt-1" />
+                  <Label htmlFor="email" className="text-xs text-muted-foreground">Email</Label>
+                  <p className="text-sm font-medium">{user?.email || 'Not set'}</p>
                 </div>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <Label htmlFor="role">Role</Label>
-                  <Input id="role" value={user?.role || ''} readOnly className="mt-1" />
+                  <Label htmlFor="role" className="text-xs text-muted-foreground">Role</Label>
+                  <p className="text-sm font-medium capitalize">{user?.role || 'Not set'}</p>
                 </div>
               </div>
               
-              <div className="flex justify-end">
-                <Button variant="destructive" onClick={logout}>
+              <div className="flex justify-end pt-2">
+                <Button variant="destructive" onClick={logout} size="sm">
                   <LogOut className="mr-2 h-4 w-4" />
                   Logout
                 </Button>
