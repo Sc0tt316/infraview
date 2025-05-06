@@ -28,6 +28,7 @@ const PrinterDetailModal: React.FC<PrinterDetailModalProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState("overview");
   const [isRestarting, setIsRestarting] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
   
   const { data: printer, error, isLoading, refetch } = useQuery({
     queryKey: ['printer', printerId],
@@ -54,6 +55,14 @@ const PrinterDetailModal: React.FC<PrinterDetailModalProps> = ({
       updateLevels();
     }
   }, [printer]);
+
+  // Handle the closing of the modal
+  const handleOpenChange = (open: boolean) => {
+    setIsOpen(open);
+    if (!open) {
+      onClose();
+    }
+  };
 
   const handleRestartPrinter = async () => {
     if (printer) {
@@ -87,8 +96,7 @@ const PrinterDetailModal: React.FC<PrinterDetailModalProps> = ({
                  isRestarting={isRestarting} 
                  onRestartPrinter={handleRestartPrinter} />;
       case "logs":
-        // Fix: Pass logs instead of printer to match the PrintLogs component API
-        return <PrintLogs logs={printer.logs} />;
+        return <PrintLogs logs={printer.logs || []} />;
       case "maintenance":
         return <MaintenanceHistory printerId={printerId} />;
       default:
@@ -100,7 +108,7 @@ const PrinterDetailModal: React.FC<PrinterDetailModalProps> = ({
   };
 
   return (
-    <Dialog open={!!printerId} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[700px] p-0 overflow-hidden bg-slate-900 border-slate-800">
         <ModalHeader 
           printer={printer} 

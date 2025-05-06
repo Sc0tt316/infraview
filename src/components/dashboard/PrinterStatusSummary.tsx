@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertTriangle, WrenchIcon, CheckCircle, XCircle, Printer } from 'lucide-react';
 import { PrinterData } from '@/types/printers';
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, CartesianGrid, Tooltip, Legend } from 'recharts';
 
 interface PrinterStatusSummaryProps {
   printers: PrinterData[];
@@ -19,6 +19,7 @@ const PrinterStatusSummary: React.FC<PrinterStatusSummaryProps> = ({ printers = 
     warning: printers?.filter(p => p.status === 'warning').length || 0,
   };
 
+  // Format data for bar chart
   const chartData = [
     { name: 'Online', value: statusCounts.online, color: '#22c55e' }, // green
     { name: 'Offline', value: statusCounts.offline, color: '#6b7280' }, // gray
@@ -37,29 +38,31 @@ const PrinterStatusSummary: React.FC<PrinterStatusSummaryProps> = ({ printers = 
       </CardHeader>
       <CardContent>
         {chartData.length > 0 ? (
-          <div className="h-[200px] mt-4">
+          <div className="h-[240px] mt-4">
             <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={chartData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={45}
-                  outerRadius={80}
-                  paddingAngle={2}
-                  dataKey="value"
-                  label={({ name, value }) => `${name}: ${value}`}
-                >
-                  {chartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip 
-                  formatter={(value, name) => [`${value} printers`, name]}
-                  labelFormatter={() => 'Status'}
+              <BarChart
+                data={chartData}
+                margin={{
+                  top: 5,
+                  right: 10,
+                  left: 10,
+                  bottom: 20,
+                }}
+              >
+                <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
+                <Tooltip
+                  formatter={(value, name) => [`${value} printers`, 'Count']}
+                  labelFormatter={(label) => `Status: ${label}`}
                 />
-                <Legend />
-              </PieChart>
+                <Legend wrapperStyle={{ fontSize: '12px' }} />
+                <Bar dataKey="value" name="Printers" isAnimationActive={true}>
+                  {chartData.map((entry, index) => (
+                    <Bar key={`bar-${index}`} dataKey="value" fill={entry.color} />
+                  ))}
+                </Bar>
+              </BarChart>
             </ResponsiveContainer>
           </div>
         ) : (

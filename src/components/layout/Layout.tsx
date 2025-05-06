@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { 
   Menu, X, Home, Printer, Users as UsersIcon, 
-  BarChart2, LogOut, Activity as ActivityIcon, BellRing, Settings
+  BarChart2, LogOut, Settings
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
@@ -30,8 +30,7 @@ const sidebarLinks = [
   { path: "/printers", label: "Printers", icon: Printer },
   { path: "/users", label: "Users", icon: UsersIcon },
   { path: "/analytics", label: "Analytics", icon: BarChart2 },
-  { path: "/activity", label: "Activity", icon: ActivityIcon },
-  { path: "/alerts", label: "Alerts", icon: BellRing },
+  { path: "/alerts", label: "Alerts", icon: Settings }
 ];
 
 const Layout = ({ children }: LayoutProps) => {
@@ -121,11 +120,11 @@ const Layout = ({ children }: LayoutProps) => {
               <div className="h-10 w-10 bg-[#300054] flex items-center justify-center rounded-md border border-[#ff6b6b]">
                 <img 
                   src="/lovable-uploads/79c40e69-54c0-4cbd-a41c-369e4c8bb316.png" 
-                  alt="M-Printer Manager Logo" 
+                  alt="M-Printer Logo" 
                   className="h-8 w-8 object-contain"
                 />
               </div>
-              <span className="text-xl font-medium text-primary">M-Printer Manager</span>
+              <span className="text-xl font-medium text-primary truncate">M-Printer</span>
             </Link>
             <button 
               onClick={() => setIsSidebarOpen(false)}
@@ -174,7 +173,7 @@ const Layout = ({ children }: LayoutProps) => {
           </nav>
 
           <div className="mt-auto p-4 border-t border-border/40 dark:border-gray-800">
-            <div className="flex items-center justify-between px-4 py-3">
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Avatar className="h-8 w-8">
                   <AvatarImage src="" alt={user?.name || "User"} />
@@ -187,19 +186,12 @@ const Layout = ({ children }: LayoutProps) => {
                   <p className="text-xs text-muted-foreground">{user?.email || "user@example.com"}</p>
                 </div>
               </div>
-              
-              <Button variant="ghost" size="icon" onClick={toggleTheme}>
-                {theme === 'dark' ? 
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg> : 
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>
-                }
-              </Button>
             </div>
             
-            <div className="flex items-center justify-between mt-3">
+            <div className="flex flex-col mt-3 space-y-2">
               <Button
                 variant="ghost"
-                className="flex-1 flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
+                className="flex items-center gap-2 px-4 py-2 justify-start rounded-lg text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
                 onClick={() => navigate('/settings')}
               >
                 <Settings size={16} />
@@ -208,7 +200,7 @@ const Layout = ({ children }: LayoutProps) => {
               
               <Button
                 variant="ghost"
-                className="flex-1 flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                className="flex items-center gap-2 px-4 py-2 justify-start rounded-lg text-sm font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                 onClick={handleLogout}
               >
                 <LogOut size={16} />
@@ -237,31 +229,20 @@ const Layout = ({ children }: LayoutProps) => {
               <Menu size={20} />
             </button>
             
-            <div className="flex items-center ml-auto gap-3">
+            <div className="flex items-center gap-3">
               <NotificationDropdown />
               
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Avatar className="h-8 w-8 cursor-pointer">
-                    <AvatarImage src="" alt={user?.name || "User"} />
-                    <AvatarFallback className="bg-primary/10 text-primary">
-                      {user?.name?.charAt(0) || 'U'}
-                    </AvatarFallback>
-                  </Avatar>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => navigate('/settings')}>
-                    <Settings className="mr-2 h-4 w-4" />
-                    <span>Settings</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleLogout}>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    <span>Logout</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleTheme}
+                className="rounded-full"
+              >
+                {theme === 'dark' ? 
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg> : 
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>
+                }
+              </Button>
             </div>
           </div>
         </header>

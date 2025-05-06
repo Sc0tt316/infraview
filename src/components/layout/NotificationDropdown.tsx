@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Bell } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -19,6 +20,7 @@ const NotificationDropdown = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
 
   // Fetch notifications on mount and when dropdown opens
   useEffect(() => {
@@ -40,7 +42,7 @@ const NotificationDropdown = () => {
     }
   }, [open]);
 
-  const handleReadNotification = (id: string) => {
+  const handleReadNotification = (id: string, type?: string, resourceId?: string) => {
     notificationService.markAsRead(id);
     setNotifications(prev => 
       prev.map(notification => 
@@ -48,6 +50,28 @@ const NotificationDropdown = () => {
       )
     );
     setUnreadCount(prev => Math.max(0, prev - 1));
+    
+    // Navigate to appropriate page based on notification type
+    if (type) {
+      switch(type) {
+        case "printer":
+          navigate(`/printers${resourceId ? `?id=${resourceId}` : ''}`);
+          break;
+        case "user":
+          navigate(`/users${resourceId ? `?id=${resourceId}` : ''}`);
+          break;
+        case "alert":
+          navigate(`/alerts${resourceId ? `?id=${resourceId}` : ''}`);
+          break;
+        case "analytics":
+          navigate('/analytics');
+          break;
+        default:
+          // Default to dashboard if type is unknown
+          navigate('/');
+      }
+      setOpen(false);
+    }
   };
 
   return (
@@ -99,7 +123,7 @@ const NotificationDropdown = () => {
               <DropdownMenuItem 
                 key={notification.id} 
                 className={`px-4 py-3 cursor-default ${!notification.read ? 'bg-muted/50' : ''}`}
-                onClick={() => handleReadNotification(notification.id)}
+                onClick={() => handleReadNotification(notification.id, notification.type, notification.resourceId)}
               >
                 <div className="space-y-1 w-full">
                   <div className="flex items-center justify-between">
