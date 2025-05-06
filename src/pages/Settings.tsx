@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -18,12 +17,13 @@ import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 
 type SettingsTab = "account" | "appearance" | "notifications" | "security";
+type UserRole = "admin" | "user" | "manager";
 
 const Settings = () => {
   const [activeTab, setActiveTab] = useState<SettingsTab>("account");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState<"admin" | "user">("user");
+  const [role, setRole] = useState<UserRole>("user");
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [pushNotifications, setPushNotifications] = useState(true);
   const [passwordUpdates, setPasswordUpdates] = useState(true);

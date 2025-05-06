@@ -18,12 +18,13 @@ const Login: React.FC = () => {
   
   const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
-  const { theme, setTheme } = useTheme();
+  const { theme } = useTheme();
 
-  // Set theme to light mode on component mount
+  // Ensure the page is in light mode
   useEffect(() => {
-    setTheme('light');
-  }, [setTheme]);
+    document.documentElement.classList.remove('dark');
+    // No need to call setTheme as it doesn't exist in our ThemeContext
+  }, []);
 
   useEffect(() => {
     if (isAuthenticated) {
