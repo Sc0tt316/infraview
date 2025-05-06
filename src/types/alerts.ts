@@ -10,6 +10,11 @@ export interface Alert {
     name: string;
     location?: string;
   };
+  user?: {
+    id: string;
+    name: string;
+    email?: string;
+  };
   isResolved: boolean;
   resolvedAt?: string;
   resolvedBy?: string;
