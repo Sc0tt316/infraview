@@ -1,9 +1,9 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertTriangle, WrenchIcon, CheckCircle, XCircle, Printer } from 'lucide-react';
+import { Printer } from 'lucide-react';
 import { PrinterData } from '@/types/printers';
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, CartesianGrid, Tooltip, Legend } from 'recharts';
+import { BarChart } from '@/components/ui/chart';
 
 interface PrinterStatusSummaryProps {
   printers: PrinterData[];
@@ -19,14 +19,23 @@ const PrinterStatusSummary: React.FC<PrinterStatusSummaryProps> = ({ printers = 
     warning: printers?.filter(p => p.status === 'warning').length || 0,
   };
 
-  // Format data for bar chart
+  // Format data for the bar chart
   const chartData = [
-    { name: 'Online', value: statusCounts.online, color: '#22c55e' }, // green
-    { name: 'Offline', value: statusCounts.offline, color: '#6b7280' }, // gray
-    { name: 'Error', value: statusCounts.error, color: '#ef4444' }, // red
-    { name: 'Maintenance', value: statusCounts.maintenance, color: '#3b82f6' }, // blue
-    { name: 'Warning', value: statusCounts.warning, color: '#f59e0b' }, // amber
-  ].filter(item => item.value > 0);
+    { status: 'Online', count: statusCounts.online },
+    { status: 'Offline', count: statusCounts.offline },
+    { status: 'Error', count: statusCounts.error },
+    { status: 'Maintenance', count: statusCounts.maintenance },
+    { status: 'Warning', count: statusCounts.warning },
+  ].filter(item => item.count > 0);
+
+  // Define chart colors based on status
+  const chartColors = [
+    '#22c55e', // green for online
+    '#6b7280', // gray for offline
+    '#ef4444', // red for error
+    '#3b82f6', // blue for maintenance
+    '#f59e0b', // amber for warning
+  ];
 
   return (
     <Card>
@@ -39,31 +48,15 @@ const PrinterStatusSummary: React.FC<PrinterStatusSummaryProps> = ({ printers = 
       <CardContent>
         {chartData.length > 0 ? (
           <div className="h-[240px] mt-4">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={chartData}
-                margin={{
-                  top: 5,
-                  right: 10,
-                  left: 10,
-                  bottom: 20,
-                }}
-              >
-                <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
-                <Tooltip
-                  formatter={(value, name) => [`${value} printers`, 'Count']}
-                  labelFormatter={(label) => `Status: ${label}`}
-                />
-                <Legend wrapperStyle={{ fontSize: '12px' }} />
-                <Bar dataKey="value" name="Printers" isAnimationActive={true}>
-                  {chartData.map((entry, index) => (
-                    <Bar key={`bar-${index}`} dataKey="value" fill={entry.color} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+            <BarChart
+              data={chartData}
+              categories={['count']}
+              index="status"
+              colors={chartColors}
+              valueFormatter={(value) => `${value} printers`}
+              showAnimation={true}
+              className="h-full w-full"
+            />
           </div>
         ) : (
           <div className="py-8 text-center text-muted-foreground">
