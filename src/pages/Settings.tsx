@@ -109,9 +109,7 @@ const Settings = () => {
                 <User className="mr-2 h-5 w-5" />
                 Profile Information
               </CardTitle>
-              <CardDescription>
-                View and manage your account information
-              </CardDescription>
+              
             </CardHeader>
             <CardContent>
               <div className="flex flex-col md:flex-row gap-6 items-start">
