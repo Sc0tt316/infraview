@@ -172,9 +172,7 @@ const Settings = () => {
                 <Lock className="mr-2 h-5 w-5" />
                 Security Settings
               </CardTitle>
-              <CardDescription>
-                Manage your password and account security
-              </CardDescription>
+              
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="flex items-center justify-between">
