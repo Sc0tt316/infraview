@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
@@ -8,13 +8,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { User, LogOut, Lock } from 'lucide-react';
+import { User, LogOut, Lock, Camera, Upload } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const Settings = () => {
-  const { user, updatePassword, logout } = useAuth();
+  const { user, updatePassword, logout, updateProfile } = useAuth();
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [profileImage, setProfileImage] = useState(user?.profileImage || '');
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const handlePasswordChange = (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,6 +37,29 @@ const Settings = () => {
     setIsPasswordModalOpen(false);
     setNewPassword('');
     setConfirmPassword('');
+  };
+
+  const handleProfileImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // In a real app, you'd upload to storage and get a URL
+    // For now, we'll use a file reader to get a base64 string
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        setProfileImage(reader.result);
+        if (updateProfile) {
+          updateProfile({ profileImage: reader.result });
+          toast.success('Profile image updated successfully');
+        }
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
   };
 
   return (
@@ -63,27 +89,70 @@ const Settings = () => {
                 View and manage your account information
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="name" className="text-xs text-muted-foreground">Name</Label>
-                  <p className="text-sm font-medium">{user?.name || 'Not set'}</p>
+            <CardContent>
+              <div className="flex flex-col md:flex-row gap-6 items-start">
+                <div className="flex flex-col items-center space-y-3">
+                  <div className="relative">
+                    <Avatar className="h-24 w-24 border-2 border-muted-foreground/10">
+                      <AvatarImage src={profileImage} alt={user?.name || "User"} />
+                      <AvatarFallback className="text-xl bg-primary/10 text-primary">
+                        {user?.name?.charAt(0) || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <Button 
+                      variant="secondary" 
+                      size="icon" 
+                      className="absolute bottom-0 right-0 rounded-full shadow-md"
+                      onClick={triggerFileInput}
+                    >
+                      <Camera size={14} />
+                    </Button>
+                    <input 
+                      type="file" 
+                      ref={fileInputRef} 
+                      className="hidden" 
+                      accept="image/*"
+                      onChange={handleProfileImageUpload}
+                    />
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex items-center"
+                    onClick={triggerFileInput}
+                  >
+                    <Upload className="mr-1 h-3 w-3" />
+                    Change Photo
+                  </Button>
                 </div>
-                <div>
-                  <Label htmlFor="email" className="text-xs text-muted-foreground">Email</Label>
-                  <p className="text-sm font-medium">{user?.email || 'Not set'}</p>
+                
+                <div className="flex-1 space-y-4 w-full">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="name" className="text-xs text-muted-foreground">Full Name</Label>
+                      <p id="name" className="text-sm font-medium">{user?.name || 'Not set'}</p>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="email" className="text-xs text-muted-foreground">Email Address</Label>
+                      <p id="email" className="text-sm font-medium">{user?.email || 'Not set'}</p>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="role" className="text-xs text-muted-foreground">Role</Label>
+                      <p id="role" className="text-sm font-medium capitalize">{user?.role || 'Not set'}</p>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="department" className="text-xs text-muted-foreground">Department</Label>
+                      <p id="department" className="text-sm font-medium">{user?.department || 'Not assigned'}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-end pt-2 mt-4 border-t">
+                    <Button variant="destructive" onClick={logout} size="sm">
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Logout
+                    </Button>
+                  </div>
                 </div>
-                <div>
-                  <Label htmlFor="role" className="text-xs text-muted-foreground">Role</Label>
-                  <p className="text-sm font-medium capitalize">{user?.role || 'Not set'}</p>
-                </div>
-              </div>
-              
-              <div className="flex justify-end pt-2">
-                <Button variant="destructive" onClick={logout} size="sm">
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Logout
-                </Button>
               </div>
             </CardContent>
           </Card>

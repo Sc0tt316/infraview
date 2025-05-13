@@ -19,12 +19,23 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, openMobileSidebar }) => 
   const getPageTitle = () => {
     const path = location.pathname;
     if (path === '/') return 'Dashboard';
+    
+    // Handle dynamic routes like /printers/123
+    if (path.includes('/printers/')) {
+      return 'Printer Details';
+    }
+    
     return path.substring(1).charAt(0).toUpperCase() + path.substring(2);
   }
 
   // Generate page subtitle based on current path
   const getPageSubtitle = () => {
     const path = location.pathname;
+    
+    if (path.includes('/printers/')) {
+      return 'View detailed printer information';
+    }
+    
     switch (path) {
       case '/':
         return 'Overview of your printing system';

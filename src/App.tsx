@@ -9,6 +9,7 @@ import Layout from '@/components/layouts/Layout';
 import Index from '@/pages/Index';
 import Login from '@/pages/Login';
 import Printers from '@/pages/Printers';
+import PrinterDetail from '@/pages/PrinterDetail';
 import Users from '@/pages/Users';
 import Alerts from '@/pages/Alerts';
 import Analytics from '@/pages/Analytics';
@@ -37,6 +38,7 @@ function App() {
               <Route path="/" element={<Layout />}>
                 <Route index element={<Index />} />
                 <Route path="printers" element={<Printers />} />
+                <Route path="printers/:printerId" element={<PrinterDetail />} />
                 <Route path="users" element={<Users />} />
                 <Route path="alerts" element={<Alerts />} />
                 <Route path="analytics" element={<Analytics />} />

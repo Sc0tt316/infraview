@@ -57,7 +57,7 @@ const NotificationDropdown = () => {
       try {
         switch(type) {
           case "printer":
-            navigate(`/printers${resourceId ? `/${resourceId}` : ''}`);
+            navigate(resourceId ? `/printers/${resourceId}` : '/printers');
             break;
           case "user":
             navigate('/users');
