@@ -5,7 +5,7 @@ import { toast } from '@/hooks/use-toast';
 
 interface AuthContextType {
   user: User | null;
-  login: (credentials: LoginCredentials) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   isAuthenticated: boolean;
   updatePassword: (password: string) => void;
@@ -42,8 +42,8 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
     }
   }, []);
 
-  // Mock login function
-  const login = async (credentials: LoginCredentials): Promise<boolean> => {
+  // Mock login function with our test users
+  const login = async (email: string, password: string): Promise<boolean> => {
     try {
       // This would normally be an API call
       const mockUsers = [
@@ -51,24 +51,28 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
           id: 'u1',
           name: 'Admin User',
           email: 'admin@example.com',
-          role: 'admin',
+          role: 'admin' as const,
           department: 'IT',
-          password: 'admin123',
+          phone: '555-123-4567',
+          status: 'active' as const,
+          password: 'password',
           profileImage: ''
         },
         {
           id: 'u2',
           name: 'Regular User',
           email: 'user@example.com',
-          role: 'user',
+          role: 'user' as const,
           department: 'Marketing',
-          password: 'user123',
+          phone: '555-987-6543',
+          status: 'active' as const,
+          password: 'password',
           profileImage: ''
         }
       ];
       
       const foundUser = mockUsers.find(
-        u => u.email === credentials.email && u.password === credentials.password
+        u => u.email === email && u.password === password
       );
       
       if (foundUser) {
@@ -107,6 +111,7 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
         toast({
           title: "Login Failed",
           description: "Invalid email or password. Please try again.",
+          variant: "destructive",
         });
         return false;
       }
@@ -115,6 +120,7 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
       toast({
         title: "Login Error",
         description: "An unexpected error occurred. Please try again later.",
+        variant: "destructive",
       });
       return false;
     }
