@@ -1,6 +1,5 @@
-
 import { useState, useEffect } from 'react';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from '@/hooks/use-toast';
 import { Alert, AlertFilter, AlertSeverity } from '@/types/alerts';
 import { apiService } from '@/services/api';
 
@@ -12,8 +11,6 @@ export const useAlerts = () => {
   const [statusFilter, setStatusFilter] = useState<AlertFilter>('all');
   const [severityFilter, setSeverityFilter] = useState<AlertSeverity | 'all'>('all');
   const [relatedToFilter, setRelatedToFilter] = useState<'all' | 'user' | 'printer'>('all');
-  
-  const { toast } = useToast();
   
   // Load alerts
   const loadAlerts = async () => {
@@ -31,7 +28,6 @@ export const useAlerts = () => {
     } catch (error) {
       console.error("Error loading alerts:", error);
       toast({
-        variant: "destructive",
         title: "Error",
         description: "Failed to load alerts. Please try again."
       });

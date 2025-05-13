@@ -118,8 +118,17 @@ function dispatch(action: Action) {
   })
 }
 
-type Toast = Omit<ToasterToast, "id"> & {
+interface Toast {
   id?: string
+  title?: React.ReactNode
+  description?: React.ReactNode
+  action?: ToasterToastActionElement
+  cancel?: React.ReactNode
+  variant?: "default" | "destructive"
+  duration?: number
+  className?: string
+  onDismiss?: (toast: ToasterToast) => void
+  onAutoClose?: (toast: ToasterToast) => void
 }
 
 function toast({ id: toastId, ...props }: Toast) {
@@ -150,7 +159,8 @@ function toast({ id: toastId, ...props }: Toast) {
     cancel: props.cancel,
     onDismiss: props.onDismiss,
     onAutoClose: props.onAutoClose,
-    duration: props.duration
+    duration: props.duration,
+    className: props.className
   })
 
   return {

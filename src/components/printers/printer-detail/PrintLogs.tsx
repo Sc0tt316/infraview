@@ -1,66 +1,59 @@
 
 import React from 'react';
-import { format } from 'date-fns';
-import { CheckCircle, X, FileClock, FileText, FileText as FileIcon } from 'lucide-react';
 import { PrintLog } from '@/types/printers';
+import { format } from 'date-fns';
 
 interface PrintLogsProps {
-  logs: PrintLog[] | undefined;
+  logs: PrintLog[];
 }
 
 const PrintLogs: React.FC<PrintLogsProps> = ({ logs }) => {
-  if (!logs || logs.length === 0) {
+  if (logs.length === 0) {
     return (
-      <div className="py-12 text-center">
-        <FileIcon className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
-        <h3 className="text-lg font-medium text-foreground">No print logs available</h3>
-        <p className="text-muted-foreground mt-1">
-          There are no print logs for this printer.
-        </p>
+      <div className="py-8 text-center">
+        <p className="text-muted-foreground">No print logs available.</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-3">
-      {logs.map((log, index) => (
-        <div key={log.id || index} className="flex items-center border-b border-border pb-3 last:border-0">
-          <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
-            log.status === 'completed' ? 'bg-green-700/20 text-green-500' : 'bg-red-700/20 text-red-500'
-          }`}>
-            {log.status === 'completed' ? (
-              <CheckCircle className="h-5 w-5" />
-            ) : (
-              <X className="h-5 w-5" />
-            )}
-          </div>
-          
-          <div className="ml-4 flex-grow min-w-0">
-            <div className="flex justify-between">
-              <span className="font-medium text-sm text-foreground truncate">{log.fileName || 'Unknown File'}</span>
-              <span className="text-xs text-muted-foreground ml-2 whitespace-nowrap">
-                {log.timestamp ? format(new Date(log.timestamp), 'MMM d, h:mm a') : 'Unknown time'}
-              </span>
-            </div>
-            <div className="flex justify-between items-center mt-1">
-              <div className="flex items-center text-xs text-muted-foreground">
-                <span className="flex items-center mr-3">
-                  <FileClock className="h-3 w-3 mr-1" />
-                  {log.pages} {log.pages === 1 ? 'page' : 'pages'}
-                </span>
-                <span className="flex items-center">
-                  <FileText className="h-3 w-3 mr-1" />
-                  {log.size || 'Unknown size'}
-                </span>
-              </div>
-              <div className="text-xs">
-                <span className="text-muted-foreground">By: </span>
-                <span className="text-foreground">{log.user || 'Unknown user'}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      ))}
+    <div className="space-y-4">
+      <h3 className="text-lg font-medium">Print History</h3>
+      
+      <div className="border rounded-md overflow-hidden">
+        <table className="min-w-full divide-y divide-border">
+          <thead className="bg-muted/50">
+            <tr>
+              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">File Name</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">User</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Pages</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Date</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</th>
+            </tr>
+          </thead>
+          <tbody className="bg-background divide-y divide-border">
+            {logs.map((log) => (
+              <tr key={log.id || `${log.timestamp}-${log.fileName}`}>
+                <td className="px-4 py-3 text-sm">{log.fileName}</td>
+                <td className="px-4 py-3 text-sm">{log.user}</td>
+                <td className="px-4 py-3 text-sm">{log.pages}</td>
+                <td className="px-4 py-3 text-sm">{format(new Date(log.timestamp), 'MMM d, yyyy h:mm a')}</td>
+                <td className="px-4 py-3 text-sm">
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
+                    ${log.status === 'completed' 
+                      ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                      : log.status === 'failed'
+                        ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                        : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
+                    }`}>
+                    {log.status.charAt(0).toUpperCase() + log.status.slice(1)}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };

@@ -2,13 +2,12 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { printerService } from '@/services/printer';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from '@/hooks/use-toast';
 import { PrinterData } from '@/types/printers';
 
 export const usePrinters = () => {
   const [printers, setPrinters] = useState<PrinterData[]>([]);
-  const { toast } = useToast();
-
+  
   // Query to get all printers
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['printers'],
@@ -26,13 +25,12 @@ export const usePrinters = () => {
   useEffect(() => {
     if (error) {
       toast({
-        variant: "destructive",
         title: "Error",
         description: "Failed to load printers. Please try again later."
       });
       console.error("Error fetching printers:", error);
     }
-  }, [error, toast]);
+  }, [error]);
 
   return {
     printers: printers || [],

@@ -16,7 +16,7 @@ const PrinterDetail = () => {
 
   const { data: printer, isLoading, error } = useQuery({
     queryKey: ['printer', printerId],
-    queryFn: () => printerService.getPrinterById(printerId || ''),
+    queryFn: () => printerService.getPrinter(printerId || ''),
     enabled: !!printerId,
   });
 

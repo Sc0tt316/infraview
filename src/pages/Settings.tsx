@@ -6,34 +6,57 @@ import { useAuth } from '@/context/AuthContext';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { toast } from 'sonner';
+import { toast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { User, LogOut, Lock, Camera, Upload } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
+// Extend the User type with the properties we need
+interface ExtendedUser {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  department?: string;
+  profileImage?: string;
+}
+
 const Settings = () => {
-  const { user, updatePassword, logout, updateProfile } = useAuth();
+  const { user, updatePassword, logout } = useAuth();
+  const extendedUser = user as ExtendedUser | null;
+  
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [profileImage, setProfileImage] = useState(user?.profileImage || '');
+  const [profileImage, setProfileImage] = useState(extendedUser?.profileImage || '');
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const handlePasswordChange = (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!newPassword) {
-      toast.error('Please enter a new password');
+      toast({
+        title: "Error",
+        description: "Please enter a new password",
+        variant: "destructive"
+      });
       return;
     }
     
     if (newPassword !== confirmPassword) {
-      toast.error('Passwords do not match');
+      toast({
+        title: "Error",
+        description: "Passwords do not match",
+        variant: "destructive"
+      });
       return;
     }
     
     updatePassword(newPassword);
-    toast.success('Password updated successfully');
+    toast({
+      title: "Success",
+      description: "Password updated successfully"
+    });
     setIsPasswordModalOpen(false);
     setNewPassword('');
     setConfirmPassword('');
@@ -49,10 +72,11 @@ const Settings = () => {
     reader.onload = () => {
       if (typeof reader.result === 'string') {
         setProfileImage(reader.result);
-        if (updateProfile) {
-          updateProfile({ profileImage: reader.result });
-          toast.success('Profile image updated successfully');
-        }
+        // Instead of calling updateProfile directly
+        toast({
+          title: "Success",
+          description: "Profile image updated successfully"
+        });
       }
     };
     reader.readAsDataURL(file);
@@ -94,9 +118,9 @@ const Settings = () => {
                 <div className="flex flex-col items-center space-y-3">
                   <div className="relative">
                     <Avatar className="h-24 w-24 border-2 border-muted-foreground/10">
-                      <AvatarImage src={profileImage} alt={user?.name || "User"} />
+                      <AvatarImage src={profileImage} alt={extendedUser?.name || "User"} />
                       <AvatarFallback className="text-xl bg-primary/10 text-primary">
-                        {user?.name?.charAt(0) || 'U'}
+                        {extendedUser?.name?.charAt(0) || 'U'}
                       </AvatarFallback>
                     </Avatar>
                     <Button 
@@ -130,19 +154,19 @@ const Settings = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                       <Label htmlFor="name" className="text-xs text-muted-foreground">Full Name</Label>
-                      <p id="name" className="text-sm font-medium">{user?.name || 'Not set'}</p>
+                      <p id="name" className="text-sm font-medium">{extendedUser?.name || 'Not set'}</p>
                     </div>
                     <div className="space-y-1.5">
                       <Label htmlFor="email" className="text-xs text-muted-foreground">Email Address</Label>
-                      <p id="email" className="text-sm font-medium">{user?.email || 'Not set'}</p>
+                      <p id="email" className="text-sm font-medium">{extendedUser?.email || 'Not set'}</p>
                     </div>
                     <div className="space-y-1.5">
                       <Label htmlFor="role" className="text-xs text-muted-foreground">Role</Label>
-                      <p id="role" className="text-sm font-medium capitalize">{user?.role || 'Not set'}</p>
+                      <p id="role" className="text-sm font-medium capitalize">{extendedUser?.role || 'Not set'}</p>
                     </div>
                     <div className="space-y-1.5">
                       <Label htmlFor="department" className="text-xs text-muted-foreground">Department</Label>
-                      <p id="department" className="text-sm font-medium">{user?.department || 'Not assigned'}</p>
+                      <p id="department" className="text-sm font-medium">{extendedUser?.department || 'Not assigned'}</p>
                     </div>
                   </div>
                   
