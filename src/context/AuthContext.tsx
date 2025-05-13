@@ -8,7 +8,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   isAuthenticated: boolean;
-  updatePassword: (password: string) => void;
+  updatePassword: (oldPassword: string, newPassword: string) => void;
   updateProfile: (data: Partial<User>) => void;
 }
 
@@ -137,9 +137,18 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
     });
   };
   
-  const updatePassword = (password: string) => {
-    // In a real app, this would call an API to update the password
-    console.log('Password updated:', password);
+  const updatePassword = (oldPassword: string, newPassword: string) => {
+    // In a real app, this would call an API to verify old password and update
+    if (oldPassword !== 'password') {
+      toast({
+        title: "Error",
+        description: "Your current password is incorrect.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    console.log('Password updated:', newPassword);
     
     toast({
       title: "Password Updated",

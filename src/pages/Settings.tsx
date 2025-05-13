@@ -26,6 +26,7 @@ const Settings = () => {
   const extendedUser = user as ExtendedUser | null;
   
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [profileImage, setProfileImage] = useState(extendedUser?.profileImage || '');
@@ -33,6 +34,14 @@ const Settings = () => {
   
   const handlePasswordChange = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!oldPassword) {
+      toast({
+        title: "Error",
+        description: "Please enter your current password",
+      });
+      return;
+    }
     
     if (!newPassword) {
       toast({
@@ -50,12 +59,12 @@ const Settings = () => {
       return;
     }
     
-    updatePassword(newPassword);
-    toast({
-      title: "Success",
-      description: "Password updated successfully"
-    });
+    // Verify old password before updating
+    updatePassword(oldPassword, newPassword);
+    
+    // Reset form and close modal
     setIsPasswordModalOpen(false);
+    setOldPassword('');
     setNewPassword('');
     setConfirmPassword('');
   };
@@ -216,11 +225,20 @@ const Settings = () => {
           <DialogHeader>
             <DialogTitle>Change Password</DialogTitle>
             <DialogDescription>
-              Enter your new password below.
+              Enter your current password and a new password below.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handlePasswordChange}>
             <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="old-password">Current Password</Label>
+                <Input
+                  id="old-password"
+                  type="password"
+                  value={oldPassword}
+                  onChange={(e) => setOldPassword(e.target.value)}
+                />
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="new-password">New Password</Label>
                 <Input

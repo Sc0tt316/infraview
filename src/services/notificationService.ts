@@ -13,6 +13,9 @@ export interface Notification {
 
 class NotificationService {
   private readonly STORAGE_KEY = 'app_notifications';
+  private readonly MAX_NOTIFICATIONS = 50; // Limit total notifications
+  private notificationThrottles: Record<string, number> = {}; // Track notification timestamps by type
+  private readonly THROTTLE_TIME = 60000; // 1 minute between similar notifications
   
   getNotifications(): Notification[] {
     try {
@@ -29,23 +32,59 @@ class NotificationService {
     return notifications.filter(n => !n.read).length;
   }
   
-  addNotification(title: string, message: string, type?: string, resourceId?: string): Notification {
-    const notifications = this.getNotifications();
+  addNotification(title: string, message: string, type?: string, resourceId?: string): Notification | null {
+    // Create a throttle key based on type and resourceId if available
+    const throttleKey = `${type || 'general'}_${resourceId || 'none'}`;
+    const now = Date.now();
     
-    const newNotification: Notification = {
-      id: uuidv4(),
-      title,
-      message,
-      timestamp: new Date(),
-      read: false,
-      type,
-      resourceId
-    };
+    // Check if this type of notification has been sent recently
+    if (this.notificationThrottles[throttleKey] && 
+        now - this.notificationThrottles[throttleKey] < this.THROTTLE_TIME) {
+      console.log(`Notification throttled: ${title}`);
+      return null; // Skip creating the notification
+    }
     
-    const updatedNotifications = [newNotification, ...notifications];
-    this.saveNotifications(updatedNotifications);
-    
-    return newNotification;
+    try {
+      const notifications = this.getNotifications();
+      
+      // Check for duplicate notifications with same title and message in the last minute
+      const recentDuplicate = notifications.find(n => 
+        n.title === title && 
+        n.message === message && 
+        (new Date().getTime() - new Date(n.timestamp).getTime()) < this.THROTTLE_TIME
+      );
+      
+      if (recentDuplicate) {
+        console.log(`Duplicate notification suppressed: ${title}`);
+        return null;
+      }
+      
+      const newNotification: Notification = {
+        id: uuidv4(),
+        title,
+        message,
+        timestamp: new Date(),
+        read: false,
+        type,
+        resourceId
+      };
+      
+      // Add to throttle tracker
+      this.notificationThrottles[throttleKey] = now;
+      
+      // Limit total notifications by removing oldest if needed
+      let updatedNotifications = [newNotification, ...notifications];
+      if (updatedNotifications.length > this.MAX_NOTIFICATIONS) {
+        updatedNotifications = updatedNotifications.slice(0, this.MAX_NOTIFICATIONS);
+      }
+      
+      this.saveNotifications(updatedNotifications);
+      
+      return newNotification;
+    } catch (error) {
+      console.error('Error adding notification:', error);
+      return null;
+    }
   }
   
   markAsRead(id: string): void {

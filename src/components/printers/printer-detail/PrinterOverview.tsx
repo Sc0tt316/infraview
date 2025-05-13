@@ -11,15 +11,17 @@ interface PrinterOverviewProps {
   printer: PrinterData;
   isRestarting: boolean;
   onRestartPrinter: () => void;
+  isAdmin: boolean;
 }
 
 const PrinterOverview: React.FC<PrinterOverviewProps> = ({
   printer,
   isRestarting,
-  onRestartPrinter
+  onRestartPrinter,
+  isAdmin
 }) => {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 dark:bg-transparent">
       {/* Printer Details */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-4">
@@ -46,11 +48,13 @@ const PrinterOverview: React.FC<PrinterOverviewProps> = ({
             lastActive={printer.lastActive}
           />
 
-          <RestartButton 
-            isRestarting={isRestarting} 
-            disabled={printer.status === 'maintenance'} 
-            onClick={onRestartPrinter} 
-          />
+          {isAdmin && (
+            <RestartButton 
+              isRestarting={isRestarting} 
+              disabled={printer.status === 'maintenance'} 
+              onClick={onRestartPrinter} 
+            />
+          )}
         </div>
       </div>
     </div>

@@ -6,8 +6,9 @@ import MobileSidebar from '@/components/layouts/MobileSidebar';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
 import { Toaster } from '@/components/ui/toaster';
+
 const Layout: React.FC = () => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Always start closed
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const navigate = useNavigate();
   const {
@@ -27,9 +28,8 @@ const Layout: React.FC = () => {
     const handleResize = () => {
       if (window.innerWidth < 768) {
         setIsSidebarOpen(false);
-      } else {
-        setIsSidebarOpen(true);
       }
+      // Don't set to true for larger screens to keep sidebar always closed initially
     };
 
     // Set initial state
@@ -42,7 +42,9 @@ const Layout: React.FC = () => {
   if (!isAuthenticated) {
     return null;
   }
-  return <div className="min-h-screen bg-background text-foreground py-0 mx-0 rounded px-[10px] my-px">
+  
+  return (
+    <div className="min-h-screen bg-background text-foreground py-0 mx-0 rounded px-[10px] my-px">
       {/* Desktop Sidebar */}
       <Sidebar isOpen={isSidebarOpen} toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} user={user} />
       
@@ -62,6 +64,8 @@ const Layout: React.FC = () => {
       
       {/* Toast notifications */}
       <Toaster />
-    </div>;
+    </div>
+  );
 };
+
 export default Layout;

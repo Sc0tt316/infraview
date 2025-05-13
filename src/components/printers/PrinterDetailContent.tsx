@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card';
 import TabsNavigation from '@/components/printers/printer-detail/TabsNavigation';
 import PrinterOverview from '@/components/printers/printer-detail/PrinterOverview';
 import PrintLogs from '@/components/printers/printer-detail/PrintLogs';
-import ActivityList from '@/components/printers/printer-detail/ActivityList';
+import { useAuth } from '@/context/AuthContext';
 
 interface PrinterDetailContentProps {
   printer: PrinterData;
@@ -15,6 +15,8 @@ interface PrinterDetailContentProps {
 
 const PrinterDetailContent: React.FC<PrinterDetailContentProps> = ({ printer, activeTab, onTabChange }) => {
   const [isRestarting, setIsRestarting] = useState(false);
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin' || user?.role === 'manager';
 
   const handleRestartPrinter = () => {
     setIsRestarting(true);
@@ -34,16 +36,12 @@ const PrinterDetailContent: React.FC<PrinterDetailContentProps> = ({ printer, ac
             printer={printer} 
             isRestarting={isRestarting}
             onRestartPrinter={handleRestartPrinter}
+            isAdmin={isAdmin}
           />
         )}
         {activeTab === 'logs' && (
           <PrintLogs 
             logs={printer.logs || []}
-          />
-        )}
-        {activeTab === 'activity' && (
-          <ActivityList 
-            activities={[]}
           />
         )}
       </div>

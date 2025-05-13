@@ -7,9 +7,9 @@ import PrinterNotFound from './printer-detail/PrinterNotFound';
 import LoadingSpinner from './printer-detail/LoadingSpinner';
 import PrinterOverview from './printer-detail/PrinterOverview';
 import PrintLogs from './printer-detail/PrintLogs';
-import MaintenanceHistory from './printer-detail/MaintenanceHistory';
 import { updatePrinterLevels } from '@/services/printer/management/autoPrinterLevels';
 import { PrinterData } from '@/types/printers';
+import { useAuth } from '@/context/AuthContext';
 
 // Import the missing components with correct props
 import ModalHeader from './printer-detail/ModalHeader';
@@ -29,6 +29,7 @@ const PrinterDetailModal: React.FC<PrinterDetailModalProps> = ({
   const [activeTab, setActiveTab] = useState("overview");
   const [isRestarting, setIsRestarting] = useState(false);
   const [isOpen, setIsOpen] = useState(true);
+  const { user } = useAuth();
   
   const { data: printer, error, isLoading, refetch } = useQuery({
     queryKey: ['printer', printerId],
@@ -94,22 +95,22 @@ const PrinterDetailModal: React.FC<PrinterDetailModalProps> = ({
         return <PrinterOverview 
                  printer={printer} 
                  isRestarting={isRestarting} 
-                 onRestartPrinter={handleRestartPrinter} />;
+                 onRestartPrinter={handleRestartPrinter}
+                 isAdmin={isAdmin} />;
       case "logs":
         return <PrintLogs logs={printer.logs || []} />;
-      case "maintenance":
-        return <MaintenanceHistory printerId={printerId} />;
       default:
         return <PrinterOverview 
                  printer={printer}
                  isRestarting={isRestarting} 
-                 onRestartPrinter={handleRestartPrinter} />;
+                 onRestartPrinter={handleRestartPrinter} 
+                 isAdmin={isAdmin} />;
     }
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[700px] p-0 overflow-hidden bg-slate-900 border-slate-800">
+      <DialogContent className="sm:max-w-[700px] p-0 overflow-hidden">
         <ModalHeader 
           printer={printer} 
           isLoading={isLoading} 
