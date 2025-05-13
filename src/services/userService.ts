@@ -1,71 +1,14 @@
-
 import { apiService } from './api';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/hooks/use-toast';
 import { UserData } from '@/types/user';
 
-// Initialize with mock data if none exists
+// Initialize with empty data if none exists
 const initializeUsers = async () => {
   const existingUsers = await apiService.get<UserData[]>('users');
   if (!existingUsers) {
-    const mockUsers: (UserData & { password: string })[] = [
-      {
-        id: "u1",
-        name: "Alex Johnson",
-        email: "admin@printerverse.com",
-        phone: "+1 (555) 123-4567",
-        role: "admin",
-        department: "IT",
-        status: "active",
-        lastActive: "2 minutes ago",
-        password: "admin123" // Note: In a real app, this would be hashed
-      },
-      {
-        id: "u2",
-        name: "Sarah Miller",
-        email: "user@example.com",
-        phone: "+1 (555) 234-5678",
-        role: "user",
-        department: "Marketing",
-        status: "active",
-        lastActive: "1 hour ago",
-        password: "user123"
-      },
-      {
-        id: "u3",
-        name: "Michael Chen",
-        email: "michael.chen@printerverse.com",
-        phone: "+1 (555) 345-6789",
-        role: "manager",
-        department: "Operations",
-        status: "inactive",
-        lastActive: "3 days ago",
-        password: "manager123"
-      },
-      {
-        id: "u4",
-        name: "Emily Rodriguez",
-        email: "emily.rodriguez@printerverse.com",
-        phone: "+1 (555) 456-7890",
-        role: "user",
-        department: "HR",
-        status: "active",
-        lastActive: "4 hours ago",
-        password: "user456"
-      },
-      {
-        id: "u5",
-        name: "James Wilson",
-        email: "james.wilson@printerverse.com",
-        phone: "+1 (555) 567-8901",
-        role: "manager",
-        department: "Finance",
-        status: "active",
-        lastActive: "Yesterday",
-        password: "manager456"
-      },
-    ];
-    await apiService.post('users', mockUsers);
-    return mockUsers;
+    const emptyUsers: (UserData & { password: string })[] = [];
+    await apiService.post('users', emptyUsers);
+    return emptyUsers;
   }
   return existingUsers;
 };
@@ -86,9 +29,9 @@ export const userService = {
     } catch (error) {
       console.error('Error fetching users:', error);
       toast({
-        variant: "destructive",
         title: "Error",
-        description: "Failed to fetch users. Please try again."
+        description: "Failed to fetch users. Please try again.",
+        variant: "destructive"
       });
       return [];
     }

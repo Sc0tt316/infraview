@@ -1,30 +1,8 @@
 
 import { apiService } from '../api';
-import { toast } from 'sonner';
+import { toast } from '@/hooks/use-toast';
 import { PrintVolumeData } from '@/types/analytics';
-import { format, subDays, eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval } from 'date-fns';
-
-// Generate realistic looking print volume data
-const generatePrintVolumeData = (days: number): PrintVolumeData[] => {
-  const data: PrintVolumeData[] = [];
-  const now = new Date();
-  
-  for (let i = days; i >= 0; i--) {
-    const date = subDays(now, i);
-    const dayOfWeek = date.getDay();
-    
-    // Lower volume on weekends
-    const baseVolume = dayOfWeek === 0 || dayOfWeek === 6 ? 
-      Math.floor(Math.random() * 200) + 50 :  // Weekend (50-250)
-      Math.floor(Math.random() * 800) + 300;  // Weekday (300-1100)
-    
-    data.push({
-      date: format(date, 'yyyy-MM-dd'),
-      volume: baseVolume
-    });
-  }
-  return data;
-};
+import { format, subDays } from 'date-fns';
 
 export const printVolumeService = {
   getPrintVolumeData: async (options?: { timeRange?: string; from?: Date; to?: Date }): Promise<PrintVolumeData[]> => {
@@ -33,8 +11,8 @@ export const printVolumeService = {
       let volumeData = await apiService.get<PrintVolumeData[]>('print-volume');
       
       if (!volumeData || volumeData.length === 0) {
-        // Generate 60 days of data for initial setup
-        volumeData = generatePrintVolumeData(60);
+        // Initialize with empty data
+        volumeData = [];
         await apiService.post('print-volume', volumeData);
       }
       
@@ -66,7 +44,11 @@ export const printVolumeService = {
       return volumeData;
     } catch (error) {
       console.error('Error fetching print volume data:', error);
-      toast.error("Failed to fetch print volume data. Please try again.");
+      toast({
+        title: "Error",
+        description: "Failed to fetch print volume data. Please try again.",
+        variant: "destructive"
+      });
       throw error;
     }
   },

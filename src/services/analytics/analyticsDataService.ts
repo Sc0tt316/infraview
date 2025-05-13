@@ -1,52 +1,34 @@
 
 import { apiService } from '../api';
-import { toast } from 'sonner';
-import { AnalyticsData, DepartmentVolume } from '@/types/analytics';
+import { toast } from '@/hooks/use-toast';
+import { AnalyticsData } from '@/types/analytics';
 
-// Initialize with mock data if none exists
+// Initialize with empty data if none exists
 const initializeAnalyticsData = async () => {
   const existingData = await apiService.get<AnalyticsData>('analytics');
   if (!existingData) {
-    const mockData: AnalyticsData = {
+    const emptyData: AnalyticsData = {
       summary: {
-        totalPrinters: 34,
-        activePrinters: 29,
-        totalVolume: 237854,
-        activeJobs: 7,
-        completedJobs: 2347,
-        failedJobs: 23,
-        totalUsers: 132,
-        departmentVolume: [
-          { department: "Marketing", volume: 34582 },
-          { department: "Finance", volume: 27843 },
-          { department: "HR", volume: 14950 },
-          { department: "IT", volume: 42801 },
-          { department: "Operations", volume: 38762 },
-          { department: "Sales", volume: 31250 },
-          { department: "Legal", volume: 19837 },
-          { department: "Executive", volume: 8950 }
-        ]
+        totalPrinters: 0,
+        activePrinters: 0,
+        totalVolume: 0,
+        activeJobs: 0,
+        completedJobs: 0,
+        failedJobs: 0,
+        totalUsers: 0,
+        departmentVolume: []
       },
       printerStatus: {
-        online: 29,
-        offline: 2,
-        error: 1,
-        warning: 2,
+        online: 0,
+        offline: 0,
+        error: 0,
+        warning: 0,
         maintenance: 0
       },
-      departmentVolume: [
-        { department: "Marketing", volume: 34582 },
-        { department: "Finance", volume: 27843 },
-        { department: "HR", volume: 14950 },
-        { department: "IT", volume: 42801 },
-        { department: "Operations", volume: 38762 },
-        { department: "Sales", volume: 31250 },
-        { department: "Legal", volume: 19837 },
-        { department: "Executive", volume: 8950 }
-      ]
+      departmentVolume: []
     };
-    await apiService.post('analytics', mockData);
-    return mockData;
+    await apiService.post('analytics', emptyData);
+    return emptyData;
   }
   return existingData;
 };
@@ -58,7 +40,11 @@ export const analyticsDataService = {
       return await initializeAnalyticsData();
     } catch (error) {
       console.error('Error fetching analytics data:', error);
-      toast.error("Failed to fetch analytics data. Please try again.");
+      toast({
+        title: "Error",
+        description: "Failed to fetch analytics data. Please try again.",
+        variant: "destructive"
+      });
       throw error;
     }
   }

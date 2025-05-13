@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/context/AuthContext';
-import { toast } from 'sonner';
+import { toast } from '@/hooks/use-toast';
 import { useTheme } from '@/context/ThemeContext';
 
 const Login: React.FC = () => {
@@ -41,7 +41,9 @@ const Login: React.FC = () => {
       const success = await login(email, password);
       
       if (success) {
-        toast.success('Login successful');
+        toast({
+          title: 'Login successful'
+        });
         navigate('/');
       } else {
         setError('Invalid email or password');
