@@ -20,9 +20,10 @@ export function Toaster() {
         // We need to check if type is a valid value for the Toast component
         const validProps = { ...props };
         
-        // Only pass type if it's one of the valid values
-        if (type === 'foreground' || type === 'background') {
-          (validProps as any).type = type;
+        // Convert type to string to safely compare with allowed values
+        const typeString = String(type);
+        if (typeString === 'foreground' || typeString === 'background') {
+          (validProps as any).type = typeString;
         }
         
         return (
