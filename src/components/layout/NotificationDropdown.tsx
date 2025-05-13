@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { Bell } from "lucide-react";
+import { Bell, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { 
   DropdownMenu,
@@ -15,7 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { notificationService, Notification } from "@/services/notificationService";
 import { formatDistanceToNow } from "date-fns";
-import { toast } from "sonner";
+import { toast } from "@/hooks/use-toast";
 
 const NotificationDropdown = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -73,13 +73,29 @@ const NotificationDropdown = () => {
             navigate('/');
         }
         
-        toast.success(`Navigating to ${type} page`);
+        toast({
+          title: "Success",
+          description: `Navigating to ${type} page`
+        });
         setOpen(false);
       } catch (error) {
         console.error("Navigation error:", error);
-        toast.error("Failed to navigate to the requested page");
+        toast({
+          title: "Error",
+          description: "Failed to navigate to the requested page"
+        });
       }
     }
+  };
+  
+  const handleClearAllNotifications = () => {
+    notificationService.clearAllNotifications();
+    setNotifications([]);
+    setUnreadCount(0);
+    toast({
+      title: "Success",
+      description: "All notifications have been cleared"
+    });
   };
 
   return (
@@ -101,22 +117,35 @@ const NotificationDropdown = () => {
         <DropdownMenuLabel className="font-normal">
           <div className="flex items-center justify-between">
             <span className="font-bold">Notifications</span>
-            {notifications.length > 0 && (
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="h-auto p-0 text-xs text-blue-500"
-                onClick={() => {
-                  notificationService.markAllAsRead();
-                  setNotifications(prev => 
-                    prev.map(notification => ({ ...notification, read: true }))
-                  );
-                  setUnreadCount(0);
-                }}
-              >
-                Mark all as read
-              </Button>
-            )}
+            <div className="flex space-x-2">
+              {notifications.length > 0 && (
+                <>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-auto p-0 text-xs text-blue-500"
+                    onClick={() => {
+                      notificationService.markAllAsRead();
+                      setNotifications(prev => 
+                        prev.map(notification => ({ ...notification, read: true }))
+                      );
+                      setUnreadCount(0);
+                    }}
+                  >
+                    Mark all as read
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-auto p-0 text-xs text-red-500 flex items-center"
+                    onClick={handleClearAllNotifications}
+                  >
+                    <Trash2 className="h-3 w-3 mr-1" />
+                    Clear all
+                  </Button>
+                </>
+              )}
+            </div>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
@@ -137,7 +166,7 @@ const NotificationDropdown = () => {
                   <div className="flex items-center justify-between">
                     <p className="font-medium text-sm">{notification.title}</p>
                     <p className="text-xs text-muted-foreground">
-                      {formatDistanceToNow(notification.timestamp, { addSuffix: true })}
+                      {formatDistanceToNow(new Date(notification.timestamp), { addSuffix: true })}
                     </p>
                   </div>
                   <p className="text-xs text-muted-foreground">{notification.message}</p>

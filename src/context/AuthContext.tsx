@@ -1,105 +1,173 @@
 
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { User } from '@/types/user';
+import { User, LoginCredentials } from '@/types/user';
+import { toast } from '@/hooks/use-toast';
 
 interface AuthContextType {
   user: User | null;
-  isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (credentials: LoginCredentials) => Promise<boolean>;
   logout: () => void;
-  updatePassword: (newPassword: string) => void;
+  isAuthenticated: boolean;
+  updatePassword: (password: string) => void;
+  updateProfile: (data: Partial<User>) => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
-  isAuthenticated: false,
   login: async () => false,
   logout: () => {},
+  isAuthenticated: false,
   updatePassword: () => {},
+  updateProfile: () => {},
 });
 
 export const useAuth = () => useContext(AuthContext);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(true);
-
-  // Check for existing user on mount
+  
+  // Initialize user from localStorage on mount
   useEffect(() => {
-    const checkAuth = () => {
-      const storedUser = localStorage.getItem('user');
-      if (storedUser) {
-        try {
-          setUser(JSON.parse(storedUser));
-          setIsAuthenticated(true);
-        } catch (error) {
-          console.error('Failed to parse user data:', error);
-        }
+    const storedUser = localStorage.getItem('current_user');
+    if (storedUser) {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        setUser(parsedUser);
+        setIsAuthenticated(true);
+      } catch (e) {
+        console.error('Failed to parse user from localStorage', e);
+        localStorage.removeItem('current_user');
       }
-      setLoading(false);
-    };
-
-    checkAuth();
+    }
   }, []);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  // Mock login function
+  const login = async (credentials: LoginCredentials): Promise<boolean> => {
     try {
-      // For demo purposes, hardcode some user data
-      // In a real app, you would make an API call
-      if (email === 'admin@example.com' && password === 'password') {
-        const userData: User = {
-          id: '1',
+      // This would normally be an API call
+      const mockUsers = [
+        {
+          id: 'u1',
           name: 'Admin User',
           email: 'admin@example.com',
           role: 'admin',
-        };
-        localStorage.setItem('user', JSON.stringify(userData));
-        localStorage.setItem('user_password', 'password');  // Store password for demo purposes
-        setUser(userData);
-        setIsAuthenticated(true);
-        return true;
-      }
-
-      if (email === 'user@example.com' && password === 'password') {
-        const userData: User = {
-          id: '2',
+          department: 'IT',
+          password: 'admin123',
+          profileImage: ''
+        },
+        {
+          id: 'u2',
           name: 'Regular User',
           email: 'user@example.com',
           role: 'user',
+          department: 'Marketing',
+          password: 'user123',
+          profileImage: ''
+        }
+      ];
+      
+      const foundUser = mockUsers.find(
+        u => u.email === credentials.email && u.password === credentials.password
+      );
+      
+      if (foundUser) {
+        // Remove password before setting user
+        const { password, ...secureUser } = foundUser;
+        
+        // Restore profile image if it was saved in local storage
+        const storedUser = localStorage.getItem('user_profile_' + foundUser.id);
+        let profileImage = '';
+        
+        if (storedUser) {
+          try {
+            const parsedUser = JSON.parse(storedUser);
+            profileImage = parsedUser.profileImage || '';
+          } catch (e) {
+            console.error('Failed to parse stored user profile', e);
+          }
+        }
+        
+        const userWithProfile = {
+          ...secureUser,
+          profileImage
         };
-        localStorage.setItem('user', JSON.stringify(userData));
-        localStorage.setItem('user_password', 'password');  // Store password for demo purposes
-        setUser(userData);
+        
+        setUser(userWithProfile as User);
         setIsAuthenticated(true);
+        localStorage.setItem('current_user', JSON.stringify(userWithProfile));
+        
+        toast({
+          title: "Login Successful",
+          description: `Welcome back, ${foundUser.name}!`,
+        });
+        
         return true;
+      } else {
+        toast({
+          title: "Login Failed",
+          description: "Invalid email or password. Please try again.",
+        });
+        return false;
       }
-
-      return false;
     } catch (error) {
-      console.error('Login failed:', error);
+      console.error('Login error:', error);
+      toast({
+        title: "Login Error",
+        description: "An unexpected error occurred. Please try again later.",
+      });
       return false;
     }
   };
-
+  
   const logout = () => {
-    localStorage.removeItem('user');
     setUser(null);
     setIsAuthenticated(false);
+    localStorage.removeItem('current_user');
+    
+    toast({
+      title: "Logged Out",
+      description: "You have been successfully logged out."
+    });
   };
-
-  const updatePassword = (newPassword: string) => {
-    // In a real app, you would make an API call to update the password
-    // Here we just store it in localStorage for demo purposes
-    localStorage.setItem('user_password', newPassword);
+  
+  const updatePassword = (password: string) => {
+    // In a real app, this would call an API to update the password
+    console.log('Password updated:', password);
+    
+    toast({
+      title: "Password Updated",
+      description: "Your password has been successfully updated."
+    });
   };
-
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-
+  
+  const updateProfile = (data: Partial<User>) => {
+    if (!user) return;
+    
+    const updatedUser = { ...user, ...data };
+    setUser(updatedUser);
+    
+    // Save to localStorage for persistence
+    localStorage.setItem('current_user', JSON.stringify(updatedUser));
+    
+    // Also save to a user-specific storage key for better persistence across logins
+    localStorage.setItem('user_profile_' + user.id, JSON.stringify(updatedUser));
+    
+    toast({
+      title: "Profile Updated",
+      description: "Your profile has been successfully updated."
+    });
+  };
+  
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, login, logout, updatePassword }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      login, 
+      logout, 
+      isAuthenticated,
+      updatePassword,
+      updateProfile
+    }}>
       {children}
     </AuthContext.Provider>
   );

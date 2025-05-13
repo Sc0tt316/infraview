@@ -22,7 +22,7 @@ interface ExtendedUser {
 }
 
 const Settings = () => {
-  const { user, updatePassword, logout } = useAuth();
+  const { user, updatePassword, logout, updateProfile } = useAuth();
   const extendedUser = user as ExtendedUser | null;
   
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
@@ -38,7 +38,6 @@ const Settings = () => {
       toast({
         title: "Error",
         description: "Please enter a new password",
-        variant: "destructive"
       });
       return;
     }
@@ -47,7 +46,6 @@ const Settings = () => {
       toast({
         title: "Error",
         description: "Passwords do not match",
-        variant: "destructive"
       });
       return;
     }
@@ -66,13 +64,14 @@ const Settings = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // In a real app, you'd upload to storage and get a URL
-    // For now, we'll use a file reader to get a base64 string
     const reader = new FileReader();
     reader.onload = () => {
       if (typeof reader.result === 'string') {
         setProfileImage(reader.result);
-        // Instead of calling updateProfile directly
+        
+        // Update profile in context and localStorage for persistence
+        updateProfile({ profileImage: reader.result });
+        
         toast({
           title: "Success",
           description: "Profile image updated successfully"

@@ -12,6 +12,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Alert } from '@/types/alerts';
+import { useAuth } from '@/context/AuthContext';
 
 interface AlertDetailsDialogProps {
   alert: Alert | null;
@@ -26,6 +27,9 @@ const AlertDetailsDialog: React.FC<AlertDetailsDialogProps> = ({
   onClose,
   onResolve
 }) => {
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
+  
   if (!alert) return null;
 
   // Function to render severity badge
@@ -136,7 +140,7 @@ const AlertDetailsDialog: React.FC<AlertDetailsDialogProps> = ({
           <Button variant="outline" onClick={onClose}>
             Close
           </Button>
-          {!alert.isResolved && (
+          {!alert.isResolved && isAdmin && (
             <Button onClick={() => onResolve(alert.id)}>
               Mark as Resolved
             </Button>

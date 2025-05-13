@@ -7,7 +7,8 @@ export interface User {
   department?: string;
   phone?: string;
   status?: 'active' | 'inactive' | 'pending';
-  lastActive?: string; // Add lastActive field to fix errors in userService
+  lastActive?: string;
+  profileImage?: string;
 }
 
 export interface UserData {
@@ -20,7 +21,8 @@ export interface UserData {
   status: 'active' | 'inactive' | 'pending';
   createdAt?: string;
   lastLogin?: string;
-  lastActive?: string; // Add lastActive field to fix errors in userService
+  lastActive?: string;
+  profileImage?: string;
 }
 
 export interface LoginCredentials {

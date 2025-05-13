@@ -152,7 +152,7 @@ function toast({ id: toastId, ...props }: Toast) {
   })
 
   // Show toast using sonner
-  sonnerToast(props.title, {
+  sonnerToast(props.title as string, {
     id,
     description: props.description,
     action: props.action,

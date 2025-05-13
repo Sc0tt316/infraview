@@ -17,10 +17,10 @@ class NotificationService {
   getNotifications(): Notification[] {
     try {
       const stored = localStorage.getItem(this.STORAGE_KEY);
-      return stored ? JSON.parse(stored) : this.generateMockNotifications();
+      return stored ? JSON.parse(stored) : [];
     } catch (error) {
       console.error('Error retrieving notifications:', error);
-      return this.generateMockNotifications();
+      return [];
     }
   }
   
@@ -71,60 +71,16 @@ class NotificationService {
     this.saveNotifications(updatedNotifications);
   }
   
+  clearAllNotifications(): void {
+    this.saveNotifications([]);
+  }
+  
   private saveNotifications(notifications: Notification[]): void {
     try {
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(notifications));
     } catch (error) {
       console.error('Error saving notifications:', error);
     }
-  }
-  
-  private generateMockNotifications(): Notification[] {
-    return [
-      {
-        id: uuidv4(),
-        title: 'Low Toner Alert',
-        message: 'Printer HP LaserJet 4200 is low on toner. Please replace soon.',
-        timestamp: new Date(Date.now() - 30 * 60 * 1000),
-        read: false,
-        type: 'printer',
-        resourceId: '1'
-      },
-      {
-        id: uuidv4(),
-        title: 'New User Added',
-        message: 'User Sarah Johnson has been added to the system.',
-        timestamp: new Date(Date.now() - 3 * 60 * 60 * 1000),
-        read: false,
-        type: 'user',
-        resourceId: '3'
-      },
-      {
-        id: uuidv4(),
-        title: 'System Maintenance',
-        message: 'Scheduled maintenance will occur tonight at 11 PM.',
-        timestamp: new Date(Date.now() - 12 * 60 * 60 * 1000),
-        read: true,
-        type: 'alert'
-      },
-      {
-        id: uuidv4(),
-        title: 'Print Job Error',
-        message: 'Print job failed for document "Annual Report.pdf".',
-        timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-        read: true,
-        type: 'printer',
-        resourceId: '2'
-      },
-      {
-        id: uuidv4(),
-        title: 'Usage Report Available',
-        message: 'Monthly printer usage report is now available.',
-        timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
-        read: true,
-        type: 'analytics'
-      }
-    ];
   }
 }
 
