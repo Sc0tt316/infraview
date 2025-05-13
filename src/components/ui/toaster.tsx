@@ -15,9 +15,13 @@ export function Toaster() {
 
   return (
     <ToastProvider>
-      {toasts.map(function ({ id, title, description, action, ...props }) {
+      {toasts.map(function ({ id, title, description, action, type, ...props }) {
+        // Ensure we only pass valid types to the Toast component
+        // Omit 'type' if it's not 'foreground' or 'background'
+        const validType = type === 'foreground' || type === 'background' ? { type } : {};
+        
         return (
-          <Toast key={id} {...props}>
+          <Toast key={id} {...validType} {...props}>
             <div className="grid gap-1">
               {title && <ToastTitle>{title}</ToastTitle>}
               {description && (
