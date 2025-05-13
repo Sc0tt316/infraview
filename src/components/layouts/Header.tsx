@@ -4,7 +4,7 @@ import { Menu, Sun, Moon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/context/ThemeContext';
 import { useLocation } from 'react-router-dom';
-import NotificationDropdown from './NotificationDropdown';
+import NotificationDropdown from '@/components/layout/NotificationDropdown';
 
 interface HeaderProps {
   toggleSidebar: () => void;

@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface TabsNavigationProps {
   activeTab: string;
@@ -10,29 +10,19 @@ interface TabsNavigationProps {
 const TabsNavigation: React.FC<TabsNavigationProps> = ({ activeTab, onTabChange }) => {
   return (
     <div className="px-6">
-      <TabsList className="w-full">
-        <TabsTrigger 
-          value="overview" 
-          className="flex-1"
-          onClick={() => onTabChange('overview')}
-        >
-          Overview
-        </TabsTrigger>
-        <TabsTrigger 
-          value="logs" 
-          className="flex-1"
-          onClick={() => onTabChange('logs')}
-        >
-          Print Logs
-        </TabsTrigger>
-        <TabsTrigger 
-          value="activity" 
-          className="flex-1"
-          onClick={() => onTabChange('activity')}
-        >
-          Activity
-        </TabsTrigger>
-      </TabsList>
+      <Tabs value={activeTab} onValueChange={onTabChange}>
+        <TabsList className="w-full">
+          <TabsTrigger value="overview" className="flex-1">
+            Overview
+          </TabsTrigger>
+          <TabsTrigger value="logs" className="flex-1">
+            Print Logs
+          </TabsTrigger>
+          <TabsTrigger value="activity" className="flex-1">
+            Activity
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
     </div>
   );
 };
