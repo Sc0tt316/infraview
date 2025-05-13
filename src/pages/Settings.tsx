@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,67 +19,65 @@ interface ExtendedUser {
   department?: string;
   profileImage?: string;
 }
-
 const Settings = () => {
-  const { user, updatePassword, logout, updateProfile } = useAuth();
+  const {
+    user,
+    updatePassword,
+    logout,
+    updateProfile
+  } = useAuth();
   const extendedUser = user as ExtendedUser | null;
-  
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [profileImage, setProfileImage] = useState(extendedUser?.profileImage || '');
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
   const handlePasswordChange = (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!oldPassword) {
       toast({
         title: "Error",
-        description: "Please enter your current password",
+        description: "Please enter your current password"
       });
       return;
     }
-    
     if (!newPassword) {
       toast({
         title: "Error",
-        description: "Please enter a new password",
+        description: "Please enter a new password"
       });
       return;
     }
-    
     if (newPassword !== confirmPassword) {
       toast({
         title: "Error",
-        description: "Passwords do not match",
+        description: "Passwords do not match"
       });
       return;
     }
-    
+
     // Verify old password before updating
     updatePassword(oldPassword, newPassword);
-    
+
     // Reset form and close modal
     setIsPasswordModalOpen(false);
     setOldPassword('');
     setNewPassword('');
     setConfirmPassword('');
   };
-
   const handleProfileImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     const reader = new FileReader();
     reader.onload = () => {
       if (typeof reader.result === 'string') {
         setProfileImage(reader.result);
-        
+
         // Update profile in context and localStorage for persistence
-        updateProfile({ profileImage: reader.result });
-        
+        updateProfile({
+          profileImage: reader.result
+        });
         toast({
           title: "Success",
           description: "Profile image updated successfully"
@@ -89,18 +86,13 @@ const Settings = () => {
     };
     reader.readAsDataURL(file);
   };
-
   const triggerFileInput = () => {
     fileInputRef.current?.click();
   };
-
-  return (
-    <div className="max-w-4xl mx-auto space-y-8">
+  return <div className="max-w-4xl mx-auto space-y-8">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
-        <p className="text-muted-foreground">
-          Manage your account settings and preferences.
-        </p>
+        
+        
       </div>
 
       <Tabs defaultValue="account" className="w-full">
@@ -131,28 +123,12 @@ const Settings = () => {
                         {extendedUser?.name?.charAt(0) || 'U'}
                       </AvatarFallback>
                     </Avatar>
-                    <Button 
-                      variant="secondary" 
-                      size="icon" 
-                      className="absolute bottom-0 right-0 rounded-full shadow-md"
-                      onClick={triggerFileInput}
-                    >
+                    <Button variant="secondary" size="icon" className="absolute bottom-0 right-0 rounded-full shadow-md" onClick={triggerFileInput}>
                       <Camera size={14} />
                     </Button>
-                    <input 
-                      type="file" 
-                      ref={fileInputRef} 
-                      className="hidden" 
-                      accept="image/*"
-                      onChange={handleProfileImageUpload}
-                    />
+                    <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleProfileImageUpload} />
                   </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="flex items-center"
-                    onClick={triggerFileInput}
-                  >
+                  <Button variant="outline" size="sm" className="flex items-center" onClick={triggerFileInput}>
                     <Upload className="mr-1 h-3 w-3" />
                     Change Photo
                   </Button>
@@ -232,30 +208,15 @@ const Settings = () => {
             <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label htmlFor="old-password">Current Password</Label>
-                <Input
-                  id="old-password"
-                  type="password"
-                  value={oldPassword}
-                  onChange={(e) => setOldPassword(e.target.value)}
-                />
+                <Input id="old-password" type="password" value={oldPassword} onChange={e => setOldPassword(e.target.value)} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="new-password">New Password</Label>
-                <Input
-                  id="new-password"
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                />
+                <Input id="new-password" type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="confirm-password">Confirm Password</Label>
-                <Input
-                  id="confirm-password"
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                />
+                <Input id="confirm-password" type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} />
               </div>
             </div>
             <DialogFooter>
@@ -267,8 +228,6 @@ const Settings = () => {
           </form>
         </DialogContent>
       </Dialog>
-    </div>
-  );
+    </div>;
 };
-
 export default Settings;
