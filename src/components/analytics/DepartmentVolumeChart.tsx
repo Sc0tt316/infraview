@@ -42,9 +42,8 @@ const DepartmentVolumeChart: React.FC<DepartmentVolumeChartProps> = ({
             const currentCount = departmentMap.get(printer.department) || 0;
             departmentMap.set(printer.department, currentCount + 1);
             
-            // Calculate volume based on print history if available
-            const printVolume = printer.printHistory?.reduce((sum, job) => sum + (job.pages || 0), 0) || 
-              printer.usageStats?.totalPages || 
+            // Calculate volume based on stats if available or use a random value
+            const printVolume = (printer.stats?.totalPages || printer.stats?.monthlyPages || 0) || 
               (Math.floor(Math.random() * 1000) + 500);
             
             const currentVolume = volumeMap.get(printer.department) || 0;

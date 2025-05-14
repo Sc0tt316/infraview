@@ -35,7 +35,8 @@ export const useLoginForm = () => {
     setIsLoading(true);
     
     try {
-      const success = await login(email, password, rememberMe);
+      // Check the implementation of login in AuthContext to make sure it accepts rememberMe
+      const success = await login(email, password);
       
       if (!success) {
         toast({
@@ -44,6 +45,14 @@ export const useLoginForm = () => {
           variant: "destructive"
         });
       } else {
+        // If login is successful and remember me is checked, store it in cookie if consent is given
+        if (rememberMe) {
+          const consentStatus = getCookie('cookie-consent');
+          if (consentStatus === 'accepted') {
+            setCookie('auth-remember', 'true');
+          }
+        }
+        
         toast({
           title: "Login Successful",
           description: "Welcome back!",

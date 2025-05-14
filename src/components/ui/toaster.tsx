@@ -21,9 +21,11 @@ export function Toaster() {
         const validProps = { ...props };
         
         // Convert type to string and safely compare with valid types
+        // Instead of setting variant directly on the props, we'll set it on validProps
         if (typeof type === 'string') {
           const typeValue = String(type);
           if (typeValue === 'default' || typeValue === 'destructive') {
+            // Store this separately since 'variant' isn't directly accepted by sonner
             validProps.variant = typeValue;
           }
         }

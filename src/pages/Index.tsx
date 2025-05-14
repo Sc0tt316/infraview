@@ -15,7 +15,7 @@ import { getCookie } from '@/lib/cookie';
 const Index: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { printers = [], refetchPrinters } = usePrinters();
+  const { printers = [], refetch: refetchPrinters } = usePrinters();
   const [alerts, setAlerts] = useState([]);
   
   // Auto-refresh interval in milliseconds (30 seconds)
