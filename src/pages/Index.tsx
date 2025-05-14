@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import MainDashboard from '@/components/dashboard/MainDashboard';
@@ -7,6 +7,7 @@ import { usePrinters } from '@/hooks/usePrinters';
 import { useQuery } from '@tanstack/react-query';
 import { printerService } from '@/services/printer';
 import { analyticsService } from '@/services/analytics';
+import { getCookie } from '@/lib/cookie';
 
 /**
  * Index page that serves as the main dashboard
@@ -14,29 +15,56 @@ import { analyticsService } from '@/services/analytics';
 const Index: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { printers = [] } = usePrinters();
+  const { printers = [], refetchPrinters } = usePrinters();
   const [alerts, setAlerts] = useState([]);
+  
+  // Auto-refresh interval in milliseconds (30 seconds)
+  const AUTO_REFRESH_INTERVAL = 30000;
 
   // Fetch recent activities
-  const { data: recentActivities = [] } = useQuery({
+  const { data: recentActivities = [], refetch: refetchActivities } = useQuery({
     queryKey: ['recentActivities'],
     queryFn: () => printerService.getAllActivities(),
   });
 
+  // Function to refresh all dashboard data
+  const refreshDashboardData = useCallback(async () => {
+    try {
+      await Promise.all([
+        refetchPrinters(),
+        refetchActivities(),
+        fetchAlerts()
+      ]);
+    } catch (error) {
+      console.error('Error refreshing dashboard data:', error);
+    }
+  }, [refetchPrinters, refetchActivities]);
+
   // Fetch alerts
+  const fetchAlerts = async () => {
+    try {
+      const alertsData = await analyticsService.getAlerts({ limit: 5 });
+      setAlerts(alertsData || []);
+    } catch (error) {
+      console.error('Error fetching alerts:', error);
+      setAlerts([]);
+    }
+  };
+  
+  // Set up auto-refresh for dashboard
   useEffect(() => {
-    const fetchAlerts = async () => {
-      try {
-        const alertsData = await analyticsService.getAlerts({ limit: 5 });
-        setAlerts(alertsData || []);
-      } catch (error) {
-        console.error('Error fetching alerts:', error);
-        setAlerts([]);
-      }
-    };
-    
     fetchAlerts();
-  }, []);
+    
+    // Only set up auto-refresh if cookies are accepted
+    const consentStatus = getCookie('cookie-consent');
+    if (consentStatus !== 'accepted') return;
+    
+    const intervalId = setInterval(() => {
+      refreshDashboardData();
+    }, AUTO_REFRESH_INTERVAL);
+    
+    return () => clearInterval(intervalId);
+  }, [refreshDashboardData]);
 
   // Handler to navigate to the alerts page
   const handleViewAllAlerts = () => {

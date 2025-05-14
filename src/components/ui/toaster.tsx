@@ -20,10 +20,12 @@ export function Toaster() {
         // We need to check if type is a valid value for the Toast component
         const validProps = { ...props };
         
-        // Convert type to string to safely compare with allowed values
-        const typeString = String(type);
-        if (typeString === 'foreground' || typeString === 'background') {
-          (validProps as any).type = typeString;
+        // Convert type to string and safely compare with valid types
+        if (typeof type === 'string') {
+          const typeValue = String(type);
+          if (typeValue === 'default' || typeValue === 'destructive') {
+            validProps.variant = typeValue;
+          }
         }
         
         return (

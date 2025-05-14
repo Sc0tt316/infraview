@@ -80,31 +80,32 @@ const Analytics = () => {
       
       <StatsSummaryCards analyticsData={analyticsData} />
       
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Changed from grid to flex column layout */}
+      <div className="flex flex-col gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Print Volume</CardTitle>
-            <CardDescription>Daily print volume over selected period</CardDescription>
+            <CardTitle>Department Usage</CardTitle>
+            <CardDescription>Print volume by department</CardDescription>
           </CardHeader>
-          <CardContent className="h-80">
-            <PrintVolumeChart 
-              timeRange={timeRange}
-              setTimeRange={setTimeRange}
-              volumeData={volumeData}
-              isLoading={isVolumeLoading}
+          <CardContent className="h-96">
+            <DepartmentVolumeChart 
+              departmentData={analyticsData?.departmentVolume} 
+              isLoading={isAnalyticsLoading} 
             />
           </CardContent>
         </Card>
         
         <Card>
           <CardHeader>
-            <CardTitle>Department Usage</CardTitle>
-            <CardDescription>Print volume by department</CardDescription>
+            <CardTitle>Print Volume</CardTitle>
+            <CardDescription>Daily print volume over selected period</CardDescription>
           </CardHeader>
-          <CardContent className="h-80">
-            <DepartmentVolumeChart 
-              departmentData={analyticsData?.departmentVolume} 
-              isLoading={isAnalyticsLoading} 
+          <CardContent className="h-96">
+            <PrintVolumeChart 
+              timeRange={timeRange}
+              setTimeRange={setTimeRange}
+              volumeData={volumeData}
+              isLoading={isVolumeLoading}
             />
           </CardContent>
         </Card>

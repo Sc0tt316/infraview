@@ -1,5 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { getCookie, setCookie } from '@/lib/cookie';
 
 type Theme = 'light' | 'dark';
 
@@ -11,20 +12,27 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider: React.FC<{children: React.ReactNode}> = ({ children }) => {
-  const [theme, setTheme] = useState<Theme>('light');
+  const [theme, setTheme] = useState<Theme>('light'); // Default to light theme
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  // Load theme from localStorage on mount
+  // Load theme on mount
   useEffect(() => {
-    const savedTheme = localStorage.getItem('theme') as Theme;
-    if (savedTheme) {
-      setTheme(savedTheme);
-      applyTheme(savedTheme);
+    // First check if the user has a theme preference saved in a cookie
+    const cookieTheme = getCookie('theme') as Theme | null;
+    
+    // Then check for system preference if no cookie
+    if (cookieTheme) {
+      setTheme(cookieTheme);
+      applyTheme(cookieTheme);
     } else {
-      // Default to light theme
-      setTheme('light');
-      applyTheme('light');
-      localStorage.setItem('theme', 'light');
+      // Check system preference
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const defaultTheme = prefersDark ? 'dark' : 'light';
+      setTheme(defaultTheme);
+      applyTheme(defaultTheme);
     }
+    
+    setIsInitialized(true);
   }, []);
 
   const applyTheme = (newTheme: Theme) => {
@@ -38,13 +46,18 @@ export const ThemeProvider: React.FC<{children: React.ReactNode}> = ({ children 
   const toggleTheme = () => {
     const newTheme = theme === 'light' ? 'dark' : 'light';
     setTheme(newTheme);
-    localStorage.setItem('theme', newTheme);
     applyTheme(newTheme);
+    
+    // Save user preference in a cookie
+    const consentStatus = getCookie('cookie-consent');
+    if (consentStatus === 'accepted') {
+      setCookie('theme', newTheme, 365);
+    }
   };
 
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>
-      {children}
+      {isInitialized ? children : null}
     </ThemeContext.Provider>
   );
 };
