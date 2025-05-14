@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -6,11 +7,14 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
 import { User } from '@/types/user';
 import { useTheme } from '@/context/ThemeContext';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+
 interface SidebarProps {
   isOpen: boolean;
   toggleSidebar: () => void;
   user: User | null;
 }
+
 const Sidebar: React.FC<SidebarProps> = ({
   isOpen,
   toggleSidebar,
@@ -22,9 +26,11 @@ const Sidebar: React.FC<SidebarProps> = ({
   const {
     theme
   } = useTheme();
+  
   const handleLogout = () => {
     logout();
   };
+  
   const navigation = [{
     name: 'Dashboard',
     href: '/',
@@ -57,6 +63,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     }
     return `${nameParts[0].charAt(0)}${nameParts[1].charAt(0)}`;
   };
+  
   return <aside className={cn("fixed inset-y-0 left-0 z-50 flex flex-col transition-transform duration-300 bg-card border-r border-border", isOpen ? "translate-x-0 w-64" : "-translate-x-full md:translate-x-0 md:w-20")}>
       {/* Logo and Brand */}
       <div className="flex h-16 items-center px-4 border-b border-border py-0 mx-0 my-0">
@@ -84,9 +91,12 @@ const Sidebar: React.FC<SidebarProps> = ({
       <div className="p-4 border-t border-border py-[20px] px-[4px]">
         <div className={cn("flex items-center", isOpen ? "justify-between" : "flex-col")}>
           <div className={cn("flex", isOpen ? "items-center" : "flex-col items-center")}>
-            <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary px-[15px]">
-              {getUserInitials()}
-            </div>
+            <Avatar className="h-8 w-8">
+              <AvatarImage src={user?.profileImage || ''} alt={user?.name || ''} />
+              <AvatarFallback className="bg-primary/20 text-primary">
+                {getUserInitials()}
+              </AvatarFallback>
+            </Avatar>
             {isOpen && <div className="ml-3">
                 <p className="text-sm font-medium text-foreground">
                   {user?.name || 'Anonymous User'}
@@ -111,4 +121,5 @@ const Sidebar: React.FC<SidebarProps> = ({
       </div>
     </aside>;
 };
+
 export default Sidebar;

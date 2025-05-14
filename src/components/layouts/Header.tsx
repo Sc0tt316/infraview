@@ -79,7 +79,9 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, openMobileSidebar }) => 
             size="icon"
             onClick={toggleTheme}
             className="rounded-full"
+            title={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
           >
+            {/* Show the opposite icon of the current theme */}
             {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
           </Button>
           

@@ -18,6 +18,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
 import { User } from '@/types/user';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface MobileSidebarProps {
   isOpen: boolean;
@@ -92,9 +93,12 @@ const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOpen, onClose, user }) 
           
           <div className="p-4 border-t border-border">
             <div className="flex items-center mb-4">
-              <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary">
-                {getUserInitials()}
-              </div>
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={user?.profileImage || ''} alt={user?.name || ''} />
+                <AvatarFallback className="bg-primary/20 text-primary">
+                  {getUserInitials()}
+                </AvatarFallback>
+              </Avatar>
               <div className="ml-3">
                 <p className="text-sm font-medium text-foreground">{user?.name || 'Anonymous User'}</p>
                 <p className="text-xs text-muted-foreground">{user?.email || 'no-email@example.com'}</p>
