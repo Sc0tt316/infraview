@@ -26,8 +26,7 @@ export const useLoginForm = () => {
     if (!email || !password) {
       toast({
         title: "Error",
-        description: "Please enter both email and password.",
-        variant: "destructive",
+        description: "Please enter both email and password."
       });
       return;
     }
@@ -35,14 +34,13 @@ export const useLoginForm = () => {
     setIsLoading(true);
     
     try {
-      // The login function in AuthContext expects only email and password
+      // Pass email and password to login function
       const success = await login(email, password);
       
       if (!success) {
         toast({
           title: "Login Failed",
-          description: "Invalid email or password. Please try again.",
-          variant: "destructive"
+          description: "Invalid email or password. Please try again."
         });
       } else {
         // If login is successful and remember me is checked, store it in cookie if consent is given
@@ -55,15 +53,14 @@ export const useLoginForm = () => {
         
         toast({
           title: "Login Successful",
-          description: "Welcome back!",
+          description: "Welcome back!"
         });
       }
     } catch (error) {
       console.error('Login error:', error);
       toast({
         title: "Login Error",
-        description: "An unexpected error occurred. Please try again.",
-        variant: "destructive"
+        description: "An unexpected error occurred. Please try again."
       });
     } finally {
       setIsLoading(false);

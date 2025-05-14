@@ -51,20 +51,23 @@ const Index: React.FC = () => {
     }
   };
   
-  // Set up auto-refresh for dashboard
+  // Set up auto-refresh for dashboard with improved cleanup and dependencies
   useEffect(() => {
+    // Fetch initial data
     fetchAlerts();
     
     // Only set up auto-refresh if cookies are accepted
     const consentStatus = getCookie('cookie-consent');
     if (consentStatus !== 'accepted') return;
     
-    const intervalId = setInterval(() => {
-      refreshDashboardData();
-    }, AUTO_REFRESH_INTERVAL);
+    // Setup interval with proper cleanup
+    const intervalId = setInterval(refreshDashboardData, AUTO_REFRESH_INTERVAL);
     
-    return () => clearInterval(intervalId);
-  }, [refreshDashboardData]);
+    // Cleanup function to clear interval
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [refreshDashboardData]); // Only refreshDashboardData as dependency
 
   // Handler to navigate to the alerts page
   const handleViewAllAlerts = () => {

@@ -1,27 +1,29 @@
+
 import React, { useState, useEffect } from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import Sidebar from '@/components/layouts/Sidebar';
 import Header from '@/components/layouts/Header';
 import MobileSidebar from '@/components/layouts/MobileSidebar';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
-import { Toaster } from '@/components/ui/toaster';
 
 const Layout: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Always start closed
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const navigate = useNavigate();
-  const {
-    user,
-    isAuthenticated
-  } = useAuth();
+  const location = useLocation();
+  const { user, isAuthenticated } = useAuth();
 
-  // Handle route protection
+  // Handle route protection - modified to prevent infinite redirects
   useEffect(() => {
-    if (!isAuthenticated) {
-      navigate('/login');
+    // Only redirect if we know authentication has completed and user is not authenticated
+    if (isAuthenticated === false) {
+      // Only navigate if not already on the login page
+      if (location.pathname !== '/login') {
+        navigate('/login');
+      }
     }
-  }, [user, isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate, location.pathname]);
 
   // Handle responsive sidebar
   useEffect(() => {
@@ -29,7 +31,6 @@ const Layout: React.FC = () => {
       if (window.innerWidth < 768) {
         setIsSidebarOpen(false);
       }
-      // Don't set to true for larger screens to keep sidebar always closed initially
     };
 
     // Set initial state
@@ -38,8 +39,8 @@ const Layout: React.FC = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // If still loading authentication or no user, don't render layout yet
-  if (!isAuthenticated) {
+  // Don't render the layout if not authenticated
+  if (isAuthenticated === false) {
     return null;
   }
   
@@ -61,9 +62,6 @@ const Layout: React.FC = () => {
           <Outlet />
         </main>
       </div>
-      
-      {/* Toast notifications */}
-      <Toaster />
     </div>
   );
 };
