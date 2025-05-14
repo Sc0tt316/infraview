@@ -1,9 +1,9 @@
 
 import React, { useState } from 'react';
 import { format } from 'date-fns';
-import { Calendar, CalendarIcon } from 'lucide-react';
+import { Calendar as CalendarIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { DateRange } from 'react-day-picker';
@@ -25,28 +25,28 @@ const DateRangePicker = ({ dateRange, setDateRange, onApply }: DateRangePickerPr
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
-        <Button variant="outline" className="gap-2">
+        <Button variant="outline" className="gap-2 h-10 px-3 min-w-[240px] justify-start">
           <CalendarIcon size={16} />
-          <span>
+          <span className="truncate">
             {dateRange?.from ? (
               dateRange.to ? (
                 <>
-                  {format(dateRange.from, 'LLL dd, y')} - {format(dateRange.to, 'LLL dd, y')}
+                  {format(dateRange.from, 'MMM dd, yyyy')} - {format(dateRange.to, 'MMM dd, yyyy')}
                 </>
               ) : (
-                format(dateRange.from, 'LLL dd, y')
+                format(dateRange.from, 'MMM dd, yyyy')
               )
             ) : (
-              'Custom Range'
+              'Select date range'
             )}
           </span>
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="end">
-        <div className="p-3 border-b border-border/50">
+        <div className="p-3 border-b">
           <h3 className="font-medium">Select date range</h3>
         </div>
-        <CalendarComponent
+        <Calendar
           initialFocus
           mode="range"
           defaultMonth={dateRange?.from}
@@ -55,7 +55,7 @@ const DateRangePicker = ({ dateRange, setDateRange, onApply }: DateRangePickerPr
           numberOfMonths={2}
           className={cn("p-3 pointer-events-auto")}
         />
-        <div className="p-3 bg-muted/20 border-t border-border/50 flex justify-end gap-2">
+        <div className="p-3 bg-muted/20 border-t flex justify-end gap-2">
           <Button variant="outline" size="sm" onClick={() => setIsOpen(false)}>
             Cancel
           </Button>

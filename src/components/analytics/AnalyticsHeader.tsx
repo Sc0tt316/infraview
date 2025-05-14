@@ -1,8 +1,10 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
 import DateRangePicker from '@/components/analytics/DateRangePicker';
 import { DateRange } from 'react-day-picker';
+
 interface AnalyticsHeaderProps {
   dateRange: DateRange | undefined;
   setDateRange: React.Dispatch<React.SetStateAction<DateRange | undefined>>;
@@ -10,6 +12,7 @@ interface AnalyticsHeaderProps {
   onRefresh: () => void;
   isLoading: boolean;
 }
+
 const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
   dateRange,
   setDateRange,
@@ -17,10 +20,11 @@ const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
   onRefresh,
   isLoading
 }) => {
-  return <div className="flex items-center justify-between">
+  return (
+    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
       <div>
-        
-        
+        <h1 className="text-2xl font-bold tracking-tight">Analytics</h1>
+        <p className="text-muted-foreground">Monitor printer usage and performance</p>
       </div>
       
       <div className="flex items-center gap-3">
@@ -30,6 +34,8 @@ const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
           <RefreshCw className={isLoading ? "animate-spin h-4 w-4" : "h-4 w-4"} />
         </Button>
       </div>
-    </div>;
+    </div>
+  );
 };
+
 export default AnalyticsHeader;

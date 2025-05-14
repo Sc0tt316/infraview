@@ -35,19 +35,16 @@ const DepartmentVolumeChart: React.FC<DepartmentVolumeChartProps> = ({
         
         // Extract unique departments and count printers per department
         const departmentMap = new Map<string, number>();
-        const volumeMap = new Map<string, number>();
         
         printers.forEach((printer: PrinterData) => {
           if (printer.department) {
             const currentCount = departmentMap.get(printer.department) || 0;
-            departmentMap.set(printer.department, currentCount + 1);
             
-            // Calculate volume based on stats if available or use a random value
-            const printVolume = (printer.stats?.totalPages || printer.stats?.monthlyPages || 0) || 
-              (Math.floor(Math.random() * 1000) + 500);
+            // Calculate volume based on stats if available, but don't use random values
+            const printVolume = printer.stats?.totalPages || 0;
             
-            const currentVolume = volumeMap.get(printer.department) || 0;
-            volumeMap.set(printer.department, currentVolume + printVolume);
+            const currentVolume = departmentMap.get(printer.department) || 0;
+            departmentMap.set(printer.department, currentVolume + printVolume);
           }
         });
         
@@ -55,7 +52,7 @@ const DepartmentVolumeChart: React.FC<DepartmentVolumeChartProps> = ({
         if (departmentMap.size > 0) {
           const volumeData: DepartmentVolume[] = Array.from(departmentMap.keys()).map(department => ({
             department,
-            volume: volumeMap.get(department) || 0
+            volume: departmentMap.get(department) || 0
           }));
           
           setDepartmentData(volumeData);

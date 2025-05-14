@@ -35,7 +35,6 @@ const Analytics = () => {
           to: dateRange.to,
         });
       } else {
-        // Now the function accepts 'custom' as a timeRange value
         return analyticsService.getPrintVolumeByTimeRange(timeRange);
       }
     },
@@ -80,8 +79,9 @@ const Analytics = () => {
       
       <StatsSummaryCards analyticsData={analyticsData} />
       
-      {/* Changed from grid to flex column layout */}
-      <div className="flex flex-col gap-6">
+      {/* Vertical layout for charts */}
+      <div className="space-y-6">
+        {/* Department Usage Chart */}
         <Card>
           <CardHeader>
             <CardTitle>Department Usage</CardTitle>
@@ -95,6 +95,7 @@ const Analytics = () => {
           </CardContent>
         </Card>
         
+        {/* Print Volume Chart */}
         <Card>
           <CardHeader>
             <CardTitle>Print Volume</CardTitle>

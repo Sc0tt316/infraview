@@ -35,8 +35,8 @@ export const useLoginForm = () => {
     setIsLoading(true);
     
     try {
-      // Pass the rememberMe value to the login function
-      const success = await login(email, password, rememberMe);
+      // The login function in AuthContext expects only email and password
+      const success = await login(email, password);
       
       if (!success) {
         toast({
