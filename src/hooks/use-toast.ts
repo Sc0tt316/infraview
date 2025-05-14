@@ -31,7 +31,7 @@ type Action =
         title?: React.ReactNode
         description?: React.ReactNode
         action?: ToasterToastActionElement
-        type?: "default" | "destructive" | "success" | "error" | "info" | "warning"
+        variant?: "default" | "destructive"
       }
     }
   | {
@@ -58,7 +58,7 @@ const reducer = (state: State, action: Action): State => {
     case actionTypes.ADD_TOAST:
       return {
         ...state,
-        toasts: [action.toast, ...state.toasts].slice(0, TOAST_LIMIT),
+        toasts: [action.toast as unknown as ToasterToast, ...state.toasts].slice(0, TOAST_LIMIT),
       }
 
     case actionTypes.UPDATE_TOAST:
@@ -124,7 +124,7 @@ interface Toast {
   description?: React.ReactNode
   action?: ToasterToastActionElement
   cancel?: React.ReactNode
-  type?: "default" | "destructive" | "success" | "error" | "info" | "warning"
+  variant?: "default" | "destructive"
   duration?: number
   className?: string
   onDismiss?: (toast: ToasterToast) => void
@@ -151,6 +151,12 @@ function toast({ id: toastId, ...props }: Toast) {
     },
   })
 
+  // Map variant to sonner's type for compatibility
+  let sonnerType: any = undefined;
+  if (props.variant === "destructive") {
+    sonnerType = "error";
+  }
+
   // Show toast using sonner
   sonnerToast(props.title as string, {
     id,
@@ -161,8 +167,7 @@ function toast({ id: toastId, ...props }: Toast) {
     onAutoClose: props.onAutoClose,
     duration: props.duration,
     className: props.className,
-    // Map the type to sonner's expected type
-    type: props.type === "destructive" ? "error" : props.type
+    type: sonnerType
   })
 
   return {
