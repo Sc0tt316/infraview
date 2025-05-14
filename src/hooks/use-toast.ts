@@ -151,14 +151,8 @@ function toast({ id: toastId, ...props }: Toast) {
     },
   })
 
-  // Map variant to sonner's type for compatibility
-  let sonnerType: any = undefined;
-  if (props.variant === "destructive") {
-    sonnerType = "error";
-  }
-
-  // Show toast using sonner
-  sonnerToast(props.title as string, {
+  // Map variant to sonner's supported options
+  const sonnerOptions: any = {
     id,
     description: props.description,
     action: props.action,
@@ -167,8 +161,15 @@ function toast({ id: toastId, ...props }: Toast) {
     onAutoClose: props.onAutoClose,
     duration: props.duration,
     className: props.className,
-    type: sonnerType
-  })
+  }
+  
+  // Only add the type if it's destructive
+  if (props.variant === "destructive") {
+    sonnerOptions.status = "error"
+  }
+
+  // Show toast using sonner
+  sonnerToast(props.title as string, sonnerOptions)
 
   return {
     id: id,
