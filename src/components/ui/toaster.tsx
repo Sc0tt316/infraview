@@ -1,6 +1,7 @@
 
 import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
+import { ToastAction } from "@/components/ui/toast"
 
 export function Toaster() {
   const { toasts } = useToast()
@@ -17,7 +18,7 @@ export function Toaster() {
               "group pointer-events-auto relative flex w-full items-center justify-between space-x-4 overflow-hidden rounded-md border border-slate-200 p-6 pr-8 shadow-lg transition-all data-[swipe=cancel]:translate-x-0 data-[swipe=end]:translate-x-[var(--radix-toast-swipe-end-x)] data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)] data-[state=closed]:animate-out data-[state=closed]:fade-out data-[state=closed]:slide-out-to-right-full data-[state=open]:animate-in data-[state=open]:slide-in-from-top-full dark:border-slate-800 sm:data-[state=closed]:slide-out-to-bottom-full sm:data-[state=open]:slide-in-from-bottom-full",
               {
                 "bg-white text-slate-950 dark:bg-slate-950 dark:text-slate-50": true,
-                "destructive group border-red-500 bg-red-500 text-slate-50 dark:border-red-900 dark:bg-red-900 dark:text-slate-50": props.variant === "destructive"
+                "destructive group border-red-500 bg-red-500 text-slate-50 dark:border-red-900 dark:bg-red-900 dark:text-slate-50": props.type === "error" || props.type === "destructive"
               }
             )}
             {...props}
@@ -28,7 +29,7 @@ export function Toaster() {
                 <div className="text-sm opacity-90">{description}</div>
               )}
             </div>
-            {action}
+            {action && typeof action === 'object' && 'children' in action ? action : null}
           </div>
         )
       })}

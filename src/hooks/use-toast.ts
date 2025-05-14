@@ -31,7 +31,7 @@ type Action =
         title?: React.ReactNode
         description?: React.ReactNode
         action?: ToasterToastActionElement
-        variant?: "default" | "destructive"
+        type?: "default" | "destructive" | "success" | "error" | "info" | "warning"
       }
     }
   | {
@@ -124,7 +124,7 @@ interface Toast {
   description?: React.ReactNode
   action?: ToasterToastActionElement
   cancel?: React.ReactNode
-  variant?: "default" | "destructive"
+  type?: "default" | "destructive" | "success" | "error" | "info" | "warning"
   duration?: number
   className?: string
   onDismiss?: (toast: ToasterToast) => void
@@ -160,7 +160,9 @@ function toast({ id: toastId, ...props }: Toast) {
     onDismiss: props.onDismiss,
     onAutoClose: props.onAutoClose,
     duration: props.duration,
-    className: props.className
+    className: props.className,
+    // Map the type to sonner's expected type
+    type: props.type === "destructive" ? "error" : props.type
   })
 
   return {

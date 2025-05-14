@@ -26,7 +26,8 @@ export const useLoginForm = () => {
     if (!email || !password) {
       toast({
         title: "Error",
-        description: "Please enter both email and password."
+        description: "Please enter both email and password.",
+        type: "error"
       });
       return;
     }
@@ -40,7 +41,8 @@ export const useLoginForm = () => {
       if (!success) {
         toast({
           title: "Login Failed",
-          description: "Invalid email or password. Please try again."
+          description: "Invalid email or password. Please try again.",
+          type: "error"
         });
       } else {
         // If login is successful and remember me is checked, store it in cookie if consent is given
@@ -53,14 +55,16 @@ export const useLoginForm = () => {
         
         toast({
           title: "Login Successful",
-          description: "Welcome back!"
+          description: "Welcome back!",
+          type: "success"
         });
       }
     } catch (error) {
       console.error('Login error:', error);
       toast({
         title: "Login Error",
-        description: "An unexpected error occurred. Please try again."
+        description: "An unexpected error occurred. Please try again.",
+        type: "error"
       });
     } finally {
       setIsLoading(false);
