@@ -17,16 +17,13 @@ export function Toaster() {
     <ToastProvider>
       {toasts.map(function ({ id, title, description, action, type, ...props }) {
         // For TypeScript, ensure we handle types correctly
-        // We need to check if type is a valid value for the Toast component
         const validProps = { ...props };
         
-        // Convert type to string and safely compare with valid types
-        // Instead of setting variant directly on the props, we'll set it on validProps
+        // Map our type values to className values instead of using variant
         if (typeof type === 'string') {
           const typeValue = String(type);
-          if (typeValue === 'default' || typeValue === 'destructive') {
-            // Store this separately since 'variant' isn't directly accepted by sonner
-            validProps.variant = typeValue;
+          if (typeValue === 'destructive') {
+            validProps.className = `${validProps.className || ''} destructive`.trim();
           }
         }
         

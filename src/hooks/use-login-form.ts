@@ -35,8 +35,8 @@ export const useLoginForm = () => {
     setIsLoading(true);
     
     try {
-      // Check the implementation of login in AuthContext to make sure it accepts rememberMe
-      const success = await login(email, password);
+      // Pass the rememberMe value to the login function
+      const success = await login(email, password, rememberMe);
       
       if (!success) {
         toast({
@@ -49,7 +49,7 @@ export const useLoginForm = () => {
         if (rememberMe) {
           const consentStatus = getCookie('cookie-consent');
           if (consentStatus === 'accepted') {
-            setCookie('auth-remember', 'true');
+            setCookie('auth-remember', 'true', 30); // Setting cookie to expire in 30 days
           }
         }
         
