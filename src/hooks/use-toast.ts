@@ -165,7 +165,7 @@ function toast({ id: toastId, ...props }: Toast) {
   
   // Only add the type if it's destructive
   if (props.variant === "destructive") {
-    sonnerOptions.status = "error"
+    sonnerOptions.type = "error"
   }
 
   // Show toast using sonner
