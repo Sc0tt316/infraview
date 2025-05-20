@@ -9,6 +9,9 @@ interface LogoProps {
 }
 
 const Logo: React.FC<LogoProps> = ({ size = 'md', className }) => {
+  // Make sure size is one of the allowed values
+  const validSize = (size === 'sm' || size === 'md' || size === 'lg') ? size : 'md';
+  
   const sizeClasses = {
     sm: { logo: 'h-6 w-6', container: 'h-8 w-8', text: 'text-base' },
     md: { logo: 'h-8 w-8', container: 'h-10 w-10', text: 'text-xl' },
@@ -20,7 +23,7 @@ const Logo: React.FC<LogoProps> = ({ size = 'md', className }) => {
       <div 
         className={cn(
           "bg-[#300054] flex items-center justify-center rounded-md border border-[#ff6b6b] transition-transform duration-500 hover:rotate-[360deg]",
-          sizeClasses[size].container,
+          sizeClasses[validSize].container,
           className
         )}
       >
@@ -29,11 +32,11 @@ const Logo: React.FC<LogoProps> = ({ size = 'md', className }) => {
           alt="M-Printer Logo" 
           className={cn(
             "object-contain",
-            sizeClasses[size].logo
+            sizeClasses[validSize].logo
           )}
         />
       </div>
-      <span className={cn("font-medium text-primary truncate", sizeClasses[size].text)}>M-Printer</span>
+      <span className={cn("font-medium text-primary truncate", sizeClasses[validSize].text)}>M-Printer</span>
     </Link>
   );
 };
