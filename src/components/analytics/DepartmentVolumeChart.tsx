@@ -4,8 +4,7 @@ import { motion } from 'framer-motion';
 import { RefreshCw, Calendar as CalendarIcon } from 'lucide-react';
 import { BarChart } from '@/components/ui/chart';
 import { DepartmentVolume } from '@/types/analytics';
-import { printerService } from '@/services/printer';
-import { PrinterData } from '@/types/printers';
+import { supabase } from '@/integrations/supabase/client';
 
 interface DepartmentVolumeChartProps {
   departmentData?: DepartmentVolume[];
@@ -19,56 +18,52 @@ const DepartmentVolumeChart: React.FC<DepartmentVolumeChartProps> = ({
   const [departmentData, setDepartmentData] = useState<DepartmentVolume[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(initialLoading);
 
-  // Fetch and process printer data to get real departments
+  // Fetch department data directly from Supabase
   useEffect(() => {
-    const fetchPrinterDepartments = async () => {
+    const fetchDepartmentData = async () => {
       try {
         setIsLoading(true);
         
-        // Get printers to extract departments
-        const printers = await printerService.getAllPrinters();
+        // Get all printers grouped by department
+        const { data: departments, error } = await supabase
+          .from('printers')
+          .select('department, job_count')
+          .not('department', 'is', null);
         
-        if (!printers?.length) {
+        if (error) {
+          console.error("Error fetching department data:", error);
           setDepartmentData([]);
+          setIsLoading(false);
           return;
         }
         
-        // Extract unique departments and count printers per department
+        // Group and sum job counts by department
         const departmentMap = new Map<string, number>();
         
-        printers.forEach((printer: PrinterData) => {
+        departments.forEach((printer: any) => {
           if (printer.department) {
-            const currentCount = departmentMap.get(printer.department) || 0;
-            
-            // Calculate volume based on stats if available, but don't use random values
-            const printVolume = printer.stats?.totalPages || 0;
-            
             const currentVolume = departmentMap.get(printer.department) || 0;
-            departmentMap.set(printer.department, currentVolume + printVolume);
+            departmentMap.set(printer.department, currentVolume + (printer.job_count || 0));
           }
         });
         
-        // If we have real departments, generate volume data
-        if (departmentMap.size > 0) {
-          const volumeData: DepartmentVolume[] = Array.from(departmentMap.keys()).map(department => ({
-            department,
-            volume: departmentMap.get(department) || 0
-          }));
-          
-          setDepartmentData(volumeData);
-        } else {
-          setDepartmentData([]);
-        }
+        // Convert to the format needed by the chart
+        const volumeData: DepartmentVolume[] = Array.from(departmentMap.entries()).map(([department, volume]) => ({
+          department,
+          volume
+        }));
+        
+        setDepartmentData(volumeData);
       } catch (error) {
-        console.error('Error fetching printer departments:', error);
+        console.error("Error in fetchDepartmentData:", error);
         setDepartmentData([]);
       } finally {
         setIsLoading(false);
       }
     };
-
-    fetchPrinterDepartments();
-  }, [initialDepartmentData]);
+    
+    fetchDepartmentData();
+  }, []);
 
   return (
     <div className="w-full h-full">
