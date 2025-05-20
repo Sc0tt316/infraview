@@ -7,7 +7,6 @@ import { usePrinters } from '@/hooks/usePrinters';
 import { useQuery } from '@tanstack/react-query';
 import { printerService } from '@/services/printer';
 import { analyticsService } from '@/services/analytics';
-import { getCookie } from '@/lib/cookie';
 
 /**
  * Index page that serves as the main dashboard
@@ -56,11 +55,7 @@ const Index: React.FC = () => {
     // Fetch initial data
     fetchAlerts();
     
-    // Only set up auto-refresh if cookies are accepted
-    const consentStatus = getCookie('cookie-consent');
-    if (consentStatus !== 'accepted') return;
-    
-    // Setup interval with proper cleanup
+    // Setup interval with proper cleanup (no consent check needed)
     const intervalId = setInterval(refreshDashboardData, AUTO_REFRESH_INTERVAL);
     
     // Cleanup function to clear interval

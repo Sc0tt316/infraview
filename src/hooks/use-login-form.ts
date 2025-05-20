@@ -9,12 +9,8 @@ export const useLoginForm = () => {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(() => {
-    // Initialize from cookie if available and consent was given
-    const consentStatus = getCookie('cookie-consent');
-    if (consentStatus === 'accepted') {
-      return getCookie('auth-remember') === 'true';
-    }
-    return false;
+    // Initialize from cookie if available (no consent check needed)
+    return getCookie('auth-remember') === 'true';
   });
   
   const { login } = useAuth();
@@ -45,12 +41,9 @@ export const useLoginForm = () => {
           variant: "destructive"
         });
       } else {
-        // If login is successful and remember me is checked, store it in cookie if consent is given
+        // If login is successful and remember me is checked, store it in cookie
         if (rememberMe) {
-          const consentStatus = getCookie('cookie-consent');
-          if (consentStatus === 'accepted') {
-            setCookie('auth-remember', 'true', 30); // Setting cookie to expire in 30 days
-          }
+          setCookie('auth-remember', 'true', 30); // Setting cookie to expire in 30 days
         }
         
         toast({

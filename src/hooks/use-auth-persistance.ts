@@ -1,6 +1,6 @@
 
 import { useEffect } from 'react';
-import { getCookie, setCookie, removeCookie } from '@/lib/cookie';
+import { getCookie, setCookie, removeCookie, ensureCookieConsent } from '@/lib/cookie';
 
 interface AuthPersistenceOptions {
   isAuthenticated: boolean;
@@ -17,8 +17,8 @@ export const useAuthPersistence = ({
 }: AuthPersistenceOptions) => {
   // Save authentication state when it changes
   useEffect(() => {
-    const consentStatus = getCookie('cookie-consent');
-    if (consentStatus !== 'accepted') return;
+    // Ensure cookie consent is set to accepted automatically
+    ensureCookieConsent();
     
     if (isAuthenticated && user && rememberMe) {
       const userData = JSON.stringify(user);
@@ -34,6 +34,9 @@ export const useAuthPersistence = ({
   // Try to restore session on mount
   useEffect(() => {
     if (isAuthenticated) return;
+    
+    // Ensure cookie consent is set to accepted automatically
+    ensureCookieConsent();
     
     const rememberedUser = getCookie('auth-user');
     const shouldRemember = getCookie('auth-remember') === 'true';

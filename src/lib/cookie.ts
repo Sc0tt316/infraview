@@ -47,3 +47,12 @@ export const areCookiesEnabled = (): boolean => {
     return false;
   }
 };
+
+/**
+ * Ensure consent cookie is set (auto-accept cookies)
+ */
+export const ensureCookieConsent = (): void => {
+  if (!getCookie('cookie-consent')) {
+    setCookie('cookie-consent', 'accepted', 365);
+  }
+};
