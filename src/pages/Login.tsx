@@ -48,9 +48,7 @@ const Login: React.FC = () => {
         <Card>
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl">Sign in</CardTitle>
-            <CardDescription>
-              Enter your credentials to access your account
-            </CardDescription>
+            
           </CardHeader>
           <CardContent className="space-y-4">
             {error && <Alert variant="destructive">
