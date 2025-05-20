@@ -1,24 +1,29 @@
 
-import { apiService } from '@/services/api';
+import { supabase } from '@/integrations/supabase/client';
 import { PrinterData } from '@/types/printers';
-import { initializePrinters } from '../mockDataService';
 import { addActivity } from '../activityLogService';
 
 export const restartPrinter = async (printerId: string): Promise<void> => {
   try {
-    await initializePrinters();
+    // Get printer details first
+    const { data: printer, error: fetchError } = await supabase
+      .from('printers')
+      .select('name')
+      .eq('id', printerId)
+      .single();
     
-    const printers = await apiService.get<PrinterData[]>('printers') || [];
-    const printerToRestart = printers.find(printer => printer.id === printerId);
+    if (fetchError) {
+      throw fetchError;
+    }
     
-    if (!printerToRestart) {
+    if (!printer) {
       throw new Error(`Printer with id ${printerId} not found`);
     }
     
     // Log the activity
     await addActivity({
       printerId,
-      printerName: printerToRestart.name,
+      printerName: printer.name,
       timestamp: new Date().toISOString(),
       action: "Printer Restarted",
       user: "admin"

@@ -1,15 +1,32 @@
 
-import { apiService } from '../api';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { PrintLog, PrinterActivity } from '@/types/printers';
-import { initializeLogs, initializeActivity } from './mockDataService';
 
 // Get printer logs
 export const getPrinterLogs = async (printerId: string): Promise<PrintLog[]> => {
   try {
-    await initializeLogs();
-    const logs = await apiService.get<PrintLog[]>('printerLogs');
-    return logs?.filter(log => log.printerId === printerId) || [];
+    const { data, error } = await supabase
+      .from('printer_logs')
+      .select('*')
+      .eq('printer_id', printerId)
+      .order('timestamp', { ascending: false });
+    
+    if (error) {
+      throw error;
+    }
+    
+    // Convert to our PrintLog format
+    return data.map(log => ({
+      id: log.id,
+      printerId: log.printer_id,
+      fileName: log.file_name,
+      status: log.status as 'completed' | 'failed' | 'pending',
+      timestamp: log.timestamp,
+      pages: log.pages,
+      size: log.size,
+      user: log.user_id
+    }));
   } catch (error) {
     console.error(`Error fetching logs for printer ${printerId}:`, error);
     useToast().toast({
@@ -24,33 +41,66 @@ export const getPrinterLogs = async (printerId: string): Promise<PrintLog[]> => 
 // Add a new log
 export const addLog = async (logData: Omit<PrintLog, 'id'>): Promise<PrintLog> => {
   try {
-    await initializeLogs();
-    const logs = await apiService.get<PrintLog[]>('printerLogs') || [];
-    
-    const newLog: PrintLog = {
-      ...logData,
-      id: `l${Date.now()}`
+    const dbLogData = {
+      printer_id: logData.printerId,
+      file_name: logData.fileName,
+      status: logData.status,
+      timestamp: logData.timestamp,
+      pages: logData.pages,
+      size: logData.size,
+      user_id: logData.user
     };
     
-    const updatedLogs = [...logs, newLog];
-    await apiService.post('printerLogs', updatedLogs);
+    const { data: newLog, error } = await supabase
+      .from('printer_logs')
+      .insert(dbLogData)
+      .select('*')
+      .single();
     
-    return newLog;
+    if (error) {
+      throw error;
+    }
+    
+    return {
+      id: newLog.id,
+      printerId: newLog.printer_id,
+      fileName: newLog.file_name,
+      status: newLog.status as 'completed' | 'failed' | 'pending',
+      timestamp: newLog.timestamp,
+      pages: newLog.pages,
+      size: newLog.size,
+      user: newLog.user_id
+    };
   } catch (error) {
     console.error('Error adding log:', error);
-    return {
-      id: `l${Date.now()}`,
-      ...logData
-    };
+    throw error;
   }
 };
 
 // Get printer activity
 export const getPrinterActivity = async (printerId: string): Promise<PrinterActivity[]> => {
   try {
-    await initializeActivity();
-    const activities = await apiService.get<PrinterActivity[]>('printerActivity');
-    return activities?.filter(activity => activity.printerId === printerId) || [];
+    const { data, error } = await supabase
+      .from('printer_activities')
+      .select('*')
+      .eq('printer_id', printerId)
+      .order('timestamp', { ascending: false });
+    
+    if (error) {
+      throw error;
+    }
+    
+    // Convert to our PrinterActivity format
+    return data.map(activity => ({
+      id: activity.id,
+      printerId: activity.printer_id,
+      printerName: activity.printer_name,
+      action: activity.action,
+      timestamp: activity.timestamp,
+      user: activity.user_id,
+      details: activity.details,
+      status: activity.status as 'success' | 'warning' | 'error' | 'info'
+    }));
   } catch (error) {
     console.error(`Error fetching activity for printer ${printerId}:`, error);
     useToast().toast({
@@ -65,33 +115,65 @@ export const getPrinterActivity = async (printerId: string): Promise<PrinterActi
 // Add a new activity
 export const addActivity = async (activityData: Omit<PrinterActivity, 'id'>): Promise<PrinterActivity> => {
   try {
-    await initializeActivity();
-    const activities = await apiService.get<PrinterActivity[]>('printerActivity') || [];
-    
-    const newActivity: PrinterActivity = {
-      ...activityData,
-      id: `a${Date.now()}`
+    const dbActivityData = {
+      printer_id: activityData.printerId,
+      printer_name: activityData.printerName,
+      action: activityData.action,
+      timestamp: activityData.timestamp,
+      user_id: activityData.user,
+      details: activityData.details,
+      status: activityData.status
     };
     
-    const updatedActivities = [...activities, newActivity];
-    await apiService.post('printerActivity', updatedActivities);
+    const { data: newActivity, error } = await supabase
+      .from('printer_activities')
+      .insert(dbActivityData)
+      .select('*')
+      .single();
     
-    return newActivity;
+    if (error) {
+      throw error;
+    }
+    
+    return {
+      id: newActivity.id,
+      printerId: newActivity.printer_id,
+      printerName: newActivity.printer_name,
+      action: newActivity.action,
+      timestamp: newActivity.timestamp,
+      user: newActivity.user_id,
+      details: newActivity.details,
+      status: newActivity.status as 'success' | 'warning' | 'error' | 'info'
+    };
   } catch (error) {
     console.error('Error adding activity:', error);
-    return {
-      id: `a${Date.now()}`,
-      ...activityData
-    };
+    throw error;
   }
 };
 
 // Get all logs (for activity page)
 export const getAllLogs = async (): Promise<PrintLog[]> => {
   try {
-    await initializeLogs();
-    const logs = await apiService.get<PrintLog[]>('printerLogs');
-    return logs || [];
+    const { data, error } = await supabase
+      .from('printer_logs')
+      .select('*')
+      .order('timestamp', { ascending: false });
+    
+    if (error) {
+      throw error;
+    }
+    
+    // Convert to our PrintLog format
+    return data.map(log => ({
+      id: log.id,
+      printerId: log.printer_id,
+      fileName: log.file_name,
+      status: log.status as 'completed' | 'failed' | 'pending',
+      timestamp: log.timestamp,
+      pages: log.pages,
+      size: log.size,
+      user: log.user_id
+    }));
   } catch (error) {
     console.error('Error fetching all logs:', error);
     useToast().toast({
@@ -106,9 +188,26 @@ export const getAllLogs = async (): Promise<PrintLog[]> => {
 // Get all activities (for activity page)
 export const getAllActivities = async (): Promise<PrinterActivity[]> => {
   try {
-    await initializeActivity();
-    const activities = await apiService.get<PrinterActivity[]>('printerActivity');
-    return activities || [];
+    const { data, error } = await supabase
+      .from('printer_activities')
+      .select('*')
+      .order('timestamp', { ascending: false });
+    
+    if (error) {
+      throw error;
+    }
+    
+    // Convert to our PrinterActivity format
+    return data.map(activity => ({
+      id: activity.id,
+      printerId: activity.printer_id,
+      printerName: activity.printer_name,
+      action: activity.action,
+      timestamp: activity.timestamp,
+      user: activity.user_id,
+      details: activity.details,
+      status: activity.status as 'success' | 'warning' | 'error' | 'info'
+    }));
   } catch (error) {
     console.error('Error fetching all activities:', error);
     useToast().toast({

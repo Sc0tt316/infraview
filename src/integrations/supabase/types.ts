@@ -9,7 +9,219 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      alerts: {
+        Row: {
+          created_at: string | null
+          description: string
+          id: string
+          is_resolved: boolean | null
+          printer_id: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+          title: string
+        }
+        Insert: {
+          created_at?: string | null
+          description: string
+          id?: string
+          is_resolved?: boolean | null
+          printer_id?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity: string
+          title: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string
+          id?: string
+          is_resolved?: boolean | null
+          printer_id?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alerts_printer_id_fkey"
+            columns: ["printer_id"]
+            isOneToOne: false
+            referencedRelation: "printers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      printer_activities: {
+        Row: {
+          action: string
+          details: string | null
+          id: string
+          printer_id: string | null
+          printer_name: string
+          status: string | null
+          timestamp: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          details?: string | null
+          id?: string
+          printer_id?: string | null
+          printer_name: string
+          status?: string | null
+          timestamp?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          details?: string | null
+          id?: string
+          printer_id?: string | null
+          printer_name?: string
+          status?: string | null
+          timestamp?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "printer_activities_printer_id_fkey"
+            columns: ["printer_id"]
+            isOneToOne: false
+            referencedRelation: "printers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      printer_logs: {
+        Row: {
+          file_name: string
+          id: string
+          pages: number
+          printer_id: string | null
+          size: string
+          status: string
+          timestamp: string | null
+          user_id: string
+        }
+        Insert: {
+          file_name: string
+          id?: string
+          pages: number
+          printer_id?: string | null
+          size: string
+          status: string
+          timestamp?: string | null
+          user_id: string
+        }
+        Update: {
+          file_name?: string
+          id?: string
+          pages?: number
+          printer_id?: string | null
+          size?: string
+          status?: string
+          timestamp?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "printer_logs_printer_id_fkey"
+            columns: ["printer_id"]
+            isOneToOne: false
+            referencedRelation: "printers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      printers: {
+        Row: {
+          added_date: string | null
+          department: string | null
+          id: string
+          ink_level: number
+          ip_address: string | null
+          job_count: number | null
+          last_active: string | null
+          location: string
+          model: string
+          name: string
+          paper_level: number
+          serial_number: string | null
+          status: string
+        }
+        Insert: {
+          added_date?: string | null
+          department?: string | null
+          id?: string
+          ink_level: number
+          ip_address?: string | null
+          job_count?: number | null
+          last_active?: string | null
+          location: string
+          model: string
+          name: string
+          paper_level: number
+          serial_number?: string | null
+          status: string
+        }
+        Update: {
+          added_date?: string | null
+          department?: string | null
+          id?: string
+          ink_level?: number
+          ip_address?: string | null
+          job_count?: number | null
+          last_active?: string | null
+          location?: string
+          model?: string
+          name?: string
+          paper_level?: number
+          serial_number?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          department: string | null
+          email: string | null
+          id: string
+          last_active: string | null
+          name: string | null
+          phone: string | null
+          profile_image: string | null
+          role: string | null
+          status: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          department?: string | null
+          email?: string | null
+          id: string
+          last_active?: string | null
+          name?: string | null
+          phone?: string | null
+          profile_image?: string | null
+          role?: string | null
+          status?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          department?: string | null
+          email?: string | null
+          id?: string
+          last_active?: string | null
+          name?: string | null
+          phone?: string | null
+          profile_image?: string | null
+          role?: string | null
+          status?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
