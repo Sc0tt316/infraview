@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,27 +7,26 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from '@/context/AuthContext';
 import Logo from '@/components/common/Logo';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const { login, isAuthenticated } = useAuth();
+  const {
+    login,
+    isAuthenticated
+  } = useAuth();
   const navigate = useNavigate();
-
   useEffect(() => {
     // If already authenticated, redirect to main page
     if (isAuthenticated) {
       navigate('/');
     }
   }, [isAuthenticated, navigate]);
-
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
     setLoading(true);
-
     try {
       const success = await login(email, password);
       if (success) {
@@ -41,9 +39,7 @@ const Login: React.FC = () => {
       setLoading(false);
     }
   };
-
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
+  return <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-6">
           <Logo size="lg" />
@@ -57,22 +53,13 @@ const Login: React.FC = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {error && (
-              <Alert variant="destructive">
+            {error && <Alert variant="destructive">
                 <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
+              </Alert>}
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input 
-                  id="email" 
-                  type="email" 
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="your.email@example.com" 
-                  required 
-                />
+                <Label htmlFor="email" className="mx-0 px-0">Email</Label>
+                <Input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="your.email@example.com" required />
               </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
@@ -81,13 +68,7 @@ const Login: React.FC = () => {
                     Forgot password?
                   </a>
                 </div>
-                <Input 
-                  id="password" 
-                  type="password" 
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required 
-                />
+                <Input id="password" type="password" value={password} onChange={e => setPassword(e.target.value)} required />
               </div>
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? 'Signing in...' : 'Sign In'}
@@ -101,13 +82,11 @@ const Login: React.FC = () => {
           </CardFooter>
         </Card>
         <div className="mt-4 text-center text-sm text-muted-foreground">
-          <div>Demo credentials:</div>
-          <div>admin@example.com / password</div>
-          <div>user@example.com / password</div>
+          
+          
+          
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default Login;
