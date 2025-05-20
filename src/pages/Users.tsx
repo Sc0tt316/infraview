@@ -101,7 +101,7 @@ const Users = () => {
             </div> : filteredUsers.length === 0 ? <div className="text-center py-8 text-muted-foreground">
               No users found. Adjust your search or filters.
             </div> : <Table>
-              <TableCaption>A list of all users in the system.</TableCaption>
+              
               <TableHeader>
                 <TableRow>
                   <TableHead>User</TableHead>
