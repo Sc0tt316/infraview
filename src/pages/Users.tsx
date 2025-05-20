@@ -72,10 +72,8 @@ const Users = () => {
 
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle>User Management</CardTitle>
-          <p className="text-muted-foreground">
-            View and manage user accounts
-          </p>
+          
+          
         </CardHeader>
         <CardContent>
           <div className="flex flex-col md:flex-row gap-4 mb-6">
