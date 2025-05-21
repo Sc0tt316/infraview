@@ -5,18 +5,23 @@ import { PrinterData } from '@/types/printers';
 
 interface EnhancedPrinterCardProps {
   printer: PrinterData;
-  onOpenDetails: (id: string) => void;
-  onOpenEdit: (printer: PrinterData) => void;
-  onOpenDelete: (printer: PrinterData) => void;
-  onRestart: (id: string) => void;
-  isAdmin: boolean;
+  onClick?: () => void; // Make onClick optional
+  onOpenDetails?: (id: string) => void;
+  onOpenEdit?: (printer: PrinterData) => void;
+  onOpenDelete?: (printer: PrinterData) => void;
+  onRestart?: (id: string) => void;
+  isAdmin?: boolean;
 }
 
 const EnhancedPrinterCard: React.FC<EnhancedPrinterCardProps> = (props) => {
-  const { printer, onOpenDetails } = props;
+  const { printer, onClick, onOpenDetails } = props;
   
   const handleCardClick = () => {
-    onOpenDetails(printer.id);
+    if (onClick) {
+      onClick();
+    } else if (onOpenDetails) {
+      onOpenDetails(printer.id);
+    }
   };
   
   return (

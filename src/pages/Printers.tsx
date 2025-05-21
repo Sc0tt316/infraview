@@ -11,7 +11,7 @@ import AddPrinterForm from '@/components/printers/AddPrinterForm';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import PrinterDetailModal from '@/components/printers/PrinterDetailModal';
 import { useAuth } from '@/context/AuthContext';
-import { PrinterWithStatus } from '@/types/printers';
+import { PrinterData } from '@/types/printers';
 import { useQueryClient } from '@tanstack/react-query';
 
 const Printers = () => {
@@ -33,12 +33,16 @@ const Printers = () => {
     setTimeout(() => setIsRefreshing(false), 1000); // Keep animation visible for 1 second
   };
   
-  const handlePrinterClick = (printer: PrinterWithStatus) => {
+  const handlePrinterClick = (printer: PrinterData) => {
     setSelectedPrinterId(printer.id);
   };
   
   const closeModal = () => {
     setSelectedPrinterId(null);
+  };
+
+  const handleAddPrinter = () => {
+    setShowAddPrinter(true);
   };
 
   // Apply filters
@@ -113,7 +117,10 @@ const Printers = () => {
           <RefreshCw className="h-8 w-8 animate-spin text-primary/70" />
         </div>
       ) : filteredPrinters.length === 0 ? (
-        <EmptyPrinterState />
+        <EmptyPrinterState 
+          onAddPrinter={handleAddPrinter}
+          isAdmin={isAdmin}
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredPrinters.map((printer) => (
@@ -121,6 +128,11 @@ const Printers = () => {
               key={printer.id}
               printer={printer}
               onClick={() => handlePrinterClick(printer)}
+              onOpenDetails={(id) => setSelectedPrinterId(id)}
+              onOpenEdit={() => {}}
+              onOpenDelete={() => {}}
+              onRestart={() => {}}
+              isAdmin={isAdmin}
             />
           ))}
         </div>
@@ -129,7 +141,9 @@ const Printers = () => {
       {/* Add Printer Dialog */}
       <Dialog open={showAddPrinter} onOpenChange={setShowAddPrinter}>
         <DialogContent className="sm:max-w-[600px]">
-          <AddPrinterForm onClose={() => setShowAddPrinter(false)} />
+          {showAddPrinter && (
+            <AddPrinterForm onClose={() => setShowAddPrinter(false)} />
+          )}
         </DialogContent>
       </Dialog>
 
@@ -137,8 +151,8 @@ const Printers = () => {
       {selectedPrinterId && (
         <PrinterDetailModal
           printerId={selectedPrinterId}
-          isOpen={!!selectedPrinterId}
           onClose={closeModal}
+          isAdmin={isAdmin}
         />
       )}
     </div>

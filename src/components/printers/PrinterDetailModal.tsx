@@ -18,17 +18,20 @@ import TabsNavigation from './printer-detail/TabsNavigation';
 interface PrinterDetailModalProps {
   printerId: string;
   onClose: () => void;
-  isAdmin: boolean;
+  isAdmin?: boolean;
+  // isOpen is optional to make it compatible with existing code
+  isOpen?: boolean;
 }
 
 const PrinterDetailModal: React.FC<PrinterDetailModalProps> = ({
   printerId,
   onClose,
-  isAdmin
+  isAdmin = false,
+  isOpen: externalIsOpen
 }) => {
   const [activeTab, setActiveTab] = useState("overview");
   const [isRestarting, setIsRestarting] = useState(false);
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(externalIsOpen !== undefined ? externalIsOpen : true);
   const { user } = useAuth();
   
   const { data: printer, error, isLoading, refetch } = useQuery({

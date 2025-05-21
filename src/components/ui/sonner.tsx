@@ -15,7 +15,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
       toastOptions={{
         duration: 3000, // 3 seconds
         closeButton: true,
-        dismissible: true,
+        // Removed 'dismissible' property as it doesn't exist in ToastOptions
         className: "cursor-pointer", // Make toast clickable
         classNames: {
           toast:

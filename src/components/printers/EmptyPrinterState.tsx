@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Printer, Plus, RefreshCw } from 'lucide-react';
 
 interface EmptyPrinterStateProps {
-  onAddPrinter: () => void;
+  onAddPrinter?: () => void;
   isAdmin?: boolean;
 }
 
@@ -20,7 +20,7 @@ const EmptyPrinterState: React.FC<EmptyPrinterStateProps> = ({ onAddPrinter, isA
           ? "Your printer management system doesn't have any printers added yet. Add your first printer to start managing your fleet."
           : "No printers match your search criteria or no printers have been added to the system yet."}
       </p>
-      {isAdmin ? (
+      {isAdmin && onAddPrinter ? (
         <Button onClick={onAddPrinter}>
           <Plus className="mr-2 h-4 w-4" />
           Add Your First Printer

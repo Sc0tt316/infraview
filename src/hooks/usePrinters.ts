@@ -51,10 +51,16 @@ export const usePrinters = () => {
     };
   }, [refetch]);
 
+  // Add the refetchPrinters method that was being called in Printers.tsx
+  const refetchPrinters = async () => {
+    return refetch();
+  };
+
   return {
     printers: printers || [],
     isLoading,
     error,
-    refetch
+    refetch,
+    refetchPrinters
   };
 };
