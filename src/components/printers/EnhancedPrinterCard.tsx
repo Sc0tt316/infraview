@@ -5,12 +5,12 @@ import { PrinterData } from '@/types/printers';
 
 interface EnhancedPrinterCardProps {
   printer: PrinterData;
-  onClick?: () => void; // Make onClick optional
-  onOpenDetails?: (id: string) => void;
-  onOpenEdit?: (printer: PrinterData) => void;
-  onOpenDelete?: (printer: PrinterData) => void;
-  onRestart?: (id: string) => void;
-  isAdmin?: boolean;
+  onClick?: () => void; 
+  onOpenDetails: (id: string) => void; // Changed from optional to required
+  onOpenEdit: (printer: PrinterData) => void; // Changed from optional to required
+  onOpenDelete: (printer: PrinterData) => void; // Changed from optional to required
+  onRestart: (id: string) => void; // Changed from optional to required
+  isAdmin: boolean; // Changed from optional to required
 }
 
 const EnhancedPrinterCard: React.FC<EnhancedPrinterCardProps> = (props) => {

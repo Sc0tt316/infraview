@@ -127,12 +127,11 @@ const Printers = () => {
             <EnhancedPrinterCard
               key={printer.id}
               printer={printer}
-              onClick={() => handlePrinterClick(printer)}
-              onOpenDetails={(id) => setSelectedPrinterId(id)}
+              onOpenDetails={setSelectedPrinterId}
               onOpenEdit={() => {}}
               onOpenDelete={() => {}}
               onRestart={() => {}}
-              isAdmin={isAdmin}
+              isAdmin={isAdmin || false}
             />
           ))}
         </div>
@@ -142,7 +141,7 @@ const Printers = () => {
       <Dialog open={showAddPrinter} onOpenChange={setShowAddPrinter}>
         <DialogContent className="sm:max-w-[600px]">
           {showAddPrinter && (
-            <AddPrinterForm onClose={() => setShowAddPrinter(false)} />
+            <AddPrinterForm />
           )}
         </DialogContent>
       </Dialog>
@@ -152,7 +151,7 @@ const Printers = () => {
         <PrinterDetailModal
           printerId={selectedPrinterId}
           onClose={closeModal}
-          isAdmin={isAdmin}
+          isAdmin={isAdmin || false}
         />
       )}
     </div>
