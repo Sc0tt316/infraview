@@ -29,6 +29,13 @@ export const getAllPrinters = async (): Promise<PrinterData[]> => {
       department: printer.department,
       serialNumber: printer.serial_number,
       addedDate: printer.added_date,
+      // Add toner supply levels
+      supplies: {
+        black: printer.ink_level || 50, // Use ink_level as black toner level if available
+        cyan: Math.floor(Math.random() * 40) + 40, // Random value between 40-80% for demo
+        magenta: Math.floor(Math.random() * 60) + 20, // Random value between 20-80% for demo
+        yellow: Math.floor(Math.random() * 50) + 30, // Random value between 30-80% for demo
+      }
     }));
   } catch (error) {
     console.error('Error fetching printers:', error);

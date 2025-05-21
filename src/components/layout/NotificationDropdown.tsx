@@ -16,6 +16,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { notificationService, Notification } from "@/services/notificationService";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const NotificationDropdown = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -25,10 +26,53 @@ const NotificationDropdown = () => {
 
   // Fetch notifications on mount and when dropdown opens
   useEffect(() => {
-    const fetchNotifications = () => {
-      const allNotifications = notificationService.getNotifications();
-      setNotifications(allNotifications);
-      setUnreadCount(notificationService.getUnreadCount());
+    const fetchNotifications = async () => {
+      try {
+        // In a real implementation, this would fetch from Supabase
+        // For now, we'll use the notification service
+        const allNotifications = notificationService.getNotifications();
+        setNotifications(allNotifications);
+        setUnreadCount(notificationService.getUnreadCount());
+        
+        // Listen for real-time notifications
+        const channel = supabase
+          .channel('public:alerts')
+          .on('postgres_changes', 
+            { event: '*', schema: 'public', table: 'alerts' },
+            (payload) => {
+              // When we receive a new alert, create a notification for it
+              if (payload.eventType === 'INSERT') {
+                const newAlert = payload.new;
+                
+                const notification: Notification = {
+                  id: newAlert.id,
+                  title: newAlert.title,
+                  message: newAlert.description,
+                  timestamp: newAlert.created_at || new Date().toISOString(),
+                  read: false,
+                  type: 'alert',
+                  resourceId: newAlert.id
+                };
+                
+                setNotifications(prev => [notification, ...prev]);
+                setUnreadCount(prev => prev + 1);
+                
+                // Show toast for new alerts
+                toast({
+                  title: "New Alert",
+                  description: newAlert.title
+                });
+              }
+            }
+          )
+          .subscribe();
+          
+        return () => {
+          supabase.removeChannel(channel);
+        };
+      } catch (error) {
+        console.error('Error fetching notifications:', error);
+      }
     };
 
     fetchNotifications();

@@ -45,7 +45,7 @@ const AlertsOverview: React.FC<AlertsOverviewProps> = ({ alerts = [], onViewAllA
       <CardHeader className="pb-2">
         <CardTitle className="text-base font-medium flex items-center">
           <AlertCircle className="h-4 w-4 mr-2" />
-          Alerts
+          Recent Alerts
         </CardTitle>
       </CardHeader>
       <CardContent>

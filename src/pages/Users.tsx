@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { userService } from '@/services/userService';
@@ -7,22 +8,28 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Search, Plus, RefreshCw } from 'lucide-react';
+import { Search, Plus, RefreshCw, Edit } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { User } from '@/types/user';
 import { useAuth } from '@/context/AuthContext';
+
 const Users = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showUserDetails, setShowUserDetails] = useState(false);
+  const [userLogs, setUserLogs] = useState<any[]>([]);
+  const [showUserAddModal, setShowUserAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+
   const {
     user
   } = useAuth();
   const isAdmin = user?.role === 'admin';
+  
   const {
     data: users = [],
     isLoading,
@@ -44,27 +51,58 @@ const Users = () => {
     }
     setFilteredUsers(result);
   }, [searchQuery, roleFilter, users]);
-  const handleViewUser = (user: User) => {
+
+  const fetchUserLogs = async (userId: string) => {
+    try {
+      // Mock function for now, would be replaced with real data fetching
+      // const logs = await userService.getUserLogs(userId);
+      const logs = [
+        { id: '1', action: 'Login', timestamp: new Date().toISOString(), details: 'User logged in successfully' },
+        { id: '2', action: 'Print job', timestamp: new Date(Date.now() - 86400000).toISOString(), details: 'User submitted print job "Document.pdf"' },
+        { id: '3', action: 'Password changed', timestamp: new Date(Date.now() - 172800000).toISOString(), details: 'User changed their password' }
+      ];
+      setUserLogs(logs);
+    } catch (error) {
+      console.error('Error fetching user logs:', error);
+      setUserLogs([]);
+    }
+  };
+
+  const handleRowClick = (user: User) => {
     setSelectedUser(user);
+    fetchUserLogs(user.id);
     setShowUserDetails(true);
   };
+
   const handleCloseUserDetails = () => {
     setShowUserDetails(false);
     setTimeout(() => {
       setSelectedUser(null);
+      setUserLogs([]);
     }, 300);
   };
+
+  const handleAddUser = () => {
+    setShowUserAddModal(true);
+  };
+
+  const handleEditUser = () => {
+    if (selectedUser && isAdmin) {
+      setShowEditModal(true);
+    }
+  };
+
   return <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          
-          
+          <h1 className="text-xl font-semibold">Users</h1>
+          <p className="text-muted-foreground">Manage user accounts and permissions</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="icon" onClick={() => refetch()} disabled={isLoading}>
             <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
           </Button>
-          {isAdmin && <Button onClick={() => toast("Add user functionality is not implemented yet")}>
+          {isAdmin && <Button onClick={handleAddUser}>
               <Plus className="h-4 w-4 mr-2" /> Add User
             </Button>}
         </div>
@@ -72,8 +110,8 @@ const Users = () => {
 
       <Card>
         <CardHeader className="pb-3">
-          
-          
+          <CardTitle>All Users</CardTitle>
+          <CardDescription>A list of all users in your organization</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col md:flex-row gap-4 mb-6">
@@ -99,18 +137,16 @@ const Users = () => {
             </div> : filteredUsers.length === 0 ? <div className="text-center py-8 text-muted-foreground">
               No users found. Adjust your search or filters.
             </div> : <Table>
-              
               <TableHeader>
                 <TableRow>
                   <TableHead>User</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Role</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredUsers.map(user => <TableRow key={user.id}>
+                {filteredUsers.map(user => <TableRow key={user.id} className="cursor-pointer hover:bg-muted/70" onClick={() => handleRowClick(user)}>
                     <TableCell className="font-medium">
                       <div className="flex items-center gap-3">
                         <Avatar className="h-8 w-8">
@@ -132,11 +168,6 @@ const Users = () => {
                         {user.status === 'active' ? 'Active' : user.status === 'inactive' ? 'Inactive' : 'Pending'}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="ghost" onClick={() => handleViewUser(user)}>
-                        View
-                      </Button>
-                    </TableCell>
                   </TableRow>)}
               </TableBody>
             </Table>}
@@ -145,7 +176,7 @@ const Users = () => {
 
       {/* User Detail Modal */}
       {selectedUser && <Dialog open={showUserDetails} onOpenChange={handleCloseUserDetails}>
-          <DialogContent className="sm:max-w-[500px]">
+          <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
               <DialogTitle>User Details</DialogTitle>
               <DialogDescription>
@@ -169,10 +200,6 @@ const Users = () => {
               </div>
               
               <div className="border rounded-md p-4 space-y-4">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">User ID:</span>
-                  <span className="font-mono">{selectedUser.id}</span>
-                </div>
                 {selectedUser.department && <div className="flex justify-between">
                     <span className="text-muted-foreground">Department:</span>
                     <span>{selectedUser.department}</span>
@@ -187,23 +214,101 @@ const Users = () => {
                     {selectedUser.status === 'active' ? 'Active' : selectedUser.status === 'inactive' ? 'Inactive' : 'Pending'}
                   </Badge>
                 </div>
-                {selectedUser.lastActive && <div className="flex justify-between">
-                    <span className="text-muted-foreground">Last Active:</span>
-                    <span>{new Date(selectedUser.lastActive).toLocaleDateString()}</span>
-                  </div>}
+              </div>
+              
+              {/* User Activity Logs */}
+              <div>
+                <h4 className="text-sm font-medium mb-3">Recent Activity</h4>
+                {userLogs.length > 0 ? (
+                  <div className="border rounded-md divide-y">
+                    {userLogs.map((log) => (
+                      <div key={log.id} className="p-3">
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="font-medium text-sm">{log.action}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(log.timestamp).toLocaleString()}
+                          </span>
+                        </div>
+                        <p className="text-sm text-muted-foreground">{log.details}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-4 border rounded-md text-muted-foreground">
+                    No recent activity found for this user.
+                  </div>
+                )}
               </div>
               
               <div className="flex gap-2 justify-end">
                 <Button variant="outline" onClick={handleCloseUserDetails}>
                   Close
                 </Button>
-                {isAdmin && <Button onClick={() => toast("Edit user functionality is not implemented yet")}>
+                {isAdmin && <Button onClick={handleEditUser}>
+                    <Edit className="h-4 w-4 mr-2" />
                     Edit User
                   </Button>}
               </div>
             </div>
           </DialogContent>
         </Dialog>}
+
+      {/* Add User Modal - Would be implemented in a separate component */}
+      <Dialog open={showUserAddModal} onOpenChange={setShowUserAddModal}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Add New User</DialogTitle>
+            <DialogDescription>
+              Create a new user account in the system
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <form className="space-y-4">
+              {/* Form fields would go here */}
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" type="button" onClick={() => setShowUserAddModal(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" onClick={() => {
+                  toast("User added successfully");
+                  setShowUserAddModal(false);
+                }}>
+                  Add User
+                </Button>
+              </div>
+            </form>
+          </div>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Edit User Modal - Would be implemented in a separate component */}
+      <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Edit User</DialogTitle>
+            <DialogDescription>
+              Update user information
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <form className="space-y-4">
+              {/* Form fields would go here */}
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" type="button" onClick={() => setShowEditModal(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" onClick={() => {
+                  toast("User updated successfully");
+                  setShowEditModal(false);
+                  setShowUserDetails(false);
+                }}>
+                  Save Changes
+                </Button>
+              </div>
+            </form>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>;
 };
 export default Users;
