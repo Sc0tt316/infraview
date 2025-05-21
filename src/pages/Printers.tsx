@@ -7,12 +7,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import EnhancedPrinterCard from '@/components/printers/EnhancedPrinterCard';
 import PrinterFilters from '@/components/printers/PrinterFilters';
 import EmptyPrinterState from '@/components/printers/EmptyPrinterState';
-import AddPrinterForm from '@/components/printers/AddPrinterForm';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import PrinterDetailModal from '@/components/printers/PrinterDetailModal';
 import { useAuth } from '@/context/AuthContext';
 import { PrinterData } from '@/types/printers';
 import { useQueryClient } from '@tanstack/react-query';
+import AddPrinterFormContainer from '@/components/printers/AddPrinterFormContainer';
 
 const Printers = () => {
   const { user } = useAuth();
@@ -119,7 +119,7 @@ const Printers = () => {
       ) : filteredPrinters.length === 0 ? (
         <EmptyPrinterState 
           onAddPrinter={handleAddPrinter}
-          isAdmin={isAdmin}
+          isAdmin={isAdmin || false}
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -141,7 +141,7 @@ const Printers = () => {
       <Dialog open={showAddPrinter} onOpenChange={setShowAddPrinter}>
         <DialogContent className="sm:max-w-[600px]">
           {showAddPrinter && (
-            <AddPrinterForm />
+            <AddPrinterFormContainer onCancel={() => setShowAddPrinter(false)} />
           )}
         </DialogContent>
       </Dialog>

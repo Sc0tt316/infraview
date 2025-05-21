@@ -24,7 +24,7 @@ export function Toaster() {
                 "destructive group border-red-500 bg-red-500 text-slate-50 dark:border-red-900 dark:bg-red-900 dark:text-slate-50": props.type === "error"
               }
             )}
-            data-state={props.visible ? "open" : "closed"} // Changed from props.open to props.visible
+            data-state="open" // Changed from props.visible to a fixed value
             role="status"
             aria-live="polite"
             {...props}
