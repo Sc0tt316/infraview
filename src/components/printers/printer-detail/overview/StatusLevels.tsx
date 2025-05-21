@@ -6,6 +6,7 @@ import { PrinterData } from '@/types/printers';
 interface StatusLevelsProps {
   inkLevel: number;
   paperLevel: number;
+  status?: 'online' | 'offline' | 'error' | 'maintenance' | 'warning';
   supplies?: {
     black: number;
     cyan?: number;

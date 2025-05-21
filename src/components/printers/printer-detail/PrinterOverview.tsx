@@ -12,9 +12,11 @@ import { Separator } from '@/components/ui/separator';
 interface PrinterOverviewProps {
   printer: PrinterData;
   isAdmin: boolean;
+  isRestarting?: boolean;
+  onRestartPrinter?: () => void;
 }
 
-const PrinterOverview: React.FC<PrinterOverviewProps> = ({ printer, isAdmin }) => {
+const PrinterOverview: React.FC<PrinterOverviewProps> = ({ printer, isAdmin, isRestarting = false, onRestartPrinter }) => {
   const hasIpAddress = !!printer.ipAddress;
   
   return (
@@ -28,7 +30,7 @@ const PrinterOverview: React.FC<PrinterOverviewProps> = ({ printer, isAdmin }) =
               <StatusLevels
                 inkLevel={printer.inkLevel}
                 paperLevel={printer.paperLevel}
-                status={printer.status}
+                supplies={printer.supplies}
               />
               <SupplyLevels supplies={printer.supplies} />
             </div>
@@ -36,7 +38,9 @@ const PrinterOverview: React.FC<PrinterOverviewProps> = ({ printer, isAdmin }) =
         </Card>
         
         <PrinterStatistics 
-          printer={printer} 
+          stats={printer.stats}
+          jobCount={printer.jobCount}
+          lastActive={printer.lastActive} 
         />
       </div>
       
@@ -47,6 +51,7 @@ const PrinterOverview: React.FC<PrinterOverviewProps> = ({ printer, isAdmin }) =
               printerId={printer.id}
               hasIpAddress={hasIpAddress}
               isAdmin={isAdmin}
+              onRestartClick={onRestartPrinter}
             />
           </CardContent>
         </Card>
