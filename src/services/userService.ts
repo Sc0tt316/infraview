@@ -81,6 +81,11 @@ export const userService = {
   // Update user profile
   updateUser: async (id: string, updateData: Partial<UserData>): Promise<UserData | null> => {
     try {
+      // Handle special case for new users
+      if (id === "new") {
+        return userService.addUser(updateData);
+      }
+      
       // Convert from UserData format to Supabase profiles format
       const profileData = {
         name: updateData.name,
@@ -126,6 +131,64 @@ export const userService = {
         variant: "destructive",
         title: "Error",
         description: "Failed to update user. Please try again."
+      });
+      return null;
+    }
+  },
+  
+  // Add a new user
+  addUser: async (userData: Partial<UserData>): Promise<UserData | null> => {
+    try {
+      // Generate a temporary ID for new user - will be replaced by Supabase
+      const tempId = crypto.randomUUID();
+      
+      // Set default status based on user role
+      const userStatus = userData.role === 'admin' ? 'active' : 'pending';
+      
+      // Create the new user profile
+      const newUserData = {
+        id: tempId, // Temporary ID will be replaced by Supabase
+        name: userData.name || '',
+        email: userData.email || '',
+        role: userData.role || 'user',
+        department: userData.department || '',
+        phone: userData.phone || '',
+        status: userData.status || userStatus,
+        profile_image: userData.profileImage
+      };
+      
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .insert([newUserData])
+        .select('*')
+        .single();
+      
+      if (error) {
+        throw error;
+      }
+      
+      toast({
+        title: "Success",
+        description: `User "${profile.name}" has been added successfully.`
+      });
+      
+      return {
+        id: profile.id,
+        name: profile.name || 'Unknown',
+        email: profile.email || 'No email',
+        role: profile.role as 'admin' | 'manager' | 'user' || 'user',
+        department: profile.department || '',
+        phone: profile.phone || '',
+        status: profile.status as 'active' | 'inactive' | 'pending',
+        lastActive: profile.last_active,
+        profileImage: profile.profile_image
+      };
+    } catch (error) {
+      console.error('Error adding user:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to add user. Please try again."
       });
       return null;
     }

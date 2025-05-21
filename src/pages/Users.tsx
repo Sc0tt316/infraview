@@ -1,15 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { userService } from '@/services/userService';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { toast } from 'sonner';
 import { Search, Plus, RefreshCw, Edit } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { User } from '@/types/user';
@@ -18,6 +15,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { userService } from '@/services/userService';
+import { toast } from '@/hooks/use-toast';
+import { useUsersRealtime } from '@/hooks/useUsersRealtime';
 
 // Define the form schema for adding/editing users
 const userFormSchema = z.object({
@@ -48,26 +48,19 @@ const Users = () => {
   const isAdmin = user?.role === 'admin';
   
   const {
-    data: users = [],
+    users,
     isLoading,
-    refetch
-  } = useQuery({
-    queryKey: ['users'],
-    queryFn: userService.getAllUsers
-  });
+    refetch,
+    filterUsersByRole,
+    searchUsers
+  } = useUsersRealtime();
 
   // Apply filters whenever search query, role filter, or users data changes
   useEffect(() => {
-    let result = [...users];
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(user => user.name?.toLowerCase().includes(query) || user.email?.toLowerCase().includes(query));
-    }
-    if (roleFilter !== 'all') {
-      result = result.filter(user => user.role === roleFilter);
-    }
+    const roleFiltered = filterUsersByRole(roleFilter);
+    const result = searchUsers(searchQuery, roleFiltered);
     setFilteredUsers(result);
-  }, [searchQuery, roleFilter, users]);
+  }, [searchQuery, roleFilter, users, filterUsersByRole, searchUsers]);
 
   const fetchUserLogs = async (userId: string) => {
     try {
@@ -160,16 +153,22 @@ const Users = () => {
   const onAddUserSubmit = async (data: UserFormValues) => {
     try {
       // Call API to add user
-      const newUser = await userService.updateUser("new", data);
+      const newUser = await userService.addUser(data);
       if (newUser) {
-        toast("User added successfully");
-        refetch(); // Refresh the user list
+        toast({
+          title: "Success",
+          description: "User added successfully"
+        });
         setShowUserAddModal(false);
         addUserForm.reset(); // Reset form values
       }
     } catch (error) {
       console.error("Error adding user:", error);
-      toast("Failed to add user");
+      toast({
+        title: "Error",
+        description: "Failed to add user",
+        variant: "destructive"
+      });
     }
   };
 
@@ -181,14 +180,50 @@ const Users = () => {
       // Call API to update user
       const updatedUser = await userService.updateUser(selectedUser.id, data);
       if (updatedUser) {
-        toast("User updated successfully");
-        refetch(); // Refresh the user list
+        toast({
+          title: "Success",
+          description: "User updated successfully"
+        });
         setShowEditModal(false);
         setShowUserDetails(false); // Close details modal as well
       }
     } catch (error) {
       console.error("Error updating user:", error);
-      toast("Failed to update user");
+      toast({
+        title: "Error",
+        description: "Failed to update user",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Render user status badge with appropriate styling
+  const renderStatusBadge = (status: string) => {
+    switch (status) {
+      case 'active':
+        return (
+          <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
+            Active
+          </Badge>
+        );
+      case 'inactive':
+        return (
+          <Badge variant="outline" className="bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-100">
+            Inactive
+          </Badge>
+        );
+      case 'pending':
+        return (
+          <Badge variant="outline" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100">
+            Pending
+          </Badge>
+        );
+      default:
+        return (
+          <Badge variant="outline">
+            {status || 'Unknown'}
+          </Badge>
+        );
     }
   };
 
@@ -269,9 +304,7 @@ const Users = () => {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline" className={user.status === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100' : user.status === 'inactive' ? 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-100' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100'}>
-                        {user.status === 'active' ? 'Active' : user.status === 'inactive' ? 'Inactive' : 'Pending'}
-                      </Badge>
+                      {renderStatusBadge(user.status || 'active')}
                     </TableCell>
                   </TableRow>)}
               </TableBody>
@@ -315,9 +348,7 @@ const Users = () => {
                   </div>}
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Status:</span>
-                  <Badge variant="outline" className={selectedUser.status === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100' : selectedUser.status === 'inactive' ? 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-100' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100'}>
-                    {selectedUser.status === 'active' ? 'Active' : selectedUser.status === 'inactive' ? 'Inactive' : 'Pending'}
-                  </Badge>
+                  {renderStatusBadge(selectedUser.status || 'active')}
                 </div>
               </div>
               
@@ -627,4 +658,5 @@ const Users = () => {
       </Dialog>
     </div>;
 };
+
 export default Users;
