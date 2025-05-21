@@ -14,6 +14,22 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { User } from '@/types/user';
 import { useAuth } from '@/context/AuthContext';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+
+// Define the form schema for adding/editing users
+const userFormSchema = z.object({
+  name: z.string().min(2, { message: "Name must be at least 2 characters." }),
+  email: z.string().email("Invalid email address."),
+  role: z.enum(["admin", "user", "manager"]),
+  department: z.string().optional(),
+  phone: z.string().optional(),
+  status: z.enum(["active", "inactive", "pending"])
+});
+
+type UserFormValues = z.infer<typeof userFormSchema>;
 
 const Users = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -24,6 +40,7 @@ const Users = () => {
   const [userLogs, setUserLogs] = useState<any[]>([]);
   const [showUserAddModal, setShowUserAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const {
     user
@@ -86,9 +103,92 @@ const Users = () => {
     setShowUserAddModal(true);
   };
 
-  const handleEditUser = () => {
+  const handleEditUser = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent the row click event
     if (selectedUser && isAdmin) {
       setShowEditModal(true);
+    }
+  };
+  
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await refetch();
+    setTimeout(() => setIsRefreshing(false), 1000); // Keep animation visible for 1 second
+  };
+
+  // Form for adding a new user
+  const addUserForm = useForm<UserFormValues>({
+    resolver: zodResolver(userFormSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      role: "user",
+      department: "",
+      phone: "",
+      status: "active"
+    }
+  });
+
+  // Form for editing an existing user
+  const editUserForm = useForm<UserFormValues>({
+    resolver: zodResolver(userFormSchema),
+    defaultValues: {
+      name: selectedUser?.name || "",
+      email: selectedUser?.email || "",
+      role: (selectedUser?.role as "admin" | "user" | "manager") || "user",
+      department: selectedUser?.department || "",
+      phone: selectedUser?.phone || "",
+      status: (selectedUser?.status as "active" | "inactive" | "pending") || "active"
+    }
+  });
+
+  // Reset edit form values when selectedUser changes
+  useEffect(() => {
+    if (selectedUser) {
+      editUserForm.reset({
+        name: selectedUser.name,
+        email: selectedUser.email,
+        role: selectedUser.role,
+        department: selectedUser.department || "",
+        phone: selectedUser.phone || "",
+        status: selectedUser.status || "active"
+      });
+    }
+  }, [selectedUser, editUserForm]);
+
+  // Handle adding a new user
+  const onAddUserSubmit = async (data: UserFormValues) => {
+    try {
+      // Call API to add user
+      const newUser = await userService.updateUser("new", data);
+      if (newUser) {
+        toast("User added successfully");
+        refetch(); // Refresh the user list
+        setShowUserAddModal(false);
+        addUserForm.reset(); // Reset form values
+      }
+    } catch (error) {
+      console.error("Error adding user:", error);
+      toast("Failed to add user");
+    }
+  };
+
+  // Handle editing an existing user
+  const onEditUserSubmit = async (data: UserFormValues) => {
+    if (!selectedUser) return;
+    
+    try {
+      // Call API to update user
+      const updatedUser = await userService.updateUser(selectedUser.id, data);
+      if (updatedUser) {
+        toast("User updated successfully");
+        refetch(); // Refresh the user list
+        setShowEditModal(false);
+        setShowUserDetails(false); // Close details modal as well
+      }
+    } catch (error) {
+      console.error("Error updating user:", error);
+      toast("Failed to update user");
     }
   };
 
@@ -99,8 +199,13 @@ const Users = () => {
           <p className="text-muted-foreground">Manage user accounts and permissions</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={() => refetch()} disabled={isLoading}>
-            <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+          <Button 
+            variant="outline" 
+            size="icon" 
+            onClick={handleRefresh} 
+            disabled={isLoading}
+          >
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
           </Button>
           {isAdmin && <Button onClick={handleAddUser}>
               <Plus className="h-4 w-4 mr-2" /> Add User
@@ -253,7 +358,7 @@ const Users = () => {
           </DialogContent>
         </Dialog>}
 
-      {/* Add User Modal - Would be implemented in a separate component */}
+      {/* Add User Modal */}
       <Dialog open={showUserAddModal} onOpenChange={setShowUserAddModal}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
@@ -263,25 +368,131 @@ const Users = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
-            <form className="space-y-4">
-              {/* Form fields would go here */}
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" type="button" onClick={() => setShowUserAddModal(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit" onClick={() => {
-                  toast("User added successfully");
-                  setShowUserAddModal(false);
-                }}>
-                  Add User
-                </Button>
-              </div>
-            </form>
+            <Form {...addUserForm}>
+              <form className="space-y-4" onSubmit={addUserForm.handleSubmit(onAddUserSubmit)}>
+                <FormField
+                  control={addUserForm.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter user name" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={addUserForm.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input type="email" placeholder="user@example.com" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={addUserForm.control}
+                  name="role"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Role</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a role" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="user">User</SelectItem>
+                          <SelectItem value="manager">Manager</SelectItem>
+                          <SelectItem value="admin">Admin</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={addUserForm.control}
+                  name="department"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Department</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Department (Optional)" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={addUserForm.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Phone</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Phone number (Optional)" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={addUserForm.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Status</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select status" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="active">Active</SelectItem>
+                          <SelectItem value="inactive">Inactive</SelectItem>
+                          <SelectItem value="pending">Pending</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" type="button" onClick={() => setShowUserAddModal(false)}>
+                    Cancel
+                  </Button>
+                  <Button type="submit">
+                    Add User
+                  </Button>
+                </div>
+              </form>
+            </Form>
           </div>
         </DialogContent>
       </Dialog>
       
-      {/* Edit User Modal - Would be implemented in a separate component */}
+      {/* Edit User Modal */}
       <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
@@ -291,21 +502,126 @@ const Users = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
-            <form className="space-y-4">
-              {/* Form fields would go here */}
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" type="button" onClick={() => setShowEditModal(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit" onClick={() => {
-                  toast("User updated successfully");
-                  setShowEditModal(false);
-                  setShowUserDetails(false);
-                }}>
-                  Save Changes
-                </Button>
-              </div>
-            </form>
+            <Form {...editUserForm}>
+              <form className="space-y-4" onSubmit={editUserForm.handleSubmit(onEditUserSubmit)}>
+                <FormField
+                  control={editUserForm.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter user name" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={editUserForm.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input type="email" placeholder="user@example.com" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={editUserForm.control}
+                  name="role"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Role</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a role" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="user">User</SelectItem>
+                          <SelectItem value="manager">Manager</SelectItem>
+                          <SelectItem value="admin">Admin</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={editUserForm.control}
+                  name="department"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Department</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Department (Optional)" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={editUserForm.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Phone</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Phone number (Optional)" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={editUserForm.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Status</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select status" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="active">Active</SelectItem>
+                          <SelectItem value="inactive">Inactive</SelectItem>
+                          <SelectItem value="pending">Pending</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" type="button" onClick={() => setShowEditModal(false)}>
+                    Cancel
+                  </Button>
+                  <Button type="submit">
+                    Save Changes
+                  </Button>
+                </div>
+              </form>
+            </Form>
           </div>
         </DialogContent>
       </Dialog>

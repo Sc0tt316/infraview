@@ -13,6 +13,10 @@ const Toaster = ({ ...props }: ToasterProps) => {
       theme={theme as ToasterProps["theme"]}
       className="toaster group"
       toastOptions={{
+        duration: 3000, // 3 seconds
+        closeButton: true,
+        dismissible: true,
+        className: "cursor-pointer", // Make toast clickable
         classNames: {
           toast:
             "group toast group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg",
@@ -23,6 +27,11 @@ const Toaster = ({ ...props }: ToasterProps) => {
             "group-[.toast]:bg-muted group-[.toast]:text-muted-foreground",
         },
       }}
+      richColors
+      position="top-right"
+      expand={false}
+      offset="16px"
+      visibleToasts={3} // Limit visible toasts to 3
       {...props}
     />
   );

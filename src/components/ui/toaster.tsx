@@ -6,11 +6,14 @@ import { ToastAction } from "@/components/ui/toast"
 export function Toaster() {
   const { toasts } = useToast()
 
+  // Only show the first 3 toasts
+  const visibleToasts = toasts.slice(0, 3);
+
   return (
     <div
       className="fixed top-0 z-[100] flex max-h-screen w-full flex-col-reverse p-4 sm:bottom-0 sm:right-0 sm:top-auto sm:flex-col md:max-w-[420px]"
     >
-      {toasts.map(function ({ id, title, description, action, ...props }) {
+      {visibleToasts.map(function ({ id, title, description, action, ...props }) {
         return (
           <div
             key={id}
@@ -21,6 +24,9 @@ export function Toaster() {
                 "destructive group border-red-500 bg-red-500 text-slate-50 dark:border-red-900 dark:bg-red-900 dark:text-slate-50": props.type === "error"
               }
             )}
+            data-state={props.visible ? "open" : "closed"}
+            role="status"
+            aria-live="polite"
             {...props}
           >
             <div className="grid gap-1">
