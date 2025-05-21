@@ -9,6 +9,7 @@ import {
   getAllLogs,
   getAllActivities
 } from './activityLogService';
+import { snmpService } from './snmpService';
 
 // Export types
 export type { 
@@ -28,5 +29,10 @@ export const printerService = {
   getPrinterActivity,
   addActivity,
   getAllLogs,
-  getAllActivities
+  getAllActivities,
+  
+  // SNMP operations
+  pollPrinter: printerManagement.pollPrinter,
+  pollAllPrinters: printerManagement.pollAllPrinters,
+  discoverPrinters: printerManagement.discoverPrinters
 };

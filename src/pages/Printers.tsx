@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { RefreshCw } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { RefreshCw, Network, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { usePrinters } from '@/hooks/usePrinters';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,6 +13,8 @@ import { useAuth } from '@/context/AuthContext';
 import { PrinterData } from '@/types/printers';
 import { useQueryClient } from '@tanstack/react-query';
 import AddPrinterFormContainer from '@/components/printers/AddPrinterFormContainer';
+import { printerService } from '@/services/printer';
+import { toast } from '@/hooks/use-toast';
 
 const Printers = () => {
   const { user } = useAuth();
@@ -23,6 +25,7 @@ const Printers = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isPollingAll, setIsPollingAll] = useState(false);
   
   const { printers, isLoading, error, refetchPrinters } = usePrinters();
   const queryClient = useQueryClient();
@@ -43,6 +46,27 @@ const Printers = () => {
 
   const handleAddPrinter = () => {
     setShowAddPrinter(true);
+  };
+
+  // Handle polling all printers via SNMP
+  const handlePollAllPrinters = async () => {
+    if (isPollingAll) return;
+    
+    setIsPollingAll(true);
+    try {
+      await printerService.pollAllPrinters();
+      // After polling is complete, refresh the printer list
+      await refetchPrinters();
+    } catch (error) {
+      console.error("Error polling printers:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update printers via SNMP",
+        variant: "destructive"
+      });
+    } finally {
+      setIsPollingAll(false);
+    }
   };
 
   // Apply filters
@@ -71,6 +95,18 @@ const Printers = () => {
     return true;
   });
 
+  // Set up auto-refresh every 5 minutes if there are printers
+  useEffect(() => {
+    if (printers.length === 0) return;
+    
+    const interval = setInterval(() => {
+      console.log("Auto-refreshing printer data...");
+      refetchPrinters();
+    }, 5 * 60 * 1000); // 5 minutes
+    
+    return () => clearInterval(interval);
+  }, [printers.length, refetchPrinters]);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -83,14 +119,29 @@ const Printers = () => {
             variant="outline" 
             size="icon" 
             onClick={handleRefresh} 
-            disabled={isLoading}
+            disabled={isLoading || isRefreshing}
+            title="Refresh printer list"
           >
             <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
           </Button>
+          
           {isAdmin && (
-            <Button onClick={() => setShowAddPrinter(true)}>
-              Add Printer
-            </Button>
+            <>
+              <Button 
+                variant="outline"
+                onClick={handlePollAllPrinters} 
+                disabled={isPollingAll || printers.length === 0}
+                className="flex items-center gap-2"
+                title="Update all printers via SNMP"
+              >
+                <Network className={`h-4 w-4 ${isPollingAll ? "animate-pulse" : ""}`} />
+                <span className="hidden sm:inline">Update via SNMP</span>
+              </Button>
+              
+              <Button onClick={() => setShowAddPrinter(true)}>
+                Add Printer
+              </Button>
+            </>
           )}
         </div>
       </div>

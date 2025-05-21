@@ -7,6 +7,7 @@ import { deletePrinter } from './deletePrinter';
 import { restartPrinter } from './restartPrinter';
 import { updatePrinterLevels, detectPrinterLevels } from './autoPrinterLevels';
 import { changeStatus } from './changeStatus';
+import { pollPrinter, discoverPrinters, pollAllPrinters } from './snmpOperations';
 
 export {
   getAllPrinters,
@@ -17,5 +18,8 @@ export {
   restartPrinter,
   updatePrinterLevels,
   detectPrinterLevels,
-  changeStatus
+  changeStatus,
+  pollPrinter,
+  discoverPrinters,
+  pollAllPrinters
 };
