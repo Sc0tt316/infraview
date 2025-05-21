@@ -7,9 +7,9 @@ import PrinterNotFound from './printer-detail/PrinterNotFound';
 import LoadingSpinner from './printer-detail/LoadingSpinner';
 import PrinterOverview from './printer-detail/PrinterOverview';
 import PrintLogs from './printer-detail/PrintLogs';
-import { updatePrinterLevels } from '@/services/printer/management/autoPrinterLevels';
 import { PrinterData } from '@/types/printers';
 import { useAuth } from '@/context/AuthContext';
+import { toast } from '@/hooks/use-toast';
 
 // Import the missing components with correct props
 import ModalHeader from './printer-detail/ModalHeader';
@@ -36,29 +36,29 @@ const PrinterDetailModal: React.FC<PrinterDetailModalProps> = ({
   
   const { data: printer, error, isLoading, refetch } = useQuery({
     queryKey: ['printer', printerId],
-    queryFn: () => printerService.getPrinter(printerId),
-  });
-  
-  // Update printer levels when modal opens
-  useEffect(() => {
-    const updateLevels = async () => {
-      if (printer) {
-        const updatedPrinter = await updatePrinterLevels(printer);
-        if (updatedPrinter.inkLevel !== printer.inkLevel || 
-            updatedPrinter.paperLevel !== printer.paperLevel) {
-          // Update the printer with new levels
-          await printerService.updatePrinter(printer.id, {
-            inkLevel: updatedPrinter.inkLevel,
-            paperLevel: updatedPrinter.paperLevel
+    queryFn: async () => {
+      // Get the printer details
+      const printerData = await printerService.getPrinter(printerId);
+      
+      // If the printer has an IP address, poll it for fresh data
+      if (printerData && printerData.ipAddress) {
+        try {
+          await printerService.pollPrinter({
+            id: printerId,
+            name: printerData.name, 
+            ipAddress: printerData.ipAddress
           });
+          return await printerService.getPrinter(printerId);
+        } catch (error) {
+          console.error('Error polling printer:', error);
+          // Return the original data even if polling failed
+          return printerData;
         }
       }
-    };
-    
-    if (printer) {
-      updateLevels();
+      
+      return printerData;
     }
-  }, [printer]);
+  });
 
   // Handle the closing of the modal
   const handleOpenChange = (open: boolean) => {
@@ -73,12 +73,21 @@ const PrinterDetailModal: React.FC<PrinterDetailModalProps> = ({
       setIsRestarting(true);
       try {
         await printerService.restartPrinter(printer.id);
+        toast({
+          title: "Printer Restarting",
+          description: "The printer is now restarting. This may take a moment."
+        });
         setTimeout(() => {
           refetch();
           setIsRestarting(false);
         }, 2000);
       } catch (error) {
         console.error('Failed to restart printer:', error);
+        toast({
+          title: "Error",
+          description: "Failed to restart the printer. Please try again.",
+          variant: "destructive"
+        });
         setIsRestarting(false);
       }
     }

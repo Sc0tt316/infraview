@@ -3,12 +3,15 @@ import { useState, useEffect } from 'react';
 import { printerService } from '@/services/printer';
 import { toast } from '@/hooks/use-toast';
 import { PrinterData } from '@/types/printers';
+import { useQueryClient } from '@tanstack/react-query';
 
 export const usePrinterStatusUpdates = (printerId: string, initialInterval = 60000) => {
   const [isPolling, setIsPolling] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [pollingInterval, setPollingInterval] = useState(initialInterval);
   const [autoPolling, setAutoPolling] = useState(false);
+  
+  const queryClient = useQueryClient();
   
   // Function to poll the printer status on demand
   const pollPrinterStatus = async (showToast = true) => {
@@ -33,6 +36,9 @@ export const usePrinterStatusUpdates = (printerId: string, initialInterval = 600
         name: printer.name,
         ipAddress: printer.ipAddress
       });
+      
+      // Invalidate queries to refetch data
+      queryClient.invalidateQueries({ queryKey: ['printer', printerId] });
       
       // Update last updated timestamp
       const now = new Date();

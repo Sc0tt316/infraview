@@ -6,6 +6,7 @@ export interface PrinterData {
   model: string;
   location: string;
   status: 'online' | 'offline' | 'error' | 'warning' | 'maintenance';
+  subStatus?: string;
   inkLevel: number;
   paperLevel: number;
   jobCount?: number;

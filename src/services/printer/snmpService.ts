@@ -47,7 +47,6 @@ export const snmpService = {
   discoverPrinters: async (): Promise<{ ipAddress: string, name: string, model: string }[]> => {
     try {
       // In a real implementation, this would scan the network for printers
-      // For this demo, we'll simulate discovery with some example printers
       
       const { data, error } = await supabase.functions.invoke('printer-monitor', {
         body: {
@@ -99,17 +98,20 @@ export const snmpService = {
       });
       
       // Poll each printer in sequence
+      const results = [];
       for (const printer of printersWithIp) {
-        await snmpService.pollPrinter({
+        const result = await snmpService.pollPrinter({
           id: printer.id,
           name: printer.name,
           ipAddress: printer.ip_address
         });
+        
+        if (result) results.push(result);
       }
       
       toast({
         title: "Update Complete",
-        description: `Successfully updated ${printersWithIp.length} printers.`
+        description: `Successfully updated ${results.length} of ${printersWithIp.length} printers.`
       });
     } catch (error) {
       console.error('Error polling all printers:', error);

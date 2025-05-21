@@ -18,6 +18,12 @@ const PrinterStatistics: React.FC<PrinterStatisticsProps> = ({ stats, jobCount, 
 
         <div className="text-muted-foreground">Monthly Pages:</div>
         <div>{stats?.monthlyPages?.toLocaleString() || stats?.monthlyPrints?.toLocaleString() || 'N/A'}</div>
+        
+        <div className="text-muted-foreground">Weekly Pages:</div>
+        <div>{stats?.weeklyPrints?.toLocaleString() || 'N/A'}</div>
+
+        <div className="text-muted-foreground">Daily Pages:</div>
+        <div>{stats?.dailyPrints?.toLocaleString() || 'N/A'}</div>
 
         <div className="text-muted-foreground">Paper Jams:</div>
         <div>{stats?.jams || 0} incidents</div>

@@ -8,19 +8,22 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { printerService } from '@/services/printer';
+import { toast } from '@/hooks/use-toast';
 
 interface PrinterActionsProps {
   printerId: string;
   hasIpAddress: boolean;
   isAdmin: boolean;
   onRestartClick?: () => void;
+  isRestarting?: boolean;
 }
 
 const PrinterActions: React.FC<PrinterActionsProps> = ({
   printerId,
   hasIpAddress,
   isAdmin,
-  onRestartClick
+  onRestartClick,
+  isRestarting = false
 }) => {
   const {
     isPolling,
@@ -30,8 +33,16 @@ const PrinterActions: React.FC<PrinterActionsProps> = ({
     toggleAutoPolling
   } = usePrinterStatusUpdates(printerId, 60000); // 1 minute default interval
 
-  const handleManualPoll = () => {
-    pollPrinterStatus(true);
+  const handleManualPoll = async () => {
+    try {
+      await pollPrinterStatus(true);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update printer status",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleRestart = () => {
@@ -51,14 +62,14 @@ const PrinterActions: React.FC<PrinterActionsProps> = ({
         {/* SNMP Status Update */}
         <div>
           <Button
-            variant="outline"
+            variant="default"
             size="sm"
             className="w-full flex items-center justify-center gap-2"
             onClick={handleManualPoll}
             disabled={isPolling || !hasIpAddress}
           >
-            <Network className={`h-4 w-4 ${isPolling ? "animate-pulse" : ""}`} />
-            <span>Update Status via SNMP</span>
+            <RefreshCw className={`h-4 w-4 ${isPolling ? "animate-spin" : ""}`} />
+            <span>Refresh Printer Status</span>
           </Button>
           
           {!hasIpAddress && (
@@ -101,9 +112,10 @@ const PrinterActions: React.FC<PrinterActionsProps> = ({
             size="sm"
             className="w-full flex items-center justify-center gap-2"
             onClick={handleRestart}
+            disabled={isRestarting}
           >
-            <Power className="h-4 w-4" />
-            <span>Restart Printer</span>
+            <Power className={`h-4 w-4 ${isRestarting ? "animate-spin" : ""}`} />
+            <span>{isRestarting ? "Restarting..." : "Restart Printer"}</span>
           </Button>
         )}
       </div>

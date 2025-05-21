@@ -31,6 +31,8 @@ const PrinterOverview: React.FC<PrinterOverviewProps> = ({ printer, isAdmin, isR
                 inkLevel={printer.inkLevel}
                 paperLevel={printer.paperLevel}
                 supplies={printer.supplies}
+                status={printer.status}
+                subStatus={printer.subStatus} 
               />
               <SupplyLevels supplies={printer.supplies} />
             </div>
@@ -52,6 +54,7 @@ const PrinterOverview: React.FC<PrinterOverviewProps> = ({ printer, isAdmin, isR
               hasIpAddress={hasIpAddress}
               isAdmin={isAdmin}
               onRestartClick={onRestartPrinter}
+              isRestarting={isRestarting}
             />
           </CardContent>
         </Card>
