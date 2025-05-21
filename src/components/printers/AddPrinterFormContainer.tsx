@@ -45,7 +45,20 @@ const AddPrinterFormContainer: React.FC<AddPrinterFormContainerProps> = ({
     
     try {
       form.handleSubmit(async (validData) => {
-        await printerService.addPrinter(validData);
+        // Ensure all required fields are present before sending to the API
+        const printerData = {
+          name: validData.name,
+          model: validData.model,
+          location: validData.location,
+          status: validData.status,
+          inkLevel: validData.inkLevel,
+          paperLevel: validData.paperLevel,
+          ipAddress: validData.ipAddress || '',
+          department: validData.department || '',
+          serialNumber: undefined
+        };
+        
+        await printerService.addPrinter(printerData);
         toast({
           title: "Success",
           description: "Printer added successfully",
