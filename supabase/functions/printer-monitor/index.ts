@@ -2,7 +2,7 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 
-// SNMP OIDs for common printer data points
+// SNMP OIDs for common printer data points - these are the industry-standard OIDs for printers
 const PRINTER_OIDS = {
   MODEL: '1.3.6.1.2.1.25.3.2.1.3.1',            // Model/description
   SERIAL: '1.3.6.1.2.1.43.5.1.1.17.1',          // Serial number
@@ -26,7 +26,7 @@ const PRINTER_OIDS = {
   TONER_CRITICAL: '1.3.6.1.2.1.25.3.5.1.1.5',   // Toner critical warning
 };
 
-// Status code mappings
+// Status code mappings based on RFC 3805 standard for printer MIB
 const PRINTER_STATUS = {
   1: 'other',
   2: 'unknown',
@@ -45,18 +45,23 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Function to simulate SNMP communication (in a real implementation, we would use an SNMP library)
+/**
+ * Simulates SNMP communication with a printer
+ * In a real implementation, this would use actual SNMP libraries such as:
+ * - snmp.js or net-snmp for Node.js environments
+ * - Or would call a native SNMP service via HTTP
+ */
 async function queryPrinter(ipAddress: string, oids: string[]): Promise<Record<string, any>> {
-  // This function would be replaced with actual SNMP library code in production
   console.log(`Querying printer at ${ipAddress} for OIDs: ${oids.join(', ')}`);
   
-  // Simulate network delay
+  // This would be a real SNMP request in production
+  // For example using net-snmp: await session.get(oids)
+  
+  // Simulate network delay and potential issues
   await new Promise(resolve => setTimeout(resolve, 1000));
   
-  // Randomly determine if printer is online (90% chance)
-  const isOnline = Math.random() < 0.9;
-  
-  if (!isOnline) {
+  // Simulate network failures (10% chance)
+  if (Math.random() < 0.1) {
     throw new Error('Printer is offline or not responding');
   }
   
@@ -97,7 +102,7 @@ async function queryPrinter(ipAddress: string, oids: string[]): Promise<Record<s
       modelName = `Generic Printer ${ipSeed}`;
   }
   
-  // Calculate printer status (mostly online/idle with occasional issues)
+  // Calculate realistic printer status based on RFC 3805 standards
   let printerStatusCode: number;
   const statusRoll = Math.random() * 100;
   if (statusRoll < 80) {
@@ -117,7 +122,7 @@ async function queryPrinter(ipAddress: string, oids: string[]): Promise<Record<s
   // Determine sub-status based on status code
   let subStatus = PRINTER_STATUS[printerStatusCode] || 'idle';
   
-  // Add more detail to the sub-status
+  // Add more detail to the sub-status based on real printer behavior
   if (printerStatusCode === 3) subStatus = 'idle';
   else if (printerStatusCode === 4) subStatus = 'printing job';
   else if (printerStatusCode === 5) subStatus = 'warming up';
@@ -144,7 +149,7 @@ async function queryPrinter(ipAddress: string, oids: string[]): Promise<Record<s
   // Paper level - somewhat random but tied to IP
   const paperLevel = Math.max(5, (seed(7) + ipSeed * 3) % 101); // Min 5%
   
-  // Create the response object
+  // Create the response object with SNMP OIDs as keys (as a real SNMP response would have)
   const response: Record<string, any> = {
     [PRINTER_OIDS.MODEL]: modelName,
     [PRINTER_OIDS.SERIAL]: `SN-${manufacturer.substring(0,1)}${ipSeed * 1000 + 10000}`,
@@ -170,7 +175,10 @@ async function queryPrinter(ipAddress: string, oids: string[]): Promise<Record<s
   return response;
 }
 
-// Function to map SNMP response to printer data object
+/**
+ * Maps raw SNMP response data to our application's printer data structure
+ * This function converts the technical SNMP OID values to our application's data model
+ */
 function mapSNMPResponseToPrinterData(snmpData: Record<string, any>, ipAddress: string, printerName: string): any {
   console.log("Mapping SNMP data to printer object:", snmpData);
   
@@ -178,7 +186,7 @@ function mapSNMPResponseToPrinterData(snmpData: Record<string, any>, ipAddress: 
   const statusCode = snmpData[PRINTER_OIDS.STATUS];
   const subStatus = snmpData[PRINTER_OIDS.SUB_STATUS] || 'idle';
   
-  // Convert status code to our application's status format
+  // Convert status code to our application's status format based on RFC 3805
   let appStatus: 'online' | 'offline' | 'error' | 'warning' | 'maintenance' = 'online';
   if (statusCode === 8) appStatus = 'error';
   else if (statusCode === 6 || statusCode === 7) appStatus = 'offline';
@@ -207,7 +215,7 @@ function mapSNMPResponseToPrinterData(snmpData: Record<string, any>, ipAddress: 
   console.log("Creating supplies object with:", { blackLevel, cyanLevel, magentaLevel, yellowLevel });
   
   // Create the supplies object based on detected levels
-  let supplies = {
+  let supplies: Record<string, number> = {
     black: blackLevel
   };
   
@@ -239,6 +247,54 @@ function mapSNMPResponseToPrinterData(snmpData: Record<string, any>, ipAddress: 
   };
 }
 
+/**
+ * Discovers SNMP-enabled printers on the network
+ * In a real implementation, this would use broadcast/multicast SNMP discovery
+ */
+async function discoverPrinters(): Promise<Array<{ipAddress: string, name: string, model: string}>> {
+  console.log("Starting printer discovery...");
+  
+  // This would be a real network scan in production environment
+  // For example using:
+  // 1. SNMPv2 GetBulk requests
+  // 2. Network broadcast
+  // 3. mDNS/Bonjour/DNS-SD discovery
+  
+  // Generate printers in common IP ranges
+  const discoveredPrinters = [];
+  
+  // Common IP ranges for office printers
+  const commonRanges = [
+    { prefix: '192.168.1.', start: 100, end: 110 },
+    { prefix: '10.0.0.', start: 50, end: 60 },
+    { prefix: '172.16.0.', start: 200, end: 210 }
+  ];
+  
+  for (const range of commonRanges) {
+    for (let i = range.start; i < range.end; i++) {
+      const ip = `${range.prefix}${i}`;
+      try {
+        // Use our query function to generate consistent data for each IP
+        const oids = [PRINTER_OIDS.MODEL, PRINTER_OIDS.DEVICE_NAME];
+        const data = await queryPrinter(ip, oids);
+        
+        discoveredPrinters.push({
+          ipAddress: ip,
+          name: data[PRINTER_OIDS.DEVICE_NAME] || `Printer-${i}`,
+          model: data[PRINTER_OIDS.MODEL] || 'Unknown Model'
+        });
+      } catch (error) {
+        // Skip printers that don't respond
+        continue;
+      }
+    }
+  }
+  
+  console.log(`Discovered ${discoveredPrinters.length} printers`);
+  return discoveredPrinters;
+}
+
+// Main handler for the edge function
 serve(async (req) => {
   // Create Supabase client
   const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
@@ -269,40 +325,12 @@ serve(async (req) => {
     if (action === 'discover') {
       console.log("Performing printer discovery");
       
-      // This would be replaced with actual network scanning in production
-      // For now, generate some sample printers in the common ranges
-      const discoveredPrinters = [];
+      const discoveredPrinters = await discoverPrinters();
       
-      // Generate printers in common IP ranges
-      const commonRanges = [
-        { prefix: '192.168.1.', start: 100, end: 110 },
-        { prefix: '10.0.0.', start: 50, end: 60 },
-        { prefix: '172.16.0.', start: 200, end: 210 }
-      ];
-      
-      for (const range of commonRanges) {
-        for (let i = range.start; i < range.end; i++) {
-          const ip = `${range.prefix}${i}`;
-          try {
-            // Use our query function to generate consistent data for each IP
-            const oids = [PRINTER_OIDS.MODEL, PRINTER_OIDS.DEVICE_NAME];
-            const data = await queryPrinter(ip, oids);
-            
-            discoveredPrinters.push({
-              ipAddress: ip,
-              name: data[PRINTER_OIDS.DEVICE_NAME] || `Printer-${i}`,
-              model: data[PRINTER_OIDS.MODEL] || 'Unknown Model'
-            });
-          } catch (error) {
-            // Skip printers that don't respond
-            continue;
-          }
-        }
-      }
-      
-      console.log(`Discovered ${discoveredPrinters.length} printers`);
-      
-      return new Response(JSON.stringify({ success: true, printers: discoveredPrinters }), {
+      return new Response(JSON.stringify({ 
+        success: true, 
+        printers: discoveredPrinters 
+      }), {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
@@ -341,8 +369,7 @@ serve(async (req) => {
           last_active: new Date().toISOString()
         })
         .eq('id', printerId)
-        .select('*')
-        .single();
+        .select();
         
       if (error) {
         console.error("Error updating printer:", error);
