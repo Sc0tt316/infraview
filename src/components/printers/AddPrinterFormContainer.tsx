@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { printerFormSchema, PrinterFormValues } from '@/types/printer';
@@ -7,13 +7,18 @@ import AddPrinterForm from './AddPrinterForm';
 import { useQueryClient } from '@tanstack/react-query';
 import { printerService } from '@/services/printer';
 import { toast } from '@/hooks/use-toast';
+import { PrinterData } from '@/types/printers';
 
 interface AddPrinterFormContainerProps {
   onCancel: () => void;
+  existingPrinter?: PrinterData;
+  onSuccess?: () => void;
 }
 
 const AddPrinterFormContainer: React.FC<AddPrinterFormContainerProps> = ({ 
-  onCancel 
+  onCancel,
+  existingPrinter,
+  onSuccess
 }) => {
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState<PrinterFormValues>({
@@ -27,9 +32,26 @@ const AddPrinterFormContainer: React.FC<AddPrinterFormContainerProps> = ({
     department: ''
   });
 
+  // Initialize form with existing printer data if editing
+  useEffect(() => {
+    if (existingPrinter) {
+      setFormData({
+        name: existingPrinter.name || '',
+        model: existingPrinter.model || '',
+        location: existingPrinter.location || '',
+        status: existingPrinter.status || 'offline',
+        inkLevel: existingPrinter.inkLevel || 100,
+        paperLevel: existingPrinter.paperLevel || 100,
+        ipAddress: existingPrinter.ipAddress || '',
+        department: existingPrinter.department || '',
+      });
+    }
+  }, [existingPrinter]);
+
   const form = useForm<PrinterFormValues>({
     resolver: zodResolver(printerFormSchema),
-    defaultValues: formData
+    defaultValues: formData,
+    values: formData
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -58,21 +80,39 @@ const AddPrinterFormContainer: React.FC<AddPrinterFormContainerProps> = ({
           serialNumber: undefined
         };
         
-        await printerService.addPrinter(printerData);
-        toast({
-          title: "Success",
-          description: "Printer added successfully",
-        });
+        if (existingPrinter) {
+          // Update existing printer
+          await printerService.updatePrinter(existingPrinter.id, printerData);
+          toast({
+            title: "Success",
+            description: "Printer updated successfully",
+          });
+        } else {
+          // Add new printer
+          await printerService.addPrinter(printerData);
+          toast({
+            title: "Success",
+            description: "Printer added successfully",
+          });
+        }
+
+        // Refresh printer data
         queryClient.invalidateQueries({
           queryKey: ['printers']
         });
-        onCancel();
+        
+        // Call onSuccess callback if provided
+        if (onSuccess) {
+          onSuccess();
+        } else {
+          onCancel();
+        }
       })();
     } catch (error) {
-      console.error("Error adding printer:", error);
+      console.error("Error adding/updating printer:", error);
       toast({
         title: "Error",
-        description: "Failed to add printer. Please try again.",
+        description: "Failed to save printer. Please try again.",
         variant: "destructive"
       });
     }
@@ -86,6 +126,7 @@ const AddPrinterFormContainer: React.FC<AddPrinterFormContainerProps> = ({
       formData={formData}
       handleInputChange={handleInputChange}
       setFormData={setFormData}
+      isEditing={!!existingPrinter}
     />
   );
 };

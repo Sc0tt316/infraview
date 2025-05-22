@@ -79,7 +79,7 @@ export const snmpService = {
       const { data: printers, error } = await supabase
         .from('printers')
         .select('id, name, ip_address')
-        .is('ip_address', 'not.null');
+        .not('ip_address', 'is', null);
       
       if (error) {
         throw error;
