@@ -20,6 +20,7 @@ interface AddPrinterFormProps {
   formData: PrinterFormValues;
   handleInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
   setFormData: React.Dispatch<React.SetStateAction<PrinterFormValues>>;
+  isEditing?: boolean;
 }
 
 const AddPrinterForm: React.FC<AddPrinterFormProps> = ({
@@ -28,6 +29,7 @@ const AddPrinterForm: React.FC<AddPrinterFormProps> = ({
   onCancel,
   formData,
   handleInputChange,
+  isEditing = false,
 }) => {
   return (
     <Form {...form}>
@@ -188,7 +190,7 @@ const AddPrinterForm: React.FC<AddPrinterFormProps> = ({
             Cancel
           </Button>
           <Button type="submit">
-            Add Printer
+            {isEditing ? "Update Printer" : "Add Printer"}
           </Button>
         </div>
       </form>
