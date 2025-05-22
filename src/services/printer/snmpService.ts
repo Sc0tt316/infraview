@@ -164,7 +164,7 @@ export const snmpService = {
         toast({
           title: "Update Partially Complete",
           description: `Updated ${results.length} of ${printersWithIp.length} printers. Some printers could not be reached.`,
-          variant: "warning"
+          variant: "destructive" // Changed from "warning" to "destructive"
         });
       }
     } catch (error) {
