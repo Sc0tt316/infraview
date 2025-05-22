@@ -13,7 +13,7 @@ export const usePrinterStatusUpdates = (printerId: string, initialInterval = 600
   
   const queryClient = useQueryClient();
   
-  // Function to poll the printer status on demand
+  // Function to poll the printer status on demand using SNMP
   const pollPrinterStatus = async (showToast = true) => {
     if (isPolling || !printerId) return;
     
@@ -30,7 +30,7 @@ export const usePrinterStatusUpdates = (printerId: string, initialInterval = 600
         throw new Error('Printer has no IP address configured');
       }
       
-      // Poll the printer
+      // Poll the printer via SNMP
       await printerService.pollPrinter({
         id: printerId,
         name: printer.name,

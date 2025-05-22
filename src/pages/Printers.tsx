@@ -26,14 +26,23 @@ const Printers = () => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isPollingAll, setIsPollingAll] = useState(false);
+  const [printerToDelete, setPrinterToDelete] = useState<PrinterData | null>(null);
+  const [printerToEdit, setPrinterToEdit] = useState<PrinterData | null>(null);
   
   const { printers, isLoading, error, refetchPrinters } = usePrinters();
   const queryClient = useQueryClient();
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    await refetchPrinters();
-    setTimeout(() => setIsRefreshing(false), 1000); // Keep animation visible for 1 second
+    // Use SNMP to update all printers when refreshing
+    try {
+      await printerService.pollAllPrinters();
+    } catch (error) {
+      console.error('Error polling printers:', error);
+    } finally {
+      await refetchPrinters();
+      setTimeout(() => setIsRefreshing(false), 1000); // Keep animation visible for 1 second
+    }
   };
   
   const handlePrinterClick = (printer: PrinterData) => {
@@ -48,24 +57,21 @@ const Printers = () => {
     setShowAddPrinter(true);
   };
 
-  // Handle polling all printers via SNMP
-  const handlePollAllPrinters = async () => {
-    if (isPollingAll) return;
-    
-    setIsPollingAll(true);
-    try {
-      await printerService.pollAllPrinters();
-      // After polling is complete, refresh the printer list
-      await refetchPrinters();
-    } catch (error) {
-      console.error("Error polling printers:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update printers via SNMP",
-        variant: "destructive"
-      });
-    } finally {
-      setIsPollingAll(false);
+  const handleDeletePrinter = (printer: PrinterData) => {
+    setPrinterToDelete(printer);
+  };
+
+  const handleEditPrinter = (printer: PrinterData) => {
+    setPrinterToEdit(printer);
+  };
+
+  const confirmDeletePrinter = async () => {
+    if (printerToDelete) {
+      const success = await printerService.deletePrinter(printerToDelete.id, printerToDelete.name);
+      if (success) {
+        setPrinterToDelete(null);
+        refetchPrinters();
+      }
     }
   };
 
@@ -120,24 +126,13 @@ const Printers = () => {
             size="icon" 
             onClick={handleRefresh} 
             disabled={isLoading || isRefreshing}
-            title="Refresh printer list"
+            title="Update all printers via SNMP"
           >
             <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
           </Button>
           
           {isAdmin && (
             <>
-              <Button 
-                variant="outline"
-                onClick={handlePollAllPrinters} 
-                disabled={isPollingAll || printers.length === 0}
-                className="flex items-center gap-2"
-                title="Update all printers via SNMP"
-              >
-                <Network className={`h-4 w-4 ${isPollingAll ? "animate-pulse" : ""}`} />
-                <span className="hidden sm:inline">Update via SNMP</span>
-              </Button>
-              
               <Button onClick={() => setShowAddPrinter(true)}>
                 Add Printer
               </Button>
@@ -179,9 +174,8 @@ const Printers = () => {
               key={printer.id}
               printer={printer}
               onOpenDetails={setSelectedPrinterId}
-              onOpenEdit={() => {}}
-              onOpenDelete={() => {}}
-              onRestart={() => {}}
+              onOpenEdit={() => handleEditPrinter(printer)}
+              onOpenDelete={() => handleDeletePrinter(printer)}
               isAdmin={isAdmin || false}
             />
           ))}
@@ -193,6 +187,44 @@ const Printers = () => {
         <DialogContent className="sm:max-w-[600px]">
           {showAddPrinter && (
             <AddPrinterFormContainer onCancel={() => setShowAddPrinter(false)} />
+          )}
+        </DialogContent>
+      </Dialog>
+      
+      {/* Edit Printer Dialog */}
+      <Dialog open={!!printerToEdit} onOpenChange={(open) => !open && setPrinterToEdit(null)}>
+        <DialogContent className="sm:max-w-[600px]">
+          {printerToEdit && (
+            <AddPrinterFormContainer 
+              onCancel={() => setPrinterToEdit(null)} 
+              existingPrinter={printerToEdit}
+              onSuccess={() => {
+                setPrinterToEdit(null);
+                refetchPrinters();
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+      
+      {/* Delete Printer Dialog */}
+      <Dialog open={!!printerToDelete} onOpenChange={(open) => !open && setPrinterToDelete(null)}>
+        <DialogContent className="sm:max-w-[400px]">
+          {printerToDelete && (
+            <div className="space-y-4">
+              <h2 className="text-xl font-bold">Delete Printer</h2>
+              <p>
+                Are you sure you want to delete "{printerToDelete.name}"? This action cannot be undone.
+              </p>
+              <div className="flex justify-end gap-3">
+                <Button variant="outline" onClick={() => setPrinterToDelete(null)}>
+                  Cancel
+                </Button>
+                <Button variant="destructive" onClick={confirmDeletePrinter}>
+                  Delete
+                </Button>
+              </div>
+            </div>
           )}
         </DialogContent>
       </Dialog>

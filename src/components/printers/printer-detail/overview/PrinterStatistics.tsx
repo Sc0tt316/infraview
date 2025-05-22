@@ -29,7 +29,7 @@ const PrinterStatistics: React.FC<PrinterStatisticsProps> = ({ stats, jobCount, 
         <div>{stats?.jams || 0} incidents</div>
 
         <div className="text-muted-foreground">Job Count:</div>
-        <div>{jobCount?.toLocaleString() || 0} jobs</div>
+        <div>{jobCount?.toLocaleString() || stats?.totalPrints?.toLocaleString() || 0} jobs</div>
 
         <div className="text-muted-foreground">Last Active:</div>
         <div>{lastActive || 'Unknown'}</div>

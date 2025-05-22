@@ -9,12 +9,7 @@ interface StatusLevelsProps {
   paperLevel: number;
   status?: 'online' | 'offline' | 'error' | 'maintenance' | 'warning';
   subStatus?: string;
-  supplies?: {
-    black: number;
-    cyan?: number;
-    magenta?: number;
-    yellow?: number;
-  };
+  supplies?: PrinterData['supplies'];
 }
 
 const StatusLevels: React.FC<StatusLevelsProps> = ({ inkLevel, paperLevel, supplies, status, subStatus }) => {

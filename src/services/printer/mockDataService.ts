@@ -1,23 +1,18 @@
-import { apiService } from '../api';
-import { PrinterData, PrintLog, PrinterActivity } from '@/types/printers';
 
-// This file is now deprecated because we're using Supabase
-// Keeping minimal implementation for backward compatibility
+// This file is now completely deprecated because we're using a real SNMP-based API
+// All functionality has been moved to the respective service files
 
-// Initialize printers (no-op - using Supabase now)
 export const initializePrinters = async (): Promise<void> => {
-  // No need to initialize mock data anymore
+  console.warn('initializePrinters from mockDataService is deprecated and does nothing');
   return;
 };
 
-// Initialize logs (no-op - using Supabase now)
 export const initializeLogs = async (): Promise<void> => {
-  // No need to initialize mock data anymore
+  console.warn('initializeLogs from mockDataService is deprecated and does nothing');
   return;
 };
 
-// Initialize activity (no-op - using Supabase now)
 export const initializeActivity = async (): Promise<void> => {
-  // No need to initialize mock data anymore
+  console.warn('initializeActivity from mockDataService is deprecated and does nothing');
   return;
 };

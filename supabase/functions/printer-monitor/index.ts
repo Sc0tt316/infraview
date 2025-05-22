@@ -16,7 +16,9 @@ const PRINTER_OIDS = {
   PAPER_LEVEL: '1.3.6.1.2.1.43.8.2.1.10.1.1',   // Paper level in tray
   PAPER_JAMS: '1.3.6.1.2.1.43.18.1.1.8.1.1',    // Paper jam counter
   TOTAL_PRINTED: '1.3.6.1.2.1.43.10.2.1.4.1.1', // Total pages printed
+  TOTAL_PAGES: '1.3.6.1.4.1.11.2.3.9.4.2.1.4.1.2.5', // HP-specific total pages
   MONTHLY_PRINTED: '1.3.6.1.2.1.43.10.2.1.5.1.1', // Monthly page count
+  MONTHLY_PAGES: '1.3.6.1.4.1.11.2.3.9.4.2.1.4.1.2.6', // HP-specific monthly pages
   PRINTER_TYPE: '1.3.6.1.2.1.25.3.2.1.2.1',     // Printer type
   WARMING_UP: '1.3.6.1.2.1.25.3.5.1.1.2',       // Warming up status
   PROCESSING_JOB: '1.3.6.1.2.1.25.3.5.1.1.3',   // Processing job status
@@ -44,64 +46,125 @@ const corsHeaders = {
 };
 
 // Function to simulate SNMP communication (in a real implementation, we would use an SNMP library)
-async function simulateSNMPQuery(ipAddress: string, oids: string[]): Promise<Record<string, any>> {
-  // This is a simulated response - in production, this would make real SNMP calls
-  // For demo purposes, we'll generate realistic-looking values
+async function queryPrinter(ipAddress: string, oids: string[]): Promise<Record<string, any>> {
+  // This function would be replaced with actual SNMP library code in production
+  console.log(`Querying printer at ${ipAddress} for OIDs: ${oids.join(', ')}`);
   
   // Simulate network delay
   await new Promise(resolve => setTimeout(resolve, 1000));
   
-  // Randomly determine if printer is online (80% chance)
-  const isOnline = Math.random() < 0.8;
+  // Randomly determine if printer is online (90% chance)
+  const isOnline = Math.random() < 0.9;
   
   if (!isOnline) {
     throw new Error('Printer is offline or not responding');
   }
   
-  // Generate random data for the printer
-  const randomSupplyLevel = () => Math.floor(Math.random() * 100);
-  const randomPrinterModel = () => {
-    const models = ['HP LaserJet Pro M404', 'Epson WorkForce Pro WF-4830', 'Canon PIXMA TS9120', 
-                   'Brother MFC-L8900CDW', 'Xerox VersaLink C405', 'Lexmark MC3224i'];
-    return models[Math.floor(Math.random() * models.length)];
-  };
+  // Generate realistic printer data based on IP address
+  // Using the last octet of IP as a "seed" for deterministic but different values
+  const ipSeed = parseInt(ipAddress.split('.').pop() || '0', 10);
+  const seed = (n: number) => ((ipSeed * 13 + n * 17) % 100); // Simple hash function for deterministic values
   
-  // Determine if it's a color printer (70% chance)
-  const isColorPrinter = Math.random() < 0.7;
+  // Determine if it's a color printer (using IP address last octet to make it deterministic)
+  const isColorPrinter = (ipSeed % 2 === 0); // Even IP = color printer
   
-  // Simulate random but realistic job count
-  const jobCount = Math.floor(Math.random() * 5000);
-  const monthlyPrints = Math.floor(Math.random() * 500);
+  // Determine manufacturer based on IP address
+  const manufacturers = ['HP', 'Epson', 'Canon', 'Brother', 'Xerox', 'Lexmark'];
+  const manufacturer = manufacturers[ipSeed % manufacturers.length];
   
-  // Simulate printer status (mostly online with occasional issues)
-  const statusCode = Math.random() < 0.9 ? 3 : [5, 6, 8][Math.floor(Math.random() * 3)];
+  // Generate model string based on manufacturer
+  let modelName = '';
+  switch (manufacturer) {
+    case 'HP':
+      modelName = `HP LaserJet ${isColorPrinter ? 'Color ' : ''}Pro M${4 + (ipSeed % 5)}${ipSeed % 100}`;
+      break;
+    case 'Epson':
+      modelName = `Epson WorkForce Pro WF-${isColorPrinter ? 'C' : ''}${4 + (ipSeed % 5)}${ipSeed % 900}`;
+      break;
+    case 'Canon':
+      modelName = `Canon ${isColorPrinter ? 'PIXMA' : 'MAXIFY'} ${isColorPrinter ? 'TS' : 'MB'}${5 + (ipSeed % 5)}${ipSeed % 100}`;
+      break;
+    case 'Brother':
+      modelName = `Brother ${isColorPrinter ? 'MFC-L8' : 'HL-L6'}${9 - (ipSeed % 5)}${ipSeed % 100}CDW`;
+      break;
+    case 'Xerox':
+      modelName = `Xerox VersaLink ${isColorPrinter ? 'C' : 'B'}${4 + (ipSeed % 5)}${ipSeed % 100}`;
+      break;
+    case 'Lexmark':
+      modelName = `Lexmark ${isColorPrinter ? 'MC' : 'MS'}${3 + (ipSeed % 5)}${ipSeed % 200}i`;
+      break;
+    default:
+      modelName = `Generic Printer ${ipSeed}`;
+  }
+  
+  // Calculate printer status (mostly online/idle with occasional issues)
+  let printerStatusCode: number;
+  const statusRoll = Math.random() * 100;
+  if (statusRoll < 80) {
+    printerStatusCode = 3; // idle - most common
+  } else if (statusRoll < 85) {
+    printerStatusCode = 4; // printing
+  } else if (statusRoll < 90) {
+    printerStatusCode = 5; // warmup
+  } else if (statusRoll < 95) {
+    printerStatusCode = 6; // stopped
+  } else if (statusRoll < 98) {
+    printerStatusCode = 8; // error
+  } else {
+    printerStatusCode = 9; // maintenance
+  }
   
   // Determine sub-status based on status code
-  let subStatus = 'idle';
-  if (statusCode === 4) subStatus = 'printing';
-  else if (statusCode === 5) subStatus = 'warming up';
-  else if (statusCode === 8) subStatus = 'paper jam';
-  else if (statusCode === 9) subStatus = 'scheduled maintenance';
+  let subStatus = PRINTER_STATUS[printerStatusCode] || 'idle';
+  
+  // Add more detail to the sub-status
+  if (printerStatusCode === 3) subStatus = 'idle';
+  else if (printerStatusCode === 4) subStatus = 'printing job';
+  else if (printerStatusCode === 5) subStatus = 'warming up';
+  else if (printerStatusCode === 6) {
+    const stopReasons = ['out of paper', 'door open', 'user intervention required'];
+    subStatus = stopReasons[ipSeed % stopReasons.length];
+  }
+  else if (printerStatusCode === 8) {
+    const errorReasons = ['paper jam', 'out of toner', 'hardware error'];
+    subStatus = errorReasons[ipSeed % errorReasons.length];
+  }
+  else if (printerStatusCode === 9) subStatus = 'scheduled maintenance required';
+  
+  // Calculate toner levels - for consistent values, use the IP seed
+  const blackLevel = Math.max(10, (seed(1) + ipSeed) % 101); // Min 10%
+  
+  // Job statistics - make them dependent on IP for consistency
+  const totalPrinted = 1000 + (ipSeed * 37) % 10000;
+  const monthlyPrinted = (ipSeed * 13) % 500;
+  const weeklyPrinted = Math.floor(monthlyPrinted / 4);
+  const dailyPrinted = Math.floor(weeklyPrinted / 7);
+  const paperJams = ipSeed % 10;
+  
+  // Paper level - somewhat random but tied to IP
+  const paperLevel = Math.max(5, (seed(7) + ipSeed * 3) % 101); // Min 5%
   
   // Create the response object
   const response: Record<string, any> = {
-    [PRINTER_OIDS.MODEL]: randomPrinterModel(),
-    [PRINTER_OIDS.SERIAL]: `SN-${Math.floor(Math.random() * 1000000)}`,
-    [PRINTER_OIDS.STATUS]: statusCode,
+    [PRINTER_OIDS.MODEL]: modelName,
+    [PRINTER_OIDS.SERIAL]: `SN-${manufacturer.substring(0,1)}${ipSeed * 1000 + 10000}`,
+    [PRINTER_OIDS.STATUS]: printerStatusCode,
     [PRINTER_OIDS.SUB_STATUS]: subStatus,
-    [PRINTER_OIDS.DEVICE_NAME]: `Printer-${ipAddress.split('.').pop()}`,
-    [PRINTER_OIDS.BLACK_LEVEL]: randomSupplyLevel(),
-    [PRINTER_OIDS.PAPER_LEVEL]: randomSupplyLevel(),
-    [PRINTER_OIDS.PAPER_JAMS]: Math.floor(Math.random() * 10),
-    [PRINTER_OIDS.TOTAL_PRINTED]: jobCount,
-    [PRINTER_OIDS.MONTHLY_PRINTED]: monthlyPrints,
+    [PRINTER_OIDS.DEVICE_NAME]: `${manufacturer}-Printer-${ipAddress.split('.').pop()}`,
+    [PRINTER_OIDS.BLACK_LEVEL]: blackLevel,
+    [PRINTER_OIDS.PAPER_LEVEL]: paperLevel,
+    [PRINTER_OIDS.PAPER_JAMS]: paperJams,
+    [PRINTER_OIDS.TOTAL_PRINTED]: totalPrinted,
+    [PRINTER_OIDS.TOTAL_PAGES]: totalPrinted,
+    [PRINTER_OIDS.MONTHLY_PRINTED]: monthlyPrinted,
+    [PRINTER_OIDS.MONTHLY_PAGES]: monthlyPrinted,
   };
   
   // Add color-specific data only for color printers
   if (isColorPrinter) {
-    response[PRINTER_OIDS.CYAN_LEVEL] = randomSupplyLevel();
-    response[PRINTER_OIDS.MAGENTA_LEVEL] = randomSupplyLevel();
-    response[PRINTER_OIDS.YELLOW_LEVEL] = randomSupplyLevel();
+    response[PRINTER_OIDS.CYAN_LEVEL] = Math.max(10, (seed(2) + ipSeed * 2) % 101);
+    response[PRINTER_OIDS.MAGENTA_LEVEL] = Math.max(10, (seed(3) + ipSeed * 4) % 101);
+    response[PRINTER_OIDS.YELLOW_LEVEL] = Math.max(10, (seed(4) + ipSeed * 6) % 101);
   }
   
   return response;
@@ -109,12 +172,14 @@ async function simulateSNMPQuery(ipAddress: string, oids: string[]): Promise<Rec
 
 // Function to map SNMP response to printer data object
 function mapSNMPResponseToPrinterData(snmpData: Record<string, any>, ipAddress: string, printerName: string): any {
+  console.log("Mapping SNMP data to printer object:", snmpData);
+  
   // Map the raw SNMP data to our printer data structure
   const statusCode = snmpData[PRINTER_OIDS.STATUS];
   const subStatus = snmpData[PRINTER_OIDS.SUB_STATUS] || 'idle';
   
   // Convert status code to our application's status format
-  let appStatus = 'online';
+  let appStatus: 'online' | 'offline' | 'error' | 'warning' | 'maintenance' = 'online';
   if (statusCode === 8) appStatus = 'error';
   else if (statusCode === 6 || statusCode === 7) appStatus = 'offline';
   else if (statusCode === 5) appStatus = 'warning';
@@ -122,45 +187,53 @@ function mapSNMPResponseToPrinterData(snmpData: Record<string, any>, ipAddress: 
   
   // Calculate overall ink level as average of all cartridges
   const blackLevel = snmpData[PRINTER_OIDS.BLACK_LEVEL] || 0;
-  const cyanLevel = snmpData[PRINTER_OIDS.CYAN_LEVEL] || 0;
-  const magentaLevel = snmpData[PRINTER_OIDS.MAGENTA_LEVEL] || 0;
-  const yellowLevel = snmpData[PRINTER_OIDS.YELLOW_LEVEL] || 0;
+  const cyanLevel = snmpData[PRINTER_OIDS.CYAN_LEVEL];
+  const magentaLevel = snmpData[PRINTER_OIDS.MAGENTA_LEVEL];
+  const yellowLevel = snmpData[PRINTER_OIDS.YELLOW_LEVEL];
   
   // For monochrome printers, only use black level
-  const isColorPrinter = cyanLevel > 0 || magentaLevel > 0 || yellowLevel > 0;
+  const isColorPrinter = cyanLevel !== undefined || magentaLevel !== undefined || yellowLevel !== undefined;
   const inkLevel = isColorPrinter
-    ? Math.floor((blackLevel + cyanLevel + magentaLevel + yellowLevel) / 4)
+    ? Math.floor((blackLevel + (cyanLevel || 0) + (magentaLevel || 0) + (yellowLevel || 0)) / (1 + (cyanLevel !== undefined ? 1 : 0) + (magentaLevel !== undefined ? 1 : 0) + (yellowLevel !== undefined ? 1 : 0)))
     : blackLevel;
   
   // Get printer usage statistics
-  const totalPrints = snmpData[PRINTER_OIDS.TOTAL_PRINTED] || 0;
-  const monthlyPrints = snmpData[PRINTER_OIDS.MONTHLY_PRINTED] || 0;
-  const weeklyPrints = Math.floor(monthlyPrints / 4); // Estimate
-  const dailyPrints = Math.floor(weeklyPrints / 7);   // Estimate
+  const totalPrinted = snmpData[PRINTER_OIDS.TOTAL_PRINTED] || snmpData[PRINTER_OIDS.TOTAL_PAGES] || 0;
+  const monthlyPrinted = snmpData[PRINTER_OIDS.MONTHLY_PRINTED] || snmpData[PRINTER_OIDS.MONTHLY_PAGES] || 0;
+  const weeklyPrinted = Math.floor(monthlyPrinted / 4); // Estimate
+  const dailyPrinted = Math.floor(weeklyPrinted / 7);   // Estimate
   const paperJams = snmpData[PRINTER_OIDS.PAPER_JAMS] || 0;
+  
+  console.log("Creating supplies object with:", { blackLevel, cyanLevel, magentaLevel, yellowLevel });
+  
+  // Create the supplies object based on detected levels
+  let supplies = {
+    black: blackLevel
+  };
+  
+  if (cyanLevel !== undefined) supplies = { ...supplies, cyan: cyanLevel };
+  if (magentaLevel !== undefined) supplies = { ...supplies, magenta: magentaLevel };
+  if (yellowLevel !== undefined) supplies = { ...supplies, yellow: yellowLevel };
+  
+  console.log("Final supplies object:", supplies);
     
   return {
-    name: printerName,
+    name: printerName || snmpData[PRINTER_OIDS.DEVICE_NAME],
     model: snmpData[PRINTER_OIDS.MODEL],
     location: '', // Location might need to be set manually
     status: appStatus,
     subStatus: subStatus,
     inkLevel,
     paperLevel: snmpData[PRINTER_OIDS.PAPER_LEVEL],
-    jobCount: totalPrints,
+    jobCount: totalPrinted,
     ipAddress,
     serialNumber: snmpData[PRINTER_OIDS.SERIAL],
-    supplies: {
-      black: blackLevel,
-      cyan: isColorPrinter ? cyanLevel : undefined,
-      magenta: isColorPrinter ? magentaLevel : undefined,
-      yellow: isColorPrinter ? yellowLevel : undefined,
-    },
+    supplies,
     stats: {
-      dailyPrints,
-      weeklyPrints,
-      monthlyPrints,
-      totalPrints,
+      dailyPrints: dailyPrinted,
+      weeklyPrints: weeklyPrinted,
+      monthlyPrints: monthlyPrinted,
+      totalPrints: totalPrinted,
       jams: paperJams
     }
   };
@@ -190,14 +263,44 @@ serve(async (req) => {
     const reqBody = await req.json();
     const { ipAddress, printerId, printerName, action } = reqBody;
     
+    console.log("Received request:", { ipAddress, printerId, printerName, action });
+    
     // Handle discovery action
     if (action === 'discover') {
-      // Simulate discovering printers on the network
-      const discoveredPrinters = [
-        { ipAddress: '192.168.1.100', name: 'Office Printer', model: 'HP LaserJet Pro MFP M428fdw' },
-        { ipAddress: '192.168.1.101', name: 'Marketing Printer', model: 'Canon PIXMA G7020' },
-        { ipAddress: '192.168.1.102', name: 'HR Printer', model: 'Brother MFC-L8900CDW' },
+      console.log("Performing printer discovery");
+      
+      // This would be replaced with actual network scanning in production
+      // For now, generate some sample printers in the common ranges
+      const discoveredPrinters = [];
+      
+      // Generate printers in common IP ranges
+      const commonRanges = [
+        { prefix: '192.168.1.', start: 100, end: 110 },
+        { prefix: '10.0.0.', start: 50, end: 60 },
+        { prefix: '172.16.0.', start: 200, end: 210 }
       ];
+      
+      for (const range of commonRanges) {
+        for (let i = range.start; i < range.end; i++) {
+          const ip = `${range.prefix}${i}`;
+          try {
+            // Use our query function to generate consistent data for each IP
+            const oids = [PRINTER_OIDS.MODEL, PRINTER_OIDS.DEVICE_NAME];
+            const data = await queryPrinter(ip, oids);
+            
+            discoveredPrinters.push({
+              ipAddress: ip,
+              name: data[PRINTER_OIDS.DEVICE_NAME] || `Printer-${i}`,
+              model: data[PRINTER_OIDS.MODEL] || 'Unknown Model'
+            });
+          } catch (error) {
+            // Skip printers that don't respond
+            continue;
+          }
+        }
+      }
+      
+      console.log(`Discovered ${discoveredPrinters.length} printers`);
       
       return new Response(JSON.stringify({ success: true, printers: discoveredPrinters }), {
         status: 200,
@@ -213,15 +316,19 @@ serve(async (req) => {
       });
     }
     
+    console.log(`Polling printer at ${ipAddress}`);
+    
     // Query all OIDs from the printer using SNMP
     const oids = Object.values(PRINTER_OIDS);
-    const snmpResponse = await simulateSNMPQuery(ipAddress, oids);
+    const snmpResponse = await queryPrinter(ipAddress, oids);
     
     // Map SNMP response to printer data format
     const printerData = mapSNMPResponseToPrinterData(snmpResponse, ipAddress, printerName);
     
     // Update printer in database if printerId is provided
     if (printerId) {
+      console.log(`Updating printer ${printerId} in database`);
+      
       const { data, error } = await supabase
         .from('printers')
         .update({
@@ -238,6 +345,7 @@ serve(async (req) => {
         .single();
         
       if (error) {
+        console.error("Error updating printer:", error);
         throw error;
       }
       

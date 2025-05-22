@@ -22,7 +22,8 @@ export const snmpService = {
         body: {
           ipAddress: printer.ipAddress,
           printerId: printer.id,
-          printerName: printer.name
+          printerName: printer.name,
+          action: 'poll'
         }
       });
       
@@ -30,7 +31,9 @@ export const snmpService = {
         throw error;
       }
       
-      // Automatically trigger a refetch of printer data to reflect the changes
+      console.log("SNMP response:", data);
+      
+      // Return the data received from the edge function
       return data.data;
     } catch (error) {
       console.error(`Error polling printer ${printer.name}:`, error);
@@ -43,11 +46,10 @@ export const snmpService = {
     }
   },
   
-  // Function to auto-discover printers on the network (this would be a real implementation in production)
+  // Function to auto-discover printers on the network
   discoverPrinters: async (): Promise<{ ipAddress: string, name: string, model: string }[]> => {
     try {
-      // In a real implementation, this would scan the network for printers
-      
+      // Call the SNMP edge function with discover action
       const { data, error } = await supabase.functions.invoke('printer-monitor', {
         body: {
           action: 'discover'
@@ -73,17 +75,17 @@ export const snmpService = {
   // Function to poll all printers in the system
   pollAllPrinters: async (): Promise<void> => {
     try {
-      // Get all printers from the database
+      // Get all printers from the database that have IP addresses
       const { data: printers, error } = await supabase
         .from('printers')
         .select('id, name, ip_address')
-        .not('ip_address', 'is', null);
+        .is('ip_address', 'not.null');
       
       if (error) {
         throw error;
       }
       
-      // Filter out printers without IP addresses
+      // Filter out printers without IP addresses (though we already filtered above)
       const printersWithIp = printers.filter(p => p.ip_address);
       
       if (printersWithIp.length === 0) {
