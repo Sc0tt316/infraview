@@ -72,7 +72,7 @@ const AddPrinterFormContainer: React.FC<AddPrinterFormContainerProps> = ({
           name: validData.name,
           model: validData.model,
           location: validData.location,
-          status: 'offline', // Always start as offline, will be auto-detected
+          status: 'offline' as const, // Always start as offline, will be auto-detected
           inkLevel: 0, // Will be auto-detected via SNMP
           paperLevel: 0, // Will be auto-detected via SNMP
           ipAddress: validData.ipAddress || '',

@@ -9,7 +9,6 @@ export const usePrinterStatusUpdates = (printerId: string, initialInterval = 300
   const [isPolling, setIsPolling] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [pollingInterval] = useState(initialInterval);
-  const [autoPolling] = useState(true); // Always enabled by default
   
   const queryClient = useQueryClient();
   
@@ -71,7 +70,7 @@ export const usePrinterStatusUpdates = (printerId: string, initialInterval = 300
     }
   };
   
-  // Set up auto-polling effect (always enabled)
+  // Set up auto-polling effect (always enabled by default)
   useEffect(() => {
     if (!printerId) return;
     

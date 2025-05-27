@@ -4,8 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Network, RefreshCw, Power } from 'lucide-react';
 import { usePrinterStatusUpdates } from '@/hooks/usePrinterStatusUpdates';
 import { formatDistanceToNow } from 'date-fns';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { printerService } from '@/services/printer';
 import { toast } from '@/hooks/use-toast';
@@ -28,9 +26,7 @@ const PrinterActions: React.FC<PrinterActionsProps> = ({
   const {
     isPolling,
     lastUpdated,
-    pollPrinterStatus,
-    autoPolling,
-    toggleAutoPolling
+    pollPrinterStatus
   } = usePrinterStatusUpdates(printerId, 60000); // 1 minute default interval
 
   const handleManualPoll = async () => {
@@ -83,25 +79,13 @@ const PrinterActions: React.FC<PrinterActionsProps> = ({
               Last updated: {formatDistanceToNow(lastUpdated, { addSuffix: true })}
             </p>
           )}
+          
+          {hasIpAddress && (
+            <p className="text-xs text-muted-foreground mt-1">
+              Auto-refresh enabled (every minute)
+            </p>
+          )}
         </div>
-        
-        {/* Auto-Refresh Toggle */}
-        {hasIpAddress && (
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label htmlFor="auto-refresh">Auto-refresh</Label>
-              <p className="text-xs text-muted-foreground">
-                Automatically poll every minute
-              </p>
-            </div>
-            <Switch
-              id="auto-refresh"
-              checked={autoPolling}
-              onCheckedChange={toggleAutoPolling}
-              disabled={!hasIpAddress}
-            />
-          </div>
-        )}
         
         <Separator />
         
