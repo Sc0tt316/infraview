@@ -104,35 +104,6 @@ const AddPrinterForm: React.FC<AddPrinterFormProps> = ({
             )}
           />
           
-          {/* Status */}
-          <FormField
-            control={form.control}
-            name="status"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Status</FormLabel>
-                <FormControl>
-                  <select
-                    className="w-full flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    name="status"
-                    value={formData.status}
-                    onChange={(e) => {
-                      field.onChange(e);
-                      handleInputChange(e);
-                    }}
-                  >
-                    <option value="offline">Offline</option>
-                    <option value="online">Online</option>
-                    <option value="error">Error</option>
-                    <option value="maintenance">Maintenance</option>
-                    <option value="warning">Warning</option>
-                  </select>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
           {/* IP Address */}
           <FormField
             control={form.control}
@@ -181,7 +152,7 @@ const AddPrinterForm: React.FC<AddPrinterFormProps> = ({
         </div>
         
         <div className="text-sm text-muted-foreground">
-          <p>Ink and paper levels will be automatically detected once the printer is connected.</p>
+          <p>Printer status, ink, and paper levels will be automatically detected once the printer is connected via IP address.</p>
         </div>
         
         {/* Form Actions */}

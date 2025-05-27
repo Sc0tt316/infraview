@@ -5,16 +5,16 @@ import { toast } from '@/hooks/use-toast';
 import { PrinterData } from '@/types/printers';
 import { useQueryClient } from '@tanstack/react-query';
 
-export const usePrinterStatusUpdates = (printerId: string, initialInterval = 60000) => {
+export const usePrinterStatusUpdates = (printerId: string, initialInterval = 30000) => {
   const [isPolling, setIsPolling] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  const [pollingInterval, setPollingInterval] = useState(initialInterval);
-  const [autoPolling, setAutoPolling] = useState(false);
+  const [pollingInterval] = useState(initialInterval);
+  const [autoPolling] = useState(true); // Always enabled by default
   
   const queryClient = useQueryClient();
   
   // Function to poll the printer status on demand using SNMP
-  const pollPrinterStatus = async (showToast = true) => {
+  const pollPrinterStatus = async (showToast = false) => {
     if (isPolling || !printerId) return;
     
     setIsPolling(true);
@@ -27,7 +27,14 @@ export const usePrinterStatusUpdates = (printerId: string, initialInterval = 600
       }
       
       if (!printer.ipAddress) {
-        throw new Error('Printer has no IP address configured');
+        if (showToast) {
+          toast({
+            title: "No IP Address",
+            description: "Printer has no IP address configured for SNMP polling.",
+            variant: "destructive"
+          });
+        }
+        return;
       }
       
       // Poll the printer via SNMP
@@ -64,19 +71,9 @@ export const usePrinterStatusUpdates = (printerId: string, initialInterval = 600
     }
   };
   
-  // Toggle auto-polling
-  const toggleAutoPolling = () => {
-    setAutoPolling(prev => !prev);
-  };
-  
-  // Change polling interval
-  const changePollingInterval = (newInterval: number) => {
-    setPollingInterval(newInterval);
-  };
-  
-  // Set up auto-polling effect
+  // Set up auto-polling effect (always enabled)
   useEffect(() => {
-    if (!autoPolling || !printerId) return;
+    if (!printerId) return;
     
     // Initial poll
     pollPrinterStatus(false);
@@ -86,19 +83,15 @@ export const usePrinterStatusUpdates = (printerId: string, initialInterval = 600
       pollPrinterStatus(false);
     }, pollingInterval);
     
-    // Clean up interval on unmount or when autoPolling is disabled
+    // Clean up interval on unmount
     return () => {
       clearInterval(interval);
     };
-  }, [autoPolling, printerId, pollingInterval]);
+  }, [printerId, pollingInterval]);
   
   return {
     isPolling,
     lastUpdated,
-    pollPrinterStatus,
-    autoPolling,
-    toggleAutoPolling,
-    pollingInterval,
-    changePollingInterval
+    pollPrinterStatus
   };
 };

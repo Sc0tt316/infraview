@@ -25,9 +25,9 @@ const AddPrinterFormContainer: React.FC<AddPrinterFormContainerProps> = ({
     name: '',
     model: '',
     location: '',
-    status: 'offline',
-    inkLevel: 100,
-    paperLevel: 100,
+    status: 'offline', // Default status - will be auto-detected
+    inkLevel: 0, // Will be auto-detected
+    paperLevel: 0, // Will be auto-detected
     ipAddress: '',
     department: ''
   });
@@ -40,8 +40,8 @@ const AddPrinterFormContainer: React.FC<AddPrinterFormContainerProps> = ({
         model: existingPrinter.model || '',
         location: existingPrinter.location || '',
         status: existingPrinter.status || 'offline',
-        inkLevel: existingPrinter.inkLevel || 100,
-        paperLevel: existingPrinter.paperLevel || 100,
+        inkLevel: existingPrinter.inkLevel || 0,
+        paperLevel: existingPrinter.paperLevel || 0,
         ipAddress: existingPrinter.ipAddress || '',
         department: existingPrinter.department || '',
       });
@@ -67,14 +67,14 @@ const AddPrinterFormContainer: React.FC<AddPrinterFormContainerProps> = ({
     
     try {
       form.handleSubmit(async (validData) => {
-        // Ensure all required fields are present before sending to the API
+        // Prepare printer data with defaults for auto-detection
         const printerData = {
           name: validData.name,
           model: validData.model,
           location: validData.location,
-          status: validData.status,
-          inkLevel: validData.inkLevel,
-          paperLevel: validData.paperLevel,
+          status: 'offline', // Always start as offline, will be auto-detected
+          inkLevel: 0, // Will be auto-detected via SNMP
+          paperLevel: 0, // Will be auto-detected via SNMP
           ipAddress: validData.ipAddress || '',
           department: validData.department || '',
           serialNumber: undefined
@@ -83,17 +83,59 @@ const AddPrinterFormContainer: React.FC<AddPrinterFormContainerProps> = ({
         if (existingPrinter) {
           // Update existing printer
           await printerService.updatePrinter(existingPrinter.id, printerData);
-          toast({
-            title: "Success",
-            description: "Printer updated successfully",
-          });
+          
+          // If IP address is provided, immediately poll the printer
+          if (printerData.ipAddress) {
+            try {
+              await printerService.pollPrinter({
+                id: existingPrinter.id,
+                name: printerData.name,
+                ipAddress: printerData.ipAddress
+              });
+              toast({
+                title: "Success",
+                description: "Printer updated and status detected automatically",
+              });
+            } catch (pollError) {
+              toast({
+                title: "Printer Updated",
+                description: "Printer updated successfully. Status will be detected on next refresh.",
+              });
+            }
+          } else {
+            toast({
+              title: "Success",
+              description: "Printer updated successfully",
+            });
+          }
         } else {
           // Add new printer
-          await printerService.addPrinter(printerData);
-          toast({
-            title: "Success",
-            description: "Printer added successfully",
-          });
+          const newPrinter = await printerService.addPrinter(printerData);
+          
+          // If IP address is provided, immediately poll the printer
+          if (printerData.ipAddress && newPrinter) {
+            try {
+              await printerService.pollPrinter({
+                id: newPrinter.id,
+                name: printerData.name,
+                ipAddress: printerData.ipAddress
+              });
+              toast({
+                title: "Success",
+                description: "Printer added and status detected automatically",
+              });
+            } catch (pollError) {
+              toast({
+                title: "Printer Added",
+                description: "Printer added successfully. Status will be detected shortly.",
+              });
+            }
+          } else {
+            toast({
+              title: "Success",
+              description: "Printer added successfully",
+            });
+          }
         }
 
         // Refresh printer data
