@@ -20,21 +20,28 @@ const PrinterOverview: React.FC<PrinterOverviewProps> = ({ printer, isAdmin, isR
   const hasIpAddress = !!printer.ipAddress;
   
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <div className="md:col-span-2 space-y-6">
-        <Card>
-          <CardContent className="p-6">
-            <PrinterInfo printer={printer} />
-            <Separator className="my-6" />
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
-              <StatusLevels
-                inkLevel={printer.inkLevel}
-                paperLevel={printer.paperLevel}
-                supplies={printer.supplies}
-                status={printer.status}
-                subStatus={printer.subStatus} 
-              />
-              <SupplyLevels supplies={printer.supplies} />
+    <div className="grid grid-cols-1 xl:grid-cols-4 gap-6 h-full">
+      <div className="xl:col-span-3 space-y-6">
+        <Card className="h-full">
+          <CardContent className="p-6 h-full">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
+              {/* Printer Info - with scroll area */}
+              <div className="h-full min-h-[400px]">
+                <PrinterInfo printer={printer} />
+              </div>
+              
+              {/* Status and Supply Levels */}
+              <div className="space-y-6">
+                <StatusLevels
+                  inkLevel={printer.inkLevel}
+                  paperLevel={printer.paperLevel}
+                  supplies={printer.supplies}
+                  status={printer.status}
+                  subStatus={printer.subStatus} 
+                />
+                <Separator />
+                <SupplyLevels supplies={printer.supplies} />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -46,7 +53,7 @@ const PrinterOverview: React.FC<PrinterOverviewProps> = ({ printer, isAdmin, isR
         />
       </div>
       
-      <div className="space-y-6">
+      <div className="xl:col-span-1 space-y-6">
         <Card>
           <CardContent className="p-0">
             <PrinterActions 

@@ -1,7 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { PrinterData } from '@/types/printers';
+import { PrinterData, SuppliesData } from '@/types/printers';
 import { updatePrinterLevels } from './autoPrinterLevels';
 
 // Get a single printer by ID
@@ -21,6 +21,30 @@ export const getPrinter = async (id: string): Promise<PrinterData | undefined> =
       return undefined;
     }
     
+    // Parse supplies data from JSON if it exists
+    let supplies: SuppliesData | undefined;
+    try {
+      if (data.supplies && typeof data.supplies === 'string') {
+        supplies = JSON.parse(data.supplies);
+      } else if (data.supplies && typeof data.supplies === 'object') {
+        supplies = data.supplies as SuppliesData;
+      }
+    } catch (e) {
+      console.warn('Failed to parse supplies data:', e);
+    }
+    
+    // Parse stats data from JSON if it exists
+    let stats;
+    try {
+      if (data.stats && typeof data.stats === 'string') {
+        stats = JSON.parse(data.stats);
+      } else if (data.stats && typeof data.stats === 'object') {
+        stats = data.stats;
+      }
+    } catch (e) {
+      console.warn('Failed to parse stats data:', e);
+    }
+    
     // Map Supabase data to PrinterData format
     const printer: PrinterData = {
       id: data.id,
@@ -28,17 +52,20 @@ export const getPrinter = async (id: string): Promise<PrinterData | undefined> =
       model: data.model,
       location: data.location,
       status: data.status as 'online' | 'offline' | 'error' | 'warning' | 'maintenance',
-      inkLevel: data.ink_level,
-      paperLevel: data.paper_level,
+      subStatus: data.sub_status,
+      inkLevel: data.ink_level || 0,
+      paperLevel: data.paper_level || 0,
       jobCount: data.job_count,
       lastActive: data.last_active ? new Date(data.last_active).toLocaleString() : 'Never',
       ipAddress: data.ip_address,
       department: data.department,
       serialNumber: data.serial_number,
       addedDate: data.added_date,
+      supplies: supplies,
+      stats: stats,
     };
     
-    // Auto-detect and update ink and paper levels
+    // Auto-detect and update ink and paper levels if IP address is available
     const updatedPrinter = await updatePrinterLevels(printer);
     
     return updatedPrinter as PrinterData;
