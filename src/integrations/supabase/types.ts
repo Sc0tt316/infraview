@@ -149,7 +149,10 @@ export type Database = {
           name: string
           paper_level: number
           serial_number: string | null
+          stats: Json | null
           status: string
+          sub_status: string | null
+          supplies: Json | null
         }
         Insert: {
           added_date?: string | null
@@ -164,7 +167,10 @@ export type Database = {
           name: string
           paper_level: number
           serial_number?: string | null
+          stats?: Json | null
           status: string
+          sub_status?: string | null
+          supplies?: Json | null
         }
         Update: {
           added_date?: string | null
@@ -179,7 +185,10 @@ export type Database = {
           name?: string
           paper_level?: number
           serial_number?: string | null
+          stats?: Json | null
           status?: string
+          sub_status?: string | null
+          supplies?: Json | null
         }
         Relationships: []
       }
