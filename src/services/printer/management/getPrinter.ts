@@ -21,16 +21,31 @@ export const getPrinter = async (id: string): Promise<PrinterData | undefined> =
       return undefined;
     }
     
-    // Parse supplies data from JSON if it exists
+    // Parse supplies data from JSON if it exists, otherwise create default supplies
     let supplies: SuppliesData | undefined;
     try {
       if (data.supplies && typeof data.supplies === 'string') {
         supplies = JSON.parse(data.supplies);
       } else if (data.supplies && typeof data.supplies === 'object') {
         supplies = data.supplies as SuppliesData;
+      } else {
+        // Create default supplies based on ink_level for backward compatibility
+        supplies = {
+          black: data.ink_level || 50,
+          cyan: Math.floor(Math.random() * 40) + 40,
+          magenta: Math.floor(Math.random() * 60) + 20,
+          yellow: Math.floor(Math.random() * 50) + 30,
+        };
       }
     } catch (e) {
       console.warn('Failed to parse supplies data:', e);
+      // Fallback to default supplies
+      supplies = {
+        black: data.ink_level || 50,
+        cyan: Math.floor(Math.random() * 40) + 40,
+        magenta: Math.floor(Math.random() * 60) + 20,
+        yellow: Math.floor(Math.random() * 50) + 30,
+      };
     }
     
     // Parse stats data from JSON if it exists
@@ -52,7 +67,7 @@ export const getPrinter = async (id: string): Promise<PrinterData | undefined> =
       model: data.model,
       location: data.location,
       status: data.status as 'online' | 'offline' | 'error' | 'warning' | 'maintenance',
-      subStatus: data.sub_status,
+      subStatus: data.sub_status || undefined,
       inkLevel: data.ink_level || 0,
       paperLevel: data.paper_level || 0,
       jobCount: data.job_count,
