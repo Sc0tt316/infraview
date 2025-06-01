@@ -3,21 +3,19 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { PrinterData } from '@/types/printers';
 
-// Enhanced SNMP printer monitoring service with better error handling and response processing
+// Enhanced SNMP service with comprehensive printer support
 export const snmpService = {
-  // Function to poll a printer via SNMP and update its data
+  // Poll a single printer with detailed error handling and manufacturer support
   pollPrinter: async (printer: Pick<PrinterData, 'id' | 'name' | 'ipAddress'>): Promise<PrinterData | null> => {
     try {
       if (!printer.ipAddress) {
-        toast({
-          title: "Error",
-          description: "Printer IP address is missing. Cannot poll printer.",
-          variant: "destructive"
-        });
+        console.warn(`No IP address for printer ${printer.name}`);
         return null;
       }
       
-      // Call the SNMP edge function with improved error handling
+      console.log(`Initiating SNMP poll for ${printer.name} (${printer.ipAddress})`);
+      
+      // Call the enhanced printer-monitor function
       const { data, error } = await supabase.functions.invoke('printer-monitor', {
         body: {
           ipAddress: printer.ipAddress,
@@ -28,127 +26,179 @@ export const snmpService = {
       });
       
       if (error) {
-        console.error('SNMP function error:', error);
-        throw new Error(`SNMP function error: ${error.message}`);
+        console.error(`SNMP error for ${printer.name}:`, error);
+        
+        // Log failed attempt
+        await supabase.from('printer_activities').insert({
+          printer_id: printer.id,
+          printer_name: printer.name,
+          action: 'SNMP Poll Failed',
+          details: `Communication failed: ${error.message}`,
+          status: 'error',
+          timestamp: new Date().toISOString()
+        });
+        
+        return null;
       }
       
-      if (!data || !data.data) {
-        throw new Error('Invalid response from SNMP function');
+      if (!data || !data.success || !data.data) {
+        console.error(`Invalid SNMP response for ${printer.name}:`, data);
+        return null;
       }
       
-      console.log("SNMP response:", data);
+      console.log(`SNMP poll successful for ${printer.name}:`, {
+        method: data.method,
+        status: data.data.status,
+        supplies: data.data.supplies
+      });
       
-      // Return the data received from the edge function
       return data.data;
     } catch (error) {
-      console.error(`Error polling printer ${printer.name}:`, error);
+      console.error(`SNMP service error for ${printer.name}:`, error);
+      
+      // Show user-friendly error message
       toast({
-        title: "Error",
-        description: `Failed to connect to printer ${printer.name}. Please check if it's online.`,
+        title: "Communication Error",
+        description: `Failed to update ${printer.name}. The printer may be offline or unreachable.`,
         variant: "destructive"
       });
+      
       return null;
     }
   },
   
-  // Function to auto-discover printers on the network with improved error handling
+  // Discover printers on the network using multiple protocols
   discoverPrinters: async (): Promise<{ ipAddress: string, name: string, model: string }[]> => {
     try {
-      console.log('Starting printer discovery...');
+      console.log('Starting comprehensive printer discovery...');
       
-      // Call the SNMP edge function with discover action
+      toast({
+        title: "Discovering Printers",
+        description: "Scanning network for SNMP-enabled printers..."
+      });
+      
       const { data, error } = await supabase.functions.invoke('printer-monitor', {
-        body: {
-          action: 'discover'
-        }
+        body: { action: 'discover' }
       });
       
       if (error) {
-        console.error('SNMP discovery error:', error);
-        throw new Error(`SNMP discovery error: ${error.message}`);
-      }
-      
-      if (!data || !data.printers) {
-        console.warn('No printers discovered or invalid response format');
+        console.error('Discovery error:', error);
+        toast({
+          title: "Discovery Failed", 
+          description: "Unable to scan network for printers.",
+          variant: "destructive"
+        });
         return [];
       }
       
-      console.log(`Discovered ${data.printers.length} printers:`, data.printers);
-      return data.printers || [];
+      if (!data || !data.success) {
+        console.warn('Discovery returned no results');
+        toast({
+          title: "No Printers Found",
+          description: "No SNMP-enabled printers were discovered on the network."
+        });
+        return [];
+      }
+      
+      const printers = data.printers || [];
+      console.log(`Discovery completed: found ${printers.length} printers`);
+      
+      if (printers.length > 0) {
+        toast({
+          title: "Discovery Complete",
+          description: `Found ${printers.length} printer${printers.length > 1 ? 's' : ''} on the network.`
+        });
+      }
+      
+      return printers;
     } catch (error) {
-      console.error('Error discovering printers:', error);
+      console.error('Discovery service error:', error);
       toast({
-        title: "Error",
-        description: "Failed to discover printers on the network.",
+        title: "Discovery Error",
+        description: "An error occurred while scanning for printers.",
         variant: "destructive"
       });
       return [];
     }
   },
   
-  // Function to poll all printers in the system with improved filtering and error handling
+  // Poll all printers with enhanced reporting and batch processing
   pollAllPrinters: async (): Promise<void> => {
     try {
-      console.log('Starting to poll all printers...');
+      console.log('Starting batch printer polling...');
       
-      // Get all printers from the database that have IP addresses
+      // Get all printers with IP addresses
       const { data: printers, error } = await supabase
         .from('printers')
-        .select('id, name, ip_address')
+        .select('id, name, ip_address, model')
         .not('ip_address', 'is', null);
       
       if (error) {
-        console.error('Database query error:', error);
-        throw new Error(`Database query error: ${error.message}`);
+        console.error('Database error:', error);
+        throw new Error(`Database query failed: ${error.message}`);
       }
       
-      // Filter out printers without IP addresses (though we already filtered above)
       const printersWithIp = printers.filter(p => p.ip_address);
       
       if (printersWithIp.length === 0) {
-        console.log('No printers with IP addresses to poll');
         toast({
-          title: "Information",
-          description: "No printers with IP addresses found to update."
+          title: "No Printers to Update",
+          description: "No printers with IP addresses found."
         });
         return;
       }
       
-      // Update the status text
-      toast({
-        title: "Updating printers",
-        description: `Polling ${printersWithIp.length} printers for status updates...`
-      });
-      
       console.log(`Polling ${printersWithIp.length} printers...`);
       
-      // Poll each printer in sequence with better error handling
+      toast({
+        title: "Updating Printers",
+        description: `Polling ${printersWithIp.length} printers for current status...`
+      });
+      
+      // Process printers in smaller batches to avoid overwhelming the network
+      const batchSize = 5;
       const results = [];
       const errors = [];
       
-      for (const printer of printersWithIp) {
-        try {
-          console.log(`Polling printer: ${printer.name} (${printer.ip_address})`);
-          const result = await snmpService.pollPrinter({
-            id: printer.id,
-            name: printer.name,
-            ipAddress: printer.ip_address
-          });
-          
-          if (result) {
-            results.push(result);
-            console.log(`Successfully polled printer: ${printer.name}`);
-          } else {
+      for (let i = 0; i < printersWithIp.length; i += batchSize) {
+        const batch = printersWithIp.slice(i, i + batchSize);
+        
+        console.log(`Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(printersWithIp.length / batchSize)}`);
+        
+        // Process batch in parallel
+        const batchPromises = batch.map(async (printer) => {
+          try {
+            const result = await snmpService.pollPrinter({
+              id: printer.id,
+              name: printer.name,
+              ipAddress: printer.ip_address
+            });
+            
+            if (result) {
+              results.push(printer.name);
+              return { success: true, printer: printer.name };
+            } else {
+              errors.push(printer.name);
+              return { success: false, printer: printer.name };
+            }
+          } catch (error) {
+            console.error(`Batch error for ${printer.name}:`, error);
             errors.push(printer.name);
-            console.error(`Failed to poll printer: ${printer.name}`);
+            return { success: false, printer: printer.name };
           }
-        } catch (error) {
-          errors.push(printer.name);
-          console.error(`Error polling printer ${printer.name}:`, error);
+        });
+        
+        await Promise.all(batchPromises);
+        
+        // Small delay between batches to prevent network congestion
+        if (i + batchSize < printersWithIp.length) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
         }
       }
       
-      // Show appropriate toast based on results
+      // Report results
+      console.log(`Batch polling complete: ${results.length} successful, ${errors.length} failed`);
+      
       if (errors.length === 0) {
         toast({
           title: "Update Complete",
@@ -157,23 +207,49 @@ export const snmpService = {
       } else if (results.length === 0) {
         toast({
           title: "Update Failed",
-          description: "Failed to update any printers. Please check their connections.",
+          description: "Failed to update any printers. Check network connectivity.",
           variant: "destructive"
         });
       } else {
         toast({
           title: "Update Partially Complete",
-          description: `Updated ${results.length} of ${printersWithIp.length} printers. Some printers could not be reached.`,
-          variant: "destructive" // Changed from "warning" to "destructive"
+          description: `Updated ${results.length} of ${printersWithIp.length} printers. ${errors.length} printers could not be reached.`,
+          variant: "destructive"
         });
       }
+      
     } catch (error) {
-      console.error('Error polling all printers:', error);
+      console.error('Batch polling error:', error);
       toast({
-        title: "Error",
-        description: "Failed to update printers. Please try again.",
+        title: "Batch Update Failed",
+        description: "An error occurred while updating printers.",
         variant: "destructive"
       });
+    }
+  },
+  
+  // Test SNMP connectivity to a specific IP
+  testConnection: async (ipAddress: string): Promise<boolean> => {
+    try {
+      console.log(`Testing SNMP connectivity to ${ipAddress}`);
+      
+      const { data, error } = await supabase.functions.invoke('printer-monitor', {
+        body: {
+          ipAddress,
+          action: 'poll'
+        }
+      });
+      
+      if (error || !data || !data.success) {
+        console.log(`Connection test failed for ${ipAddress}`);
+        return false;
+      }
+      
+      console.log(`Connection test successful for ${ipAddress}`);
+      return true;
+    } catch (error) {
+      console.error(`Connection test error for ${ipAddress}:`, error);
+      return false;
     }
   }
 };
