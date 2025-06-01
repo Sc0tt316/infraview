@@ -1,10 +1,9 @@
 
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { MoreVertical, Edit, Trash2, Printer } from 'lucide-react';
+import { MoreVertical, Edit, Trash2 } from 'lucide-react';
 import { PrinterData } from '@/types/printers';
 
 interface EnhancedPrinterCardProps {
@@ -22,25 +21,7 @@ const EnhancedPrinterCard: React.FC<EnhancedPrinterCardProps> = ({
   onOpenDelete,
   isAdmin
 }) => {
-  // Function to get status color
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'online':
-        return 'bg-green-500';
-      case 'offline':
-        return 'bg-gray-500';
-      case 'error':
-        return 'bg-red-500';
-      case 'warning':
-        return 'bg-amber-500';
-      case 'maintenance':
-        return 'bg-blue-500';
-      default:
-        return 'bg-gray-500';
-    }
-  };
-
-  // Function to render supplies
+  // Function to render supplies info inline
   const renderSuppliesInfo = () => {
     if (printer.supplies) {
       // For color printers
@@ -49,17 +30,29 @@ const EnhancedPrinterCard: React.FC<EnhancedPrinterCardProps> = ({
           printer.supplies.yellow !== undefined) {
         return (
           <div className="mt-2">
-            <p className="text-xs text-muted-foreground">Toners:</p>
-            <div className="flex gap-1 mt-1">
-              <div className="h-3 w-3 rounded-full bg-black" title={`Black: ${printer.supplies.black}%`}></div>
+            <p className="text-xs text-muted-foreground mb-1">Toners:</p>
+            <div className="flex gap-2 text-xs">
+              <span className="flex items-center gap-1">
+                <div className="h-2 w-2 rounded-full bg-black"></div>
+                Black: {printer.supplies.black}%
+              </span>
               {printer.supplies.cyan !== undefined && (
-                <div className="h-3 w-3 rounded-full bg-cyan-500" title={`Cyan: ${printer.supplies.cyan}%`}></div>
+                <span className="flex items-center gap-1">
+                  <div className="h-2 w-2 rounded-full bg-cyan-500"></div>
+                  Cyan: {printer.supplies.cyan}%
+                </span>
               )}
               {printer.supplies.magenta !== undefined && (
-                <div className="h-3 w-3 rounded-full bg-pink-500" title={`Magenta: ${printer.supplies.magenta}%`}></div>
+                <span className="flex items-center gap-1">
+                  <div className="h-2 w-2 rounded-full bg-pink-500"></div>
+                  Magenta: {printer.supplies.magenta}%
+                </span>
               )}
               {printer.supplies.yellow !== undefined && (
-                <div className="h-3 w-3 rounded-full bg-yellow-500" title={`Yellow: ${printer.supplies.yellow}%`}></div>
+                <span className="flex items-center gap-1">
+                  <div className="h-2 w-2 rounded-full bg-yellow-500"></div>
+                  Yellow: {printer.supplies.yellow}%
+                </span>
               )}
             </div>
           </div>
@@ -95,16 +88,10 @@ const EnhancedPrinterCard: React.FC<EnhancedPrinterCardProps> = ({
     >
       <CardContent className="p-4">
         <div className="flex justify-between items-start">
-          <div>
+          <div className="flex-1">
             <h3 className="font-medium">{printer.name}</h3>
             <p className="text-sm text-muted-foreground">{printer.model}</p>
             <p className="text-xs text-muted-foreground">{printer.location}</p>
-            
-            {printer.department && (
-              <Badge variant="outline" className="mt-2">
-                {printer.department}
-              </Badge>
-            )}
             
             {renderSuppliesInfo()}
             
@@ -112,16 +99,6 @@ const EnhancedPrinterCard: React.FC<EnhancedPrinterCardProps> = ({
           </div>
           
           <div className="flex flex-col items-end">
-            <Badge className={`${getStatusColor(printer.status)} mb-2`}>
-              {printer.status}
-            </Badge>
-            
-            {printer.subStatus && (
-              <p className="text-xs text-muted-foreground mb-2">
-                {printer.subStatus}
-              </p>
-            )}
-            
             {isAdmin && (
               <div className="dropdown-action">
                 <DropdownMenu>
