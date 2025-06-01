@@ -2,9 +2,8 @@
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { PrinterData, SuppliesData } from '@/types/printers';
-import { updatePrinterLevels } from './autoPrinterLevels';
 
-// Get a single printer by ID
+// Get a single printer by ID - no simulation
 export const getPrinter = async (id: string): Promise<PrinterData | undefined> => {
   try {
     const { data, error } = await supabase
@@ -21,7 +20,7 @@ export const getPrinter = async (id: string): Promise<PrinterData | undefined> =
       return undefined;
     }
     
-    // Parse supplies data from JSON if it exists, otherwise create default supplies
+    // Parse supplies data from JSON if it exists - no default simulation data
     let supplies: SuppliesData | undefined;
     try {
       if (data.supplies && typeof data.supplies === 'string') {
@@ -29,38 +28,30 @@ export const getPrinter = async (id: string): Promise<PrinterData | undefined> =
       } else if (data.supplies && typeof data.supplies === 'object' && !Array.isArray(data.supplies)) {
         supplies = data.supplies as unknown as SuppliesData;
       } else {
-        // Create default supplies based on ink_level for backward compatibility
-        supplies = {
-          black: data.ink_level || 50,
-          cyan: Math.floor(Math.random() * 40) + 40,
-          magenta: Math.floor(Math.random() * 60) + 20,
-          yellow: Math.floor(Math.random() * 50) + 30,
-        };
+        // No supplies data available - will need real SNMP to populate
+        supplies = undefined;
       }
     } catch (e) {
       console.warn('Failed to parse supplies data:', e);
-      // Fallback to default supplies
-      supplies = {
-        black: data.ink_level || 50,
-        cyan: Math.floor(Math.random() * 40) + 40,
-        magenta: Math.floor(Math.random() * 60) + 20,
-        yellow: Math.floor(Math.random() * 50) + 30,
-      };
+      supplies = undefined;
     }
     
-    // Parse stats data from JSON if it exists
+    // Parse stats data from JSON if it exists - no simulation
     let stats;
     try {
       if (data.stats && typeof data.stats === 'string') {
         stats = JSON.parse(data.stats);
       } else if (data.stats && typeof data.stats === 'object' && !Array.isArray(data.stats)) {
         stats = data.stats;
+      } else {
+        stats = undefined;
       }
     } catch (e) {
       console.warn('Failed to parse stats data:', e);
+      stats = undefined;
     }
     
-    // Map Supabase data to PrinterData format
+    // Map Supabase data to PrinterData format - use only real data
     const printer: PrinterData = {
       id: data.id,
       name: data.name,
@@ -80,10 +71,8 @@ export const getPrinter = async (id: string): Promise<PrinterData | undefined> =
       stats: stats,
     };
     
-    // Auto-detect and update ink and paper levels if IP address is available
-    const updatedPrinter = await updatePrinterLevels(printer);
-    
-    return updatedPrinter as PrinterData;
+    // No auto-detection or level updates - use only real SNMP data
+    return printer;
   } catch (error) {
     console.error(`Error fetching printer ${id}:`, error);
     toast({

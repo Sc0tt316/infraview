@@ -3,19 +3,24 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { PrinterData } from '@/types/printers';
 
-// Enhanced SNMP service with comprehensive printer support
+// Real SNMP service with no simulation fallbacks
 export const snmpService = {
-  // Poll a single printer with detailed error handling and manufacturer support
+  // Poll a single printer with real SNMP only
   pollPrinter: async (printer: Pick<PrinterData, 'id' | 'name' | 'ipAddress'>): Promise<PrinterData | null> => {
     try {
       if (!printer.ipAddress) {
         console.warn(`No IP address for printer ${printer.name}`);
+        toast({
+          title: "No IP Address",
+          description: `${printer.name} has no IP address configured for SNMP polling.`,
+          variant: "destructive"
+        });
         return null;
       }
       
-      console.log(`Initiating SNMP poll for ${printer.name} (${printer.ipAddress})`);
+      console.log(`Initiating real SNMP poll for ${printer.name} (${printer.ipAddress})`);
       
-      // Call the enhanced printer-monitor function
+      // Call the real SNMP printer-monitor function
       const { data, error } = await supabase.functions.invoke('printer-monitor', {
         body: {
           ipAddress: printer.ipAddress,
@@ -26,27 +31,40 @@ export const snmpService = {
       });
       
       if (error) {
-        console.error(`SNMP error for ${printer.name}:`, error);
+        console.error(`Real SNMP error for ${printer.name}:`, error);
         
         // Log failed attempt
         await supabase.from('printer_activities').insert({
           printer_id: printer.id,
           printer_name: printer.name,
           action: 'SNMP Poll Failed',
-          details: `Communication failed: ${error.message}`,
+          details: `Real SNMP communication failed: ${error.message}`,
           status: 'error',
           timestamp: new Date().toISOString()
+        });
+        
+        toast({
+          title: "SNMP Communication Failed",
+          description: `Failed to communicate with ${printer.name}. The printer may be offline or SNMP may not be configured.`,
+          variant: "destructive"
         });
         
         return null;
       }
       
-      if (!data || !data.success || !data.data) {
-        console.error(`Invalid SNMP response for ${printer.name}:`, data);
+      if (!data || !data.success) {
+        console.error(`Real SNMP failed for ${printer.name}:`, data);
+        
+        toast({
+          title: "SNMP Error",
+          description: `${printer.name}: ${data?.error || 'Unknown SNMP error'}`,
+          variant: "destructive"
+        });
+        
         return null;
       }
       
-      console.log(`SNMP poll successful for ${printer.name}:`, {
+      console.log(`Real SNMP poll successful for ${printer.name}:`, {
         method: data.method,
         status: data.data.status,
         supplies: data.data.supplies
@@ -59,7 +77,7 @@ export const snmpService = {
       // Show user-friendly error message
       toast({
         title: "Communication Error",
-        description: `Failed to update ${printer.name}. The printer may be offline or unreachable.`,
+        description: `Failed to update ${printer.name}. Please check SNMP configuration and network connectivity.`,
         variant: "destructive"
       });
       
@@ -67,14 +85,14 @@ export const snmpService = {
     }
   },
   
-  // Discover printers on the network using multiple protocols
+  // Discover printers on the network using real SNMP only
   discoverPrinters: async (): Promise<{ ipAddress: string, name: string, model: string }[]> => {
     try {
-      console.log('Starting comprehensive printer discovery...');
+      console.log('Starting real SNMP printer discovery...');
       
       toast({
         title: "Discovering Printers",
-        description: "Scanning network for SNMP-enabled printers..."
+        description: "Scanning network for SNMP-enabled printers using real SNMP..."
       });
       
       const { data, error } = await supabase.functions.invoke('printer-monitor', {
@@ -82,31 +100,38 @@ export const snmpService = {
       });
       
       if (error) {
-        console.error('Discovery error:', error);
+        console.error('Real SNMP discovery error:', error);
         toast({
           title: "Discovery Failed", 
-          description: "Unable to scan network for printers.",
+          description: "Real SNMP discovery failed. Please check SNMP service configuration.",
           variant: "destructive"
         });
         return [];
       }
       
       if (!data || !data.success) {
-        console.warn('Discovery returned no results');
+        console.warn('Real SNMP discovery returned no results:', data);
         toast({
           title: "No Printers Found",
-          description: "No SNMP-enabled printers were discovered on the network."
+          description: data?.error || "No SNMP-enabled printers were discovered on the network using real SNMP.",
+          variant: "destructive"
         });
         return [];
       }
       
       const printers = data.printers || [];
-      console.log(`Discovery completed: found ${printers.length} printers`);
+      console.log(`Real SNMP discovery completed: found ${printers.length} printers`);
       
       if (printers.length > 0) {
         toast({
           title: "Discovery Complete",
-          description: `Found ${printers.length} printer${printers.length > 1 ? 's' : ''} on the network.`
+          description: `Found ${printers.length} printer${printers.length > 1 ? 's' : ''} on the network using real SNMP.`
+        });
+      } else {
+        toast({
+          title: "No Printers Found",
+          description: "No SNMP-enabled printers were found. Ensure printers have SNMP enabled and are accessible.",
+          variant: "destructive"
         });
       }
       
@@ -115,17 +140,17 @@ export const snmpService = {
       console.error('Discovery service error:', error);
       toast({
         title: "Discovery Error",
-        description: "An error occurred while scanning for printers.",
+        description: "An error occurred while scanning for printers using real SNMP.",
         variant: "destructive"
       });
       return [];
     }
   },
   
-  // Poll all printers with enhanced reporting and batch processing
+  // Poll all printers with real SNMP only
   pollAllPrinters: async (): Promise<void> => {
     try {
-      console.log('Starting batch printer polling...');
+      console.log('Starting batch real SNMP printer polling...');
       
       // Get all printers with IP addresses
       const { data: printers, error } = await supabase
@@ -143,27 +168,27 @@ export const snmpService = {
       if (printersWithIp.length === 0) {
         toast({
           title: "No Printers to Update",
-          description: "No printers with IP addresses found."
+          description: "No printers with IP addresses found for SNMP polling."
         });
         return;
       }
       
-      console.log(`Polling ${printersWithIp.length} printers...`);
+      console.log(`Real SNMP polling ${printersWithIp.length} printers...`);
       
       toast({
         title: "Updating Printers",
-        description: `Polling ${printersWithIp.length} printers for current status...`
+        description: `Polling ${printersWithIp.length} printers using real SNMP...`
       });
       
       // Process printers in smaller batches to avoid overwhelming the network
-      const batchSize = 5;
+      const batchSize = 3; // Reduced batch size for real SNMP
       const results = [];
       const errors = [];
       
       for (let i = 0; i < printersWithIp.length; i += batchSize) {
         const batch = printersWithIp.slice(i, i + batchSize);
         
-        console.log(`Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(printersWithIp.length / batchSize)}`);
+        console.log(`Processing real SNMP batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(printersWithIp.length / batchSize)}`);
         
         // Process batch in parallel
         const batchPromises = batch.map(async (printer) => {
@@ -182,7 +207,7 @@ export const snmpService = {
               return { success: false, printer: printer.name };
             }
           } catch (error) {
-            console.error(`Batch error for ${printer.name}:`, error);
+            console.error(`Real SNMP batch error for ${printer.name}:`, error);
             errors.push(printer.name);
             return { success: false, printer: printer.name };
           }
@@ -190,48 +215,48 @@ export const snmpService = {
         
         await Promise.all(batchPromises);
         
-        // Small delay between batches to prevent network congestion
+        // Delay between batches to prevent network congestion
         if (i + batchSize < printersWithIp.length) {
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          await new Promise(resolve => setTimeout(resolve, 2000)); // Increased delay for real SNMP
         }
       }
       
       // Report results
-      console.log(`Batch polling complete: ${results.length} successful, ${errors.length} failed`);
+      console.log(`Real SNMP batch polling complete: ${results.length} successful, ${errors.length} failed`);
       
       if (errors.length === 0) {
         toast({
           title: "Update Complete",
-          description: `Successfully updated all ${results.length} printers.`
+          description: `Successfully updated all ${results.length} printers using real SNMP.`
         });
       } else if (results.length === 0) {
         toast({
           title: "Update Failed",
-          description: "Failed to update any printers. Check network connectivity.",
+          description: "Failed to update any printers using real SNMP. Check SNMP configuration and network connectivity.",
           variant: "destructive"
         });
       } else {
         toast({
           title: "Update Partially Complete",
-          description: `Updated ${results.length} of ${printersWithIp.length} printers. ${errors.length} printers could not be reached.`,
+          description: `Updated ${results.length} of ${printersWithIp.length} printers using real SNMP. ${errors.length} printers could not be reached.`,
           variant: "destructive"
         });
       }
       
     } catch (error) {
-      console.error('Batch polling error:', error);
+      console.error('Real SNMP batch polling error:', error);
       toast({
         title: "Batch Update Failed",
-        description: "An error occurred while updating printers.",
+        description: "An error occurred while updating printers using real SNMP.",
         variant: "destructive"
       });
     }
   },
   
-  // Test SNMP connectivity to a specific IP
+  // Test real SNMP connectivity to a specific IP
   testConnection: async (ipAddress: string): Promise<boolean> => {
     try {
-      console.log(`Testing SNMP connectivity to ${ipAddress}`);
+      console.log(`Testing real SNMP connectivity to ${ipAddress}`);
       
       const { data, error } = await supabase.functions.invoke('printer-monitor', {
         body: {
@@ -241,14 +266,14 @@ export const snmpService = {
       });
       
       if (error || !data || !data.success) {
-        console.log(`Connection test failed for ${ipAddress}`);
+        console.log(`Real SNMP connection test failed for ${ipAddress}:`, error || data);
         return false;
       }
       
-      console.log(`Connection test successful for ${ipAddress}`);
+      console.log(`Real SNMP connection test successful for ${ipAddress}`);
       return true;
     } catch (error) {
-      console.error(`Connection test error for ${ipAddress}:`, error);
+      console.error(`Real SNMP connection test error for ${ipAddress}:`, error);
       return false;
     }
   }

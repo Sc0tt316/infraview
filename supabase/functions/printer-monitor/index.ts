@@ -68,82 +68,6 @@ const PRINTER_OIDS = {
   }
 };
 
-// Enhanced printer database with real printer models and their characteristics
-const PRINTER_DATABASE = {
-  'HP LaserJet': {
-    oids: PRINTER_OIDS.HP,
-    supportsColor: false,
-    paperTrays: 2,
-    duplexSupport: true,
-    networkPrinting: true,
-    consumables: ['black_toner']
-  },
-  'HP LaserJet Color': {
-    oids: PRINTER_OIDS.HP,
-    supportsColor: true,
-    paperTrays: 3,
-    duplexSupport: true,
-    networkPrinting: true,
-    consumables: ['black_toner', 'cyan_toner', 'magenta_toner', 'yellow_toner']
-  },
-  'Canon PIXMA': {
-    oids: PRINTER_OIDS.CANON,
-    supportsColor: true,
-    paperTrays: 1,
-    duplexSupport: false,
-    networkPrinting: true,
-    consumables: ['black_ink', 'color_ink']
-  },
-  'Canon MAXIFY': {
-    oids: PRINTER_OIDS.CANON,
-    supportsColor: true,
-    paperTrays: 2,
-    duplexSupport: true,
-    networkPrinting: true,
-    consumables: ['black_ink', 'cyan_ink', 'magenta_ink', 'yellow_ink']
-  },
-  'Epson WorkForce': {
-    oids: PRINTER_OIDS.EPSON,
-    supportsColor: true,
-    paperTrays: 2,
-    duplexSupport: true,
-    networkPrinting: true,
-    consumables: ['black_ink', 'cyan_ink', 'magenta_ink', 'yellow_ink']
-  },
-  'Brother HL': {
-    oids: PRINTER_OIDS.BROTHER,
-    supportsColor: false,
-    paperTrays: 1,
-    duplexSupport: true,
-    networkPrinting: true,
-    consumables: ['black_toner']
-  },
-  'Brother MFC': {
-    oids: PRINTER_OIDS.BROTHER,
-    supportsColor: true,
-    paperTrays: 2,
-    duplexSupport: true,
-    networkPrinting: true,
-    consumables: ['black_toner', 'cyan_toner', 'magenta_toner', 'yellow_toner']
-  },
-  'Xerox VersaLink': {
-    oids: PRINTER_OIDS.XEROX,
-    supportsColor: true,
-    paperTrays: 4,
-    duplexSupport: true,
-    networkPrinting: true,
-    consumables: ['black_toner', 'cyan_toner', 'magenta_toner', 'yellow_toner']
-  },
-  'Lexmark MS': {
-    oids: PRINTER_OIDS.LEXMARK,
-    supportsColor: false,
-    paperTrays: 2,
-    duplexSupport: true,
-    networkPrinting: true,
-    consumables: ['black_toner']
-  }
-};
-
 // Status mappings based on RFC 3805
 const PRINTER_STATUS_CODES = {
   1: { status: 'other', description: 'Other' },
@@ -164,7 +88,7 @@ const corsHeaders = {
 };
 
 /**
- * Attempts real SNMP communication with external service or fallback
+ * Performs real SNMP communication with external service
  */
 async function performRealSNMP(ipAddress: string, oids: string[]): Promise<Record<string, any> | null> {
   try {
@@ -193,6 +117,9 @@ async function performRealSNMP(ipAddress: string, oids: string[]): Promise<Recor
         const data = await response.json();
         console.log(`Real SNMP successful for ${ipAddress}:`, data);
         return data.values || data;
+      } else {
+        console.error(`SNMP service returned error: ${response.status}`);
+        throw new Error(`SNMP service error: ${response.status}`);
       }
     }
     
@@ -217,130 +144,35 @@ async function performRealSNMP(ipAddress: string, oids: string[]): Promise<Recor
         const data = await response.json();
         console.log(`Direct SNMP successful for ${ipAddress}:`, data);
         return data;
+      } else {
+        console.error(`Direct SNMP returned error: ${response.status}`);
+        throw new Error(`Direct SNMP error: ${response.status}`);
       }
     }
     
-    return null;
+    // If no SNMP services are configured, throw error
+    throw new Error('No SNMP service configured. Please set SNMP_SERVICE_URL or DIRECT_SNMP_URL environment variables.');
+    
   } catch (error) {
     console.error(`Real SNMP failed for ${ipAddress}:`, error.message);
-    return null;
+    throw error;
   }
 }
 
 /**
- * Enhanced simulation with realistic printer behavior
- */
-async function simulateAdvancedSNMP(ipAddress: string, oids: string[]): Promise<Record<string, any>> {
-  console.log(`Using enhanced simulation for ${ipAddress}`);
-  
-  // Generate consistent data based on IP
-  const ipSeed = parseInt(ipAddress.split('.').pop() || '0', 10);
-  const timeBasedSeed = Math.floor(Date.now() / (1000 * 60 * 10)); // Changes every 10 minutes
-  const seed = (n: number) => ((ipSeed * 17 + timeBasedSeed * 7 + n * 23) % 100);
-  
-  // Determine printer type based on IP
-  const printerTypes = Object.keys(PRINTER_DATABASE);
-  const printerType = printerTypes[ipSeed % printerTypes.length];
-  const printerInfo = PRINTER_DATABASE[printerType];
-  
-  // Generate realistic model name
-  const models = {
-    'HP LaserJet': [`HP LaserJet Pro M${400 + (ipSeed % 100)}`, `HP LaserJet Enterprise M${600 + (ipSeed % 200)}`],
-    'HP LaserJet Color': [`HP LaserJet Color Pro M${450 + (ipSeed % 100)}`, `HP Color LaserJet Enterprise M${650 + (ipSeed % 200)}`],
-    'Canon PIXMA': [`Canon PIXMA TS${3000 + (ipSeed % 1000)}`, `Canon PIXMA TR${4000 + (ipSeed % 1000)}`],
-    'Canon MAXIFY': [`Canon MAXIFY MB${2000 + (ipSeed % 1000)}`, `Canon MAXIFY GX${3000 + (ipSeed % 1000)}`],
-    'Epson WorkForce': [`Epson WorkForce Pro WF-${3720 + (ipSeed % 500)}`, `Epson EcoTank ET-${2720 + (ipSeed % 500)}`],
-    'Brother HL': [`Brother HL-L${2000 + (ipSeed % 500)}DW`, `Brother HL-L${2300 + (ipSeed % 500)}D`],
-    'Brother MFC': [`Brother MFC-L${8000 + (ipSeed % 500)}CDW`, `Brother MFC-J${4000 + (ipSeed % 500)}DW`],
-    'Xerox VersaLink': [`Xerox VersaLink C${400 + (ipSeed % 200)}`, `Xerox VersaLink B${400 + (ipSeed % 200)}`],
-    'Lexmark MS': [`Lexmark MS${320 + (ipSeed % 200)}dn`, `Lexmark MS${420 + (ipSeed % 200)}`]
-  };
-  
-  const modelName = models[printerType][ipSeed % 2];
-  
-  // Generate realistic status
-  const statusRoll = seed(1);
-  let statusCode: number;
-  if (statusRoll < 70) statusCode = 3; // idle - most common
-  else if (statusRoll < 80) statusCode = 4; // printing
-  else if (statusRoll < 85) statusCode = 5; // warmup
-  else if (statusRoll < 90) statusCode = 6; // stopped
-  else if (statusRoll < 95) statusCode = 8; // error
-  else statusCode = 9; // maintenance
-  
-  const status = PRINTER_STATUS_CODES[statusCode];
-  
-  // Generate supplies based on printer capabilities
-  const supplies: Record<string, number> = {};
-  printerInfo.consumables.forEach((consumable, index) => {
-    const level = Math.max(5, Math.min(95, seed(10 + index * 3)));
-    const colorName = consumable.split('_')[0];
-    supplies[colorName] = level;
-  });
-  
-  // Generate realistic counters
-  const totalPages = 1000 + (ipSeed * 47) % 50000;
-  const monthlyPages = (ipSeed * 13) % 2000;
-  const dailyPages = Math.floor(monthlyPages / 30);
-  const jams = ipSeed % 15;
-  
-  // Paper level
-  const paperLevel = Math.max(10, seed(7));
-  
-  // Create SNMP response
-  const response: Record<string, any> = {};
-  
-  // Map standard OIDs
-  response[PRINTER_OIDS.SYS_DESCR] = modelName;
-  response[PRINTER_OIDS.SYS_NAME] = `${printerType.replace(' ', '')}-${ipSeed}`;
-  response[PRINTER_OIDS.DEVICE_DESCR] = modelName;
-  response[PRINTER_OIDS.PRINTER_STATUS] = statusCode;
-  response[PRINTER_OIDS.PRINTER_DETAILED_STATUS] = status.description;
-  
-  // Add manufacturer-specific OIDs
-  const manufacturerOids = printerInfo.oids;
-  if (manufacturerOids.SERIAL_NUMBER) {
-    response[manufacturerOids.SERIAL_NUMBER] = `SN-${printerType.substring(0,2).toUpperCase()}${10000 + ipSeed * 123}`;
-  }
-  if (manufacturerOids.PAGE_COUNT || manufacturerOids.COUNTER_TOTAL) {
-    const oid = manufacturerOids.PAGE_COUNT || manufacturerOids.COUNTER_TOTAL;
-    response[oid] = totalPages;
-  }
-  
-  // Add supply levels
-  Object.entries(supplies).forEach(([color, level], index) => {
-    response[`${PRINTER_OIDS.SUPPLY_LEVEL}.${index + 1}`] = level;
-    response[`${PRINTER_OIDS.SUPPLY_MAX_CAPACITY}.${index + 1}`] = 100;
-    response[`${PRINTER_OIDS.SUPPLY_TYPE}.${index + 1}`] = color;
-  });
-  
-  // Add paper levels
-  response[`${PRINTER_OIDS.INPUT_CURRENT_LEVEL}.1`] = paperLevel;
-  response[`${PRINTER_OIDS.INPUT_MAX_CAPACITY}.1`] = 250; // Standard tray capacity
-  
-  // Add page counts
-  response[PRINTER_OIDS.TOTAL_PAGES] = totalPages;
-  response[PRINTER_OIDS.TOTAL_IMPRESSIONS] = totalPages;
-  
-  return response;
-}
-
-/**
- * Main SNMP query function with real communication attempt and fallback
+ * Main SNMP query function with real communication only
  */
 async function queryPrinter(ipAddress: string, oids: string[]): Promise<Record<string, any>> {
   console.log(`Querying printer at ${ipAddress} for ${oids.length} OIDs`);
   
-  // First attempt: Real SNMP communication
-  const realResult = await performRealSNMP(ipAddress, oids);
-  if (realResult) {
-    console.log(`Successfully retrieved real SNMP data from ${ipAddress}`);
-    return realResult;
+  // Only attempt real SNMP communication - no fallback
+  const result = await performRealSNMP(ipAddress, oids);
+  if (!result) {
+    throw new Error(`Failed to retrieve SNMP data from ${ipAddress}`);
   }
   
-  // Fallback: Enhanced simulation
-  console.log(`Falling back to enhanced simulation for ${ipAddress}`);
-  return await simulateAdvancedSNMP(ipAddress, oids);
+  console.log(`Successfully retrieved real SNMP data from ${ipAddress}`);
+  return result;
 }
 
 /**
@@ -386,10 +218,10 @@ function mapSNMPToPrinterData(snmpData: Record<string, any>, ipAddress: string, 
   });
   
   // Calculate overall ink level
-  const inkLevel = inkCount > 0 ? Math.floor(totalInkLevel / inkCount) : 50;
+  const inkLevel = inkCount > 0 ? Math.floor(totalInkLevel / inkCount) : 0;
   
   // Extract paper information
-  const paperLevel = snmpData[`${PRINTER_OIDS.INPUT_CURRENT_LEVEL}.1`] || 50;
+  const paperLevel = snmpData[`${PRINTER_OIDS.INPUT_CURRENT_LEVEL}.1`] || 0;
   
   // Extract page counts
   const totalPages = snmpData[PRINTER_OIDS.TOTAL_PAGES] || snmpData[PRINTER_OIDS.TOTAL_IMPRESSIONS] || 0;
@@ -404,8 +236,8 @@ function mapSNMPToPrinterData(snmpData: Record<string, any>, ipAddress: string, 
     }
   });
   
-  // Generate statistics
-  const monthlyPrints = Math.floor(totalPages * 0.1) || Math.floor(Math.random() * 500);
+  // Generate statistics based on actual data
+  const monthlyPrints = Math.floor(totalPages * 0.1) || 0;
   const weeklyPrints = Math.floor(monthlyPrints / 4);
   const dailyPrints = Math.floor(weeklyPrints / 7);
   
@@ -416,7 +248,7 @@ function mapSNMPToPrinterData(snmpData: Record<string, any>, ipAddress: string, 
     status: appStatus,
     subStatus: detailedStatus,
     inkLevel,
-    paperLevel: typeof paperLevel === 'number' ? paperLevel : parseInt(paperLevel) || 50,
+    paperLevel: typeof paperLevel === 'number' ? paperLevel : parseInt(paperLevel) || 0,
     jobCount: totalPages,
     ipAddress,
     serialNumber,
@@ -432,14 +264,14 @@ function mapSNMPToPrinterData(snmpData: Record<string, any>, ipAddress: string, 
 }
 
 /**
- * Network discovery with multiple protocols
+ * Network discovery with real SNMP only
  */
 async function discoverPrinters(): Promise<Array<{ipAddress: string, name: string, model: string}>> {
-  console.log("Starting comprehensive printer discovery...");
+  console.log("Starting real SNMP printer discovery...");
   
   const discoveredPrinters = [];
   
-  // Try multiple discovery methods
+  // Discovery ranges to scan
   const discoveryMethods = [
     { name: 'SNMP Broadcast', range: '192.168.1', start: 100, end: 120 },
     { name: 'Common Office Range', range: '10.0.0', start: 50, end: 70 },
@@ -454,7 +286,7 @@ async function discoverPrinters(): Promise<Array<{ipAddress: string, name: strin
       const ip = `${method.range}.${i}`;
       
       try {
-        // Quick SNMP probe
+        // Quick SNMP probe with real communication only
         const probeOids = [PRINTER_OIDS.SYS_DESCR, PRINTER_OIDS.DEVICE_TYPE];
         const result = await queryPrinter(ip, probeOids);
         
@@ -478,7 +310,7 @@ async function discoverPrinters(): Promise<Array<{ipAddress: string, name: strin
           }
         }
       } catch (error) {
-        // Skip unreachable IPs
+        // Skip unreachable IPs - this is expected for most IPs
         continue;
       }
     }
@@ -514,14 +346,26 @@ serve(async (req) => {
     
     // Handle discovery
     if (action === 'discover') {
-      const discoveredPrinters = await discoverPrinters();
-      return new Response(JSON.stringify({ 
-        success: true, 
-        printers: discoveredPrinters 
-      }), {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
+      try {
+        const discoveredPrinters = await discoverPrinters();
+        return new Response(JSON.stringify({ 
+          success: true, 
+          printers: discoveredPrinters 
+        }), {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      } catch (error) {
+        console.error('Discovery failed:', error);
+        return new Response(JSON.stringify({ 
+          success: false,
+          error: 'SNMP discovery failed',
+          details: error.message
+        }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
     }
     
     // Handle single printer polling
@@ -532,7 +376,7 @@ serve(async (req) => {
       });
     }
     
-    console.log(`Polling printer at ${ipAddress}`);
+    console.log(`Polling printer at ${ipAddress} using real SNMP only`);
     
     // Query all relevant OIDs
     const allOids = [
@@ -545,56 +389,82 @@ serve(async (req) => {
       ...Object.values(PRINTER_OIDS.LEXMARK)
     ];
     
-    const snmpResponse = await queryPrinter(ipAddress, allOids);
-    const printerData = mapSNMPToPrinterData(snmpResponse, ipAddress, printerName);
-    
-    // Update database if printerId provided
-    if (printerId) {
-      console.log(`Updating printer ${printerId} in database`);
+    try {
+      const snmpResponse = await queryPrinter(ipAddress, allOids);
+      const printerData = mapSNMPToPrinterData(snmpResponse, ipAddress, printerName);
       
-      const { data, error } = await supabase
-        .from('printers')
-        .update({
-          model: printerData.model,
-          status: printerData.status,
-          sub_status: printerData.subStatus,
-          ink_level: printerData.inkLevel,
-          paper_level: printerData.paperLevel,
-          job_count: printerData.jobCount,
-          serial_number: printerData.serialNumber,
-          supplies: printerData.supplies,
-          stats: printerData.stats,
-          last_active: new Date().toISOString()
-        })
-        .eq('id', printerId)
-        .select();
+      // Update database if printerId provided
+      if (printerId) {
+        console.log(`Updating printer ${printerId} in database`);
         
-      if (error) {
-        console.error("Database update error:", error);
-        throw error;
+        const { data, error } = await supabase
+          .from('printers')
+          .update({
+            model: printerData.model,
+            status: printerData.status,
+            sub_status: printerData.subStatus,
+            ink_level: printerData.inkLevel,
+            paper_level: printerData.paperLevel,
+            job_count: printerData.jobCount,
+            serial_number: printerData.serialNumber,
+            supplies: printerData.supplies,
+            stats: printerData.stats,
+            last_active: new Date().toISOString()
+          })
+          .eq('id', printerId)
+          .select();
+          
+        if (error) {
+          console.error("Database update error:", error);
+          throw error;
+        }
+        
+        // Log activity
+        await supabase.from('printer_activities').insert({
+          printer_id: printerId,
+          printer_name: printerName,
+          action: 'SNMP Data Updated',
+          details: `Real SNMP data retrieved from ${ipAddress}`,
+          status: 'success',
+          timestamp: new Date().toISOString()
+        });
+        
+        console.log(`Successfully updated printer ${printerId}`);
       }
       
-      // Log activity
-      await supabase.from('printer_activities').insert({
-        printer_id: printerId,
-        printer_name: printerName,
-        action: 'SNMP Data Updated',
-        details: `Real-time data retrieved via SNMP from ${ipAddress}`,
-        status: 'success',
-        timestamp: new Date().toISOString()
+      return new Response(JSON.stringify({ 
+        success: true, 
+        data: printerData,
+        method: 'real_snmp'
+      }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
       
-      console.log(`Successfully updated printer ${printerId}`);
+    } catch (error) {
+      console.error('SNMP communication failed:', error);
+      
+      // Log failed attempt
+      if (printerId) {
+        await supabase.from('printer_activities').insert({
+          printer_id: printerId,
+          printer_name: printerName,
+          action: 'SNMP Poll Failed',
+          details: `Real SNMP communication failed: ${error.message}`,
+          status: 'error',
+          timestamp: new Date().toISOString()
+        });
+      }
+      
+      return new Response(JSON.stringify({ 
+        success: false,
+        error: 'SNMP communication failed',
+        details: error.message
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
-    
-    return new Response(JSON.stringify({ 
-      success: true, 
-      data: printerData,
-      method: snmpResponse._method || 'enhanced_simulation' // Indicate which method was used
-    }), {
-      status: 200,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
     
   } catch (error) {
     console.error('Error in printer-monitor function:', error);
