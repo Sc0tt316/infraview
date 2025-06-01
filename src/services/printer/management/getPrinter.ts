@@ -26,8 +26,8 @@ export const getPrinter = async (id: string): Promise<PrinterData | undefined> =
     try {
       if (data.supplies && typeof data.supplies === 'string') {
         supplies = JSON.parse(data.supplies);
-      } else if (data.supplies && typeof data.supplies === 'object') {
-        supplies = data.supplies as SuppliesData;
+      } else if (data.supplies && typeof data.supplies === 'object' && !Array.isArray(data.supplies)) {
+        supplies = data.supplies as unknown as SuppliesData;
       } else {
         // Create default supplies based on ink_level for backward compatibility
         supplies = {
@@ -53,7 +53,7 @@ export const getPrinter = async (id: string): Promise<PrinterData | undefined> =
     try {
       if (data.stats && typeof data.stats === 'string') {
         stats = JSON.parse(data.stats);
-      } else if (data.stats && typeof data.stats === 'object') {
+      } else if (data.stats && typeof data.stats === 'object' && !Array.isArray(data.stats)) {
         stats = data.stats;
       }
     } catch (e) {
