@@ -35,13 +35,17 @@ const PrinterDetailContent: React.FC<PrinterDetailContentProps> = ({
   };
 
   return (
-    <div className="w-full max-w-full space-y-4">
+    <div className="w-full max-w-full">
       <Card className="w-full">
-        <div className="p-4">
-          <TabsNavigation activeTab={activeTab} onTabChange={onTabChange} />
+        {/* Tabs Navigation */}
+        <div className="border-b bg-muted/30">
+          <div className="p-3">
+            <TabsNavigation activeTab={activeTab} onTabChange={onTabChange} />
+          </div>
         </div>
         
-        <div className="px-4 pb-4">
+        {/* Tab Content */}
+        <div className="p-4">
           {activeTab === 'overview' && (
             <PrinterOverview 
               printer={printer} 

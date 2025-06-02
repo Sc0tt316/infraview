@@ -54,16 +54,16 @@ const PrinterDetail = () => {
   }
 
   return (
-    <div className="container mx-auto p-4 sm:p-6 max-w-7xl">
-      {/* Header with back button and printer title */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <div className="flex items-center w-full sm:w-auto">
-          <Button variant="ghost" onClick={() => navigate('/printers')} className="mr-4 shrink-0">
+    <div className="container mx-auto p-4 sm:p-6 max-w-6xl">
+      {/* Compact Header */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="sm" onClick={() => navigate('/printers')}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
-          <div className="min-w-0 flex-1">
-            <h1 className="text-xl sm:text-2xl font-bold truncate">{printer.name}</h1>
+          <div className="min-w-0">
+            <h1 className="text-lg sm:text-xl font-bold truncate">{printer.name}</h1>
             <p className="text-muted-foreground text-sm truncate">
               {printer.model} • {printer.location}
             </p>
@@ -71,7 +71,7 @@ const PrinterDetail = () => {
         </div>
       </div>
 
-      {/* Main content area with proper width constraints */}
+      {/* Main content area */}
       <div className="w-full">
         <PrinterDetailContent 
           printer={printer} 
