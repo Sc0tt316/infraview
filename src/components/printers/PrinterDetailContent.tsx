@@ -35,33 +35,37 @@ const PrinterDetailContent: React.FC<PrinterDetailContentProps> = ({
   };
 
   return (
-    <Card className="w-full max-w-full">
-      <TabsNavigation activeTab={activeTab} onTabChange={onTabChange} />
-      
-      <div className="p-4 sm:p-6">
-        {activeTab === 'overview' && (
-          <PrinterOverview 
-            printer={printer} 
-            isRestarting={isRestarting}
-            onRestartPrinter={handleRestartPrinter}
-            isAdmin={isAdmin}
-          />
-        )}
-        {activeTab === 'actions' && (
-          <PrinterActions 
-            printer={printer}
-            isAdmin={isAdmin}
-            onEdit={onEdit}
-            onDelete={onDelete}
-          />
-        )}
-        {activeTab === 'logs' && (
-          <PrintLogs 
-            logs={printer.logs || []}
-          />
-        )}
-      </div>
-    </Card>
+    <div className="w-full max-w-full space-y-4">
+      <Card className="w-full">
+        <div className="p-4">
+          <TabsNavigation activeTab={activeTab} onTabChange={onTabChange} />
+        </div>
+        
+        <div className="px-4 pb-4">
+          {activeTab === 'overview' && (
+            <PrinterOverview 
+              printer={printer} 
+              isRestarting={isRestarting}
+              onRestartPrinter={handleRestartPrinter}
+              isAdmin={isAdmin}
+            />
+          )}
+          {activeTab === 'actions' && (
+            <PrinterActions 
+              printer={printer}
+              isAdmin={isAdmin}
+              onEdit={onEdit}
+              onDelete={onDelete}
+            />
+          )}
+          {activeTab === 'logs' && (
+            <PrintLogs 
+              logs={printer.logs || []}
+            />
+          )}
+        </div>
+      </Card>
+    </div>
   );
 };
 

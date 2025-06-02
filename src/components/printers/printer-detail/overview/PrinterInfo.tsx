@@ -13,7 +13,7 @@ const PrinterInfo: React.FC<PrinterInfoProps> = ({ printer }) => {
   const getStatusBadge = () => {
     if (!printer.status) return null;
     
-    let badgeClasses = "capitalize text-white";
+    let badgeClasses = "capitalize text-white font-medium";
     switch (printer.status) {
       case 'online': badgeClasses += " bg-green-500"; break;
       case 'offline': badgeClasses += " bg-gray-500"; break;
@@ -27,9 +27,8 @@ const PrinterInfo: React.FC<PrinterInfoProps> = ({ printer }) => {
   };
 
   const getDrumStatus = () => {
-    // Extract drum status from supplies data if available
     if (printer.supplies && typeof printer.supplies === 'object') {
-      const drumLevel = (printer.supplies as any).drum || 85; // Default if not available
+      const drumLevel = (printer.supplies as any).drum || 85;
       let drumColor = "text-green-600";
       if (drumLevel < 10) drumColor = "text-red-500";
       else if (drumLevel < 25) drumColor = "text-amber-500";
@@ -45,6 +44,7 @@ const PrinterInfo: React.FC<PrinterInfoProps> = ({ printer }) => {
   };
 
   const infoItems = [
+    { label: 'Name', value: printer.name },
     { label: 'Model', value: printer.model },
     { label: 'Location', value: printer.location },
     { label: 'Status', value: getStatusBadge() },
@@ -57,20 +57,20 @@ const PrinterInfo: React.FC<PrinterInfoProps> = ({ printer }) => {
   ];
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="w-full">
       <h3 className="text-lg font-medium mb-4">Printer Information</h3>
       
-      {/* Horizontal scrollable layout */}
-      <ScrollArea className="flex-1">
-        <div className="flex gap-6 pb-4 min-w-max">
+      {/* Horizontal scrollable layout with better spacing */}
+      <ScrollArea className="w-full">
+        <div className="flex gap-8 pb-4 min-w-max">
           {infoItems.map((item, index) => (
-            <div key={index} className="flex flex-col space-y-1 min-w-[140px]">
+            <div key={index} className="flex flex-col space-y-2 min-w-[160px]">
               <div className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
                 {item.label}
               </div>
-              <div className="text-sm font-medium break-words">
+              <div className="text-sm font-medium">
                 {typeof item.value === 'string' ? (
-                  <span>{item.value}</span>
+                  <span className="break-words">{item.value}</span>
                 ) : (
                   item.value
                 )}
