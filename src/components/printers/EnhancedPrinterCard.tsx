@@ -1,9 +1,6 @@
 
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Button } from '@/components/ui/button';
-import { MoreVertical, Edit, Trash2 } from 'lucide-react';
 import { PrinterData } from '@/types/printers';
 
 interface EnhancedPrinterCardProps {
@@ -16,10 +13,7 @@ interface EnhancedPrinterCardProps {
 
 const EnhancedPrinterCard: React.FC<EnhancedPrinterCardProps> = ({
   printer,
-  onOpenDetails,
-  onOpenEdit,
-  onOpenDelete,
-  isAdmin
+  onOpenDetails
 }) => {
   // Function to render supplies info inline
   const renderSuppliesInfo = () => {
@@ -80,11 +74,7 @@ const EnhancedPrinterCard: React.FC<EnhancedPrinterCardProps> = ({
   return (
     <Card 
       className="cursor-pointer hover:shadow-md transition-shadow"
-      onClick={(e) => {
-        // Don't trigger card click when dropdown is clicked
-        if ((e.target as HTMLElement).closest('.dropdown-action')) return;
-        onOpenDetails(printer.id);
-      }}
+      onClick={() => onOpenDetails(printer.id)}
     >
       <CardContent className="p-4">
         <div className="flex justify-between items-start">
@@ -96,37 +86,6 @@ const EnhancedPrinterCard: React.FC<EnhancedPrinterCardProps> = ({
             {renderSuppliesInfo()}
             
             <p className="text-xs mt-2">Paper: {printer.paperLevel}%</p>
-          </div>
-          
-          <div className="flex flex-col items-end">
-            {isAdmin && (
-              <div className="dropdown-action">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    {onOpenEdit && (
-                      <DropdownMenuItem onClick={onOpenEdit}>
-                        <Edit className="h-4 w-4 mr-2" />
-                        Edit
-                      </DropdownMenuItem>
-                    )}
-                    {onOpenDelete && (
-                      <DropdownMenuItem 
-                        onClick={onOpenDelete}
-                        className="text-red-600"
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Delete
-                      </DropdownMenuItem>
-                    )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            )}
           </div>
         </div>
       </CardContent>

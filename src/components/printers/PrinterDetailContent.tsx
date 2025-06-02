@@ -4,6 +4,7 @@ import { PrinterData } from '@/types/printers';
 import { Card } from '@/components/ui/card';
 import TabsNavigation from '@/components/printers/printer-detail/TabsNavigation';
 import PrinterOverview from '@/components/printers/printer-detail/PrinterOverview';
+import PrinterActions from '@/components/printers/printer-detail/PrinterActions';
 import PrintLogs from '@/components/printers/printer-detail/PrintLogs';
 import { useAuth } from '@/context/AuthContext';
 
@@ -11,16 +12,23 @@ interface PrinterDetailContentProps {
   printer: PrinterData;
   activeTab: string;
   onTabChange: (tab: string) => void;
+  onEdit?: () => void;
+  onDelete?: () => void;
 }
 
-const PrinterDetailContent: React.FC<PrinterDetailContentProps> = ({ printer, activeTab, onTabChange }) => {
+const PrinterDetailContent: React.FC<PrinterDetailContentProps> = ({ 
+  printer, 
+  activeTab, 
+  onTabChange,
+  onEdit,
+  onDelete
+}) => {
   const [isRestarting, setIsRestarting] = useState(false);
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin' || user?.role === 'manager';
 
   const handleRestartPrinter = () => {
     setIsRestarting(true);
-    // Simulate printer restart
     setTimeout(() => {
       setIsRestarting(false);
     }, 2000);
@@ -37,6 +45,14 @@ const PrinterDetailContent: React.FC<PrinterDetailContentProps> = ({ printer, ac
             isRestarting={isRestarting}
             onRestartPrinter={handleRestartPrinter}
             isAdmin={isAdmin}
+          />
+        )}
+        {activeTab === 'actions' && (
+          <PrinterActions 
+            printer={printer}
+            isAdmin={isAdmin}
+            onEdit={onEdit}
+            onDelete={onDelete}
           />
         )}
         {activeTab === 'logs' && (

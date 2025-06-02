@@ -2,11 +2,11 @@
 import { baseApiService } from './base';
 import { toast } from '@/hooks/use-toast';
 
-// Enhanced API service with notification handling and animation support
+// Enhanced API service with SNMP operations and database integration
 const enhancedApiService = {
   ...baseApiService,
   
-  // Add refresh method that handles animations and notifications
+  // Add refresh method that handles notifications
   refreshData: async <T>(
     endpoint: string, 
     options: { 
@@ -22,10 +22,8 @@ const enhancedApiService = {
     } = options;
     
     try {
-      // Fetch the data
       const data = await baseApiService.get<T>(endpoint);
       
-      // Show success notification if requested
       if (showNotification) {
         toast({
           title: 'Success',
@@ -33,7 +31,6 @@ const enhancedApiService = {
         });
       }
       
-      // Call success callback if provided
       if (onSuccess && data) {
         onSuccess(data);
       }
@@ -42,7 +39,6 @@ const enhancedApiService = {
     } catch (error) {
       console.error(`Error refreshing data from ${endpoint}:`, error);
       
-      // Show error notification
       if (showNotification) {
         toast({
           variant: 'destructive',
@@ -56,5 +52,4 @@ const enhancedApiService = {
   }
 };
 
-// Re-export the enhanced service
 export const apiService = enhancedApiService;

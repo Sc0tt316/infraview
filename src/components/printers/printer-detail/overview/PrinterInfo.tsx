@@ -2,76 +2,45 @@
 import React from 'react';
 import { format } from 'date-fns';
 import { PrinterData } from '@/types/printers';
-import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
 
 interface PrinterInfoProps {
   printer: PrinterData;
 }
 
 const PrinterInfo: React.FC<PrinterInfoProps> = ({ printer }) => {
-  const renderTonerLevels = () => {
-    if (printer.supplies) {
-      const { black, cyan, magenta, yellow } = printer.supplies;
+  const getStatusBadge = () => {
+    if (!printer.status) return null;
+    
+    let color = "bg-gray-500";
+    switch (printer.status) {
+      case 'online': color = "bg-green-500"; break;
+      case 'offline': color = "bg-gray-500"; break;
+      case 'error': color = "bg-red-500"; break;
+      case 'warning': color = "bg-amber-500"; break;
+      case 'maintenance': color = "bg-blue-500"; break;
+    }
+    
+    return <Badge className={`${color} capitalize text-white`}>{printer.status}</Badge>;
+  };
+
+  const getDrumStatus = () => {
+    // Extract drum status from supplies data if available
+    if (printer.supplies && typeof printer.supplies === 'object') {
+      const drumLevel = (printer.supplies as any).drum || 85; // Default if not available
+      let drumColor = "text-green-600";
+      if (drumLevel < 10) drumColor = "text-red-500";
+      else if (drumLevel < 25) drumColor = "text-amber-500";
       
       return (
-        <div className="space-y-3">
-          <h4 className="text-sm font-medium">Toner Levels</h4>
-          
-          {/* Black Toner */}
-          <div className="space-y-1">
-            <div className="flex justify-between text-xs">
-              <span>Black Toner</span>
-              <span className={black < 10 ? "text-red-500" : black < 25 ? "text-amber-500" : "text-green-600"}>
-                {black}%
-              </span>
-            </div>
-            <Progress value={black} className="h-2" />
-          </div>
-          
-          {/* Color Toners - only show if available */}
-          {cyan !== undefined && (
-            <div className="space-y-1">
-              <div className="flex justify-between text-xs">
-                <span>Cyan Toner</span>
-                <span className={cyan < 10 ? "text-red-500" : cyan < 25 ? "text-amber-500" : "text-green-600"}>
-                  {cyan}%
-                </span>
-              </div>
-              <Progress value={cyan} className="h-2" />
-            </div>
-          )}
-          
-          {magenta !== undefined && (
-            <div className="space-y-1">
-              <div className="flex justify-between text-xs">
-                <span>Magenta Toner</span>
-                <span className={magenta < 10 ? "text-red-500" : magenta < 25 ? "text-amber-500" : "text-green-600"}>
-                  {magenta}%
-                </span>
-              </div>
-              <Progress value={magenta} className="h-2" />
-            </div>
-          )}
-          
-          {yellow !== undefined && (
-            <div className="space-y-1">
-              <div className="flex justify-between text-xs">
-                <span>Yellow Toner</span>
-                <span className={yellow < 10 ? "text-red-500" : yellow < 25 ? "text-amber-500" : "text-green-600"}>
-                  {yellow}%
-                </span>
-              </div>
-              <Progress value={yellow} className="h-2" />
-            </div>
-          )}
+        <div className={`${drumColor} font-medium`}>
+          {drumLevel}% - {drumLevel > 75 ? 'Good' : drumLevel > 25 ? 'Fair' : 'Replace Soon'}
         </div>
       );
     }
     
-    return (
-      <div className="text-sm text-muted-foreground">No supply data available</div>
-    );
+    return <div className="text-muted-foreground">Not Available</div>;
   };
 
   return (
@@ -87,6 +56,16 @@ const PrinterInfo: React.FC<PrinterInfoProps> = ({ printer }) => {
             <div className="text-muted-foreground">Location:</div>
             <div className="break-words">{printer.location}</div>
 
+            <div className="text-muted-foreground">Status:</div>
+            <div className="break-words">{getStatusBadge()}</div>
+
+            {printer.subStatus && (
+              <>
+                <div className="text-muted-foreground">Sub Status:</div>
+                <div className="break-words">{printer.subStatus}</div>
+              </>
+            )}
+
             <div className="text-muted-foreground">Serial Number:</div>
             <div className="break-words">{printer.serialNumber || 'N/A'}</div>
 
@@ -99,20 +78,8 @@ const PrinterInfo: React.FC<PrinterInfoProps> = ({ printer }) => {
             <div className="text-muted-foreground">Date Added:</div>
             <div className="break-words">{printer.addedDate ? format(new Date(printer.addedDate), 'MMM dd, yyyy') : 'N/A'}</div>
 
-            <div className="text-muted-foreground">Status:</div>
-            <div className="break-words capitalize">{printer.status}</div>
-
-            {printer.subStatus && (
-              <>
-                <div className="text-muted-foreground">Sub Status:</div>
-                <div className="break-words">{printer.subStatus}</div>
-              </>
-            )}
-          </div>
-          
-          {/* Toner Levels Section */}
-          <div className="mt-6">
-            {renderTonerLevels()}
+            <div className="text-muted-foreground">Drum Status:</div>
+            {getDrumStatus()}
           </div>
         </div>
       </ScrollArea>

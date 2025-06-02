@@ -1,43 +1,21 @@
 
 import React from 'react';
-import { Printer, FileText } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface TabsNavigationProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
 }
 
-const TabsNavigation: React.FC<TabsNavigationProps> = ({
-  activeTab,
-  onTabChange
-}) => {
-  const tabs = [
-    { id: 'overview', label: 'Overview', icon: Printer },
-    { id: 'logs', label: 'Print Logs', icon: FileText },
-  ];
-
+const TabsNavigation: React.FC<TabsNavigationProps> = ({ activeTab, onTabChange }) => {
   return (
-    <div className="flex border-b">
-      {tabs.map((tab) => {
-        const Icon = tab.icon;
-        const isActive = activeTab === tab.id;
-        
-        return (
-          <button
-            key={tab.id}
-            onClick={() => onTabChange(tab.id)}
-            className={`
-              flex items-center px-6 py-3 text-sm font-medium
-              ${isActive ? 'border-b-2 border-primary text-primary' : 'text-muted-foreground hover:text-foreground'}
-              transition-colors
-            `}
-          >
-            <Icon className="mr-2 h-4 w-4" />
-            {tab.label}
-          </button>
-        );
-      })}
-    </div>
+    <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
+      <TabsList className="grid w-full grid-cols-3">
+        <TabsTrigger value="overview">Overview</TabsTrigger>
+        <TabsTrigger value="actions">Actions</TabsTrigger>
+        <TabsTrigger value="logs">Logs</TabsTrigger>
+      </TabsList>
+    </Tabs>
   );
 };
 
