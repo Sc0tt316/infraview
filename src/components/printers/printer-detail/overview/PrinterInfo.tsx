@@ -13,16 +13,17 @@ const PrinterInfo: React.FC<PrinterInfoProps> = ({ printer }) => {
   const getStatusBadge = () => {
     if (!printer.status) return null;
     
-    let color = "bg-gray-500";
+    let badgeClasses = "capitalize text-white";
     switch (printer.status) {
-      case 'online': color = "bg-green-500"; break;
-      case 'offline': color = "bg-gray-500"; break;
-      case 'error': color = "bg-red-500"; break;
-      case 'warning': color = "bg-amber-500"; break;
-      case 'maintenance': color = "bg-blue-500"; break;
+      case 'online': badgeClasses += " bg-green-500"; break;
+      case 'offline': badgeClasses += " bg-gray-500"; break;
+      case 'error': badgeClasses += " bg-red-500"; break;
+      case 'warning': badgeClasses += " bg-amber-500"; break;
+      case 'maintenance': badgeClasses += " bg-blue-500"; break;
+      default: badgeClasses += " bg-gray-500"; break;
     }
     
-    return <Badge className={`${color} capitalize text-white`}>{printer.status}</Badge>;
+    return <Badge className={badgeClasses}>{printer.status}</Badge>;
   };
 
   const getDrumStatus = () => {
@@ -43,44 +44,39 @@ const PrinterInfo: React.FC<PrinterInfoProps> = ({ printer }) => {
     return <div className="text-muted-foreground">Not Available</div>;
   };
 
+  const infoItems = [
+    { label: 'Model', value: printer.model },
+    { label: 'Location', value: printer.location },
+    { label: 'Status', value: getStatusBadge() },
+    ...(printer.subStatus ? [{ label: 'Sub Status', value: printer.subStatus }] : []),
+    { label: 'Serial Number', value: printer.serialNumber || 'N/A' },
+    { label: 'IP Address', value: printer.ipAddress || 'N/A' },
+    { label: 'Department', value: printer.department || 'N/A' },
+    { label: 'Date Added', value: printer.addedDate ? format(new Date(printer.addedDate), 'MMM dd, yyyy') : 'N/A' },
+    { label: 'Drum Status', value: getDrumStatus() }
+  ];
+
   return (
     <div className="h-full flex flex-col">
       <h3 className="text-lg font-medium mb-4">Printer Information</h3>
-      <ScrollArea className="flex-1 pr-4">
-        <div className="space-y-4">
-          {/* Basic Info */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-            <div className="text-muted-foreground">Model:</div>
-            <div className="break-words">{printer.model}</div>
-
-            <div className="text-muted-foreground">Location:</div>
-            <div className="break-words">{printer.location}</div>
-
-            <div className="text-muted-foreground">Status:</div>
-            <div className="break-words">{getStatusBadge()}</div>
-
-            {printer.subStatus && (
-              <>
-                <div className="text-muted-foreground">Sub Status:</div>
-                <div className="break-words">{printer.subStatus}</div>
-              </>
-            )}
-
-            <div className="text-muted-foreground">Serial Number:</div>
-            <div className="break-words">{printer.serialNumber || 'N/A'}</div>
-
-            <div className="text-muted-foreground">IP Address:</div>
-            <div className="break-words">{printer.ipAddress || 'N/A'}</div>
-
-            <div className="text-muted-foreground">Department:</div>
-            <div className="break-words">{printer.department || 'N/A'}</div>
-
-            <div className="text-muted-foreground">Date Added:</div>
-            <div className="break-words">{printer.addedDate ? format(new Date(printer.addedDate), 'MMM dd, yyyy') : 'N/A'}</div>
-
-            <div className="text-muted-foreground">Drum Status:</div>
-            {getDrumStatus()}
-          </div>
+      
+      {/* Horizontal scrollable layout */}
+      <ScrollArea className="flex-1">
+        <div className="flex gap-6 pb-4 min-w-max">
+          {infoItems.map((item, index) => (
+            <div key={index} className="flex flex-col space-y-1 min-w-[140px]">
+              <div className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
+                {item.label}
+              </div>
+              <div className="text-sm font-medium break-words">
+                {typeof item.value === 'string' ? (
+                  <span>{item.value}</span>
+                ) : (
+                  item.value
+                )}
+              </div>
+            </div>
+          ))}
         </div>
       </ScrollArea>
     </div>

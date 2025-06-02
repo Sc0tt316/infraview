@@ -28,7 +28,7 @@ const PrinterDetail = () => {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto p-6 flex items-center justify-center min-h-[60vh]">
+      <div className="container mx-auto p-4 sm:p-6 flex items-center justify-center min-h-[60vh]">
         <div className="animate-pulse text-center">
           <p className="text-muted-foreground">Loading printer details...</p>
         </div>
@@ -38,7 +38,7 @@ const PrinterDetail = () => {
 
   if (!printer) {
     return (
-      <div className="container mx-auto p-6">
+      <div className="container mx-auto p-4 sm:p-6">
         <Card className="p-6">
           <div className="flex flex-col items-center justify-center space-y-4 py-8">
             <h2 className="text-2xl font-bold">Printer Not Found</h2>
@@ -54,23 +54,29 @@ const PrinterDetail = () => {
   }
 
   return (
-    <div className="container mx-auto space-y-6 p-6">
-      <div className="flex justify-between items-center">
-        <div className="flex items-center">
-          <Button variant="ghost" onClick={() => navigate('/printers')} className="mr-4">
+    <div className="container mx-auto space-y-4 sm:space-y-6 p-4 sm:p-6 max-w-full">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex items-center w-full sm:w-auto">
+          <Button variant="ghost" onClick={() => navigate('/printers')} className="mr-2 sm:mr-4">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
-          <div>
-            <h1 className="text-2xl font-bold">{printer.name}</h1>
-            <p className="text-muted-foreground text-sm">
+          <div className="min-w-0 flex-1">
+            <h1 className="text-xl sm:text-2xl font-bold truncate">{printer.name}</h1>
+            <p className="text-muted-foreground text-xs sm:text-sm truncate">
               {printer.model} • {printer.location}
             </p>
           </div>
         </div>
       </div>
 
-      <PrinterDetailContent printer={printer} activeTab={activeTab} onTabChange={setActiveTab} />
+      <div className="w-full max-w-full">
+        <PrinterDetailContent 
+          printer={printer} 
+          activeTab={activeTab} 
+          onTabChange={setActiveTab} 
+        />
+      </div>
     </div>
   );
 };
