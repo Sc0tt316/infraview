@@ -80,7 +80,7 @@ const PrinterActions: React.FC<PrinterActionsProps> = ({
   const handleDelete = async () => {
     setIsDeleting(true);
     try {
-      await printerService.deletePrinter(printer.id);
+      await printerService.deletePrinter(printer.id, printer.name);
       toast({
         title: "Printer Deleted",
         description: `${printer.name} has been deleted successfully.`
