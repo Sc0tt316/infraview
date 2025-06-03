@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { UseFormReturn } from "react-hook-form";
 import { PrinterFormValues } from '@/types/printer';
+import { Loader2 } from 'lucide-react';
 
 interface AddPrinterFormProps {
   form: UseFormReturn<PrinterFormValues>;
@@ -21,6 +22,7 @@ interface AddPrinterFormProps {
   handleInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
   setFormData: React.Dispatch<React.SetStateAction<PrinterFormValues>>;
   isEditing?: boolean;
+  isDetecting?: boolean;
 }
 
 const AddPrinterForm: React.FC<AddPrinterFormProps> = ({
@@ -30,6 +32,7 @@ const AddPrinterForm: React.FC<AddPrinterFormProps> = ({
   formData,
   handleInputChange,
   isEditing = false,
+  isDetecting = false,
 }) => {
   return (
     <Form {...form}>
@@ -66,16 +69,25 @@ const AddPrinterForm: React.FC<AddPrinterFormProps> = ({
               <FormItem>
                 <FormLabel>Model</FormLabel>
                 <FormControl>
-                  <Input 
-                    {...field} 
-                    value={formData.model}
-                    onChange={(e) => {
-                      field.onChange(e);
-                      handleInputChange(e);
-                    }}
-                    placeholder="Epson WorkForce Pro" 
-                  />
+                  <div className="relative">
+                    <Input 
+                      {...field} 
+                      value={formData.model}
+                      onChange={(e) => {
+                        field.onChange(e);
+                        handleInputChange(e);
+                      }}
+                      placeholder="Epson WorkForce Pro" 
+                      disabled={isDetecting}
+                    />
+                    {isDetecting && (
+                      <Loader2 className="absolute right-3 top-3 h-4 w-4 animate-spin text-muted-foreground" />
+                    )}
+                  </div>
                 </FormControl>
+                {isDetecting && (
+                  <p className="text-xs text-muted-foreground">Detecting printer model...</p>
+                )}
                 <FormMessage />
               </FormItem>
             )}
@@ -153,6 +165,9 @@ const AddPrinterForm: React.FC<AddPrinterFormProps> = ({
         
         <div className="text-sm text-muted-foreground">
           <p>Printer status, ink, and paper levels will be automatically detected once the printer is connected via IP address.</p>
+          {!isEditing && (
+            <p className="mt-1">Enter an IP address to automatically detect the printer model and name.</p>
+          )}
         </div>
         
         {/* Form Actions */}

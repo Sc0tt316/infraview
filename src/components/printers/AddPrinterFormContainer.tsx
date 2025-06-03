@@ -25,12 +25,13 @@ const AddPrinterFormContainer: React.FC<AddPrinterFormContainerProps> = ({
     name: '',
     model: '',
     location: '',
-    status: 'offline', // Default status - will be auto-detected
-    inkLevel: 0, // Will be auto-detected
-    paperLevel: 0, // Will be auto-detected
+    status: 'offline',
+    inkLevel: 0,
+    paperLevel: 0,
     ipAddress: '',
     department: ''
   });
+  const [isDetecting, setIsDetecting] = useState(false);
 
   // Initialize form with existing printer data if editing
   useEffect(() => {
@@ -54,12 +55,62 @@ const AddPrinterFormContainer: React.FC<AddPrinterFormContainerProps> = ({
     values: formData
   });
 
+  // Auto-detect printer model when IP address changes
+  const detectPrinterModel = async (ipAddress: string) => {
+    if (!ipAddress || existingPrinter) return; // Skip if editing existing printer
+    
+    setIsDetecting(true);
+    try {
+      const result = await fetch('/api/printer-monitor', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ipAddress,
+          action: 'poll'
+        })
+      });
+      
+      const data = await result.json();
+      
+      if (data.success && data.data) {
+        const detectedModel = data.data.model;
+        const detectedName = data.data.name;
+        
+        if (detectedModel && detectedModel !== 'Unknown Printer') {
+          setFormData(prev => ({
+            ...prev,
+            model: detectedModel,
+            name: detectedName || prev.name
+          }));
+          
+          toast({
+            title: "Printer Detected",
+            description: `Found: ${detectedModel}`,
+          });
+        }
+      }
+    } catch (error) {
+      console.log('Auto-detection failed, user can enter manually');
+    } finally {
+      setIsDetecting(false);
+    }
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
+
+    // Auto-detect when IP address is entered
+    if (name === 'ipAddress' && value && !existingPrinter) {
+      const timeoutId = setTimeout(() => {
+        detectPrinterModel(value);
+      }, 1000); // Debounce for 1 second
+      
+      return () => clearTimeout(timeoutId);
+    }
   };
 
   const onSubmit = async (e: React.FormEvent) => {
@@ -67,24 +118,21 @@ const AddPrinterFormContainer: React.FC<AddPrinterFormContainerProps> = ({
     
     try {
       form.handleSubmit(async (validData) => {
-        // Prepare printer data with defaults for auto-detection
         const printerData = {
           name: validData.name,
           model: validData.model,
           location: validData.location,
-          status: 'offline' as const, // Always start as offline, will be auto-detected
-          inkLevel: 0, // Will be auto-detected via SNMP
-          paperLevel: 0, // Will be auto-detected via SNMP
+          status: 'offline' as const,
+          inkLevel: 0,
+          paperLevel: 0,
           ipAddress: validData.ipAddress || '',
           department: validData.department || '',
           serialNumber: undefined
         };
         
         if (existingPrinter) {
-          // Update existing printer
           await printerService.updatePrinter(existingPrinter.id, printerData);
           
-          // If IP address is provided, immediately poll the printer
           if (printerData.ipAddress) {
             try {
               await printerService.pollPrinter({
@@ -109,10 +157,8 @@ const AddPrinterFormContainer: React.FC<AddPrinterFormContainerProps> = ({
             });
           }
         } else {
-          // Add new printer
           const newPrinter = await printerService.addPrinter(printerData);
           
-          // If IP address is provided, immediately poll the printer
           if (printerData.ipAddress && newPrinter) {
             try {
               await printerService.pollPrinter({
@@ -138,12 +184,10 @@ const AddPrinterFormContainer: React.FC<AddPrinterFormContainerProps> = ({
           }
         }
 
-        // Refresh printer data
         queryClient.invalidateQueries({
           queryKey: ['printers']
         });
         
-        // Call onSuccess callback if provided
         if (onSuccess) {
           onSuccess();
         } else {
@@ -169,6 +213,7 @@ const AddPrinterFormContainer: React.FC<AddPrinterFormContainerProps> = ({
       handleInputChange={handleInputChange}
       setFormData={setFormData}
       isEditing={!!existingPrinter}
+      isDetecting={isDetecting}
     />
   );
 };
