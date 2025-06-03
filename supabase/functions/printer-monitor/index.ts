@@ -2,63 +2,6 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 
-// Comprehensive SNMP OID mappings for different printer manufacturers
-const PRINTER_OIDS = {
-  // Standard RFC 3805 Printer MIB OIDs
-  DEVICE_TYPE: '1.3.6.1.2.1.25.3.2.1.2.1',
-  DEVICE_DESCR: '1.3.6.1.2.1.25.3.2.1.3.1',
-  DEVICE_STATUS: '1.3.6.1.2.1.25.3.5.1.1.1',
-  DEVICE_ERRORS: '1.3.6.1.2.1.25.3.5.1.2.1',
-  
-  // System Information
-  SYS_NAME: '1.3.6.1.2.1.1.5.0',
-  SYS_DESCR: '1.3.6.1.2.1.1.1.0',
-  SYS_CONTACT: '1.3.6.1.2.1.1.4.0',
-  SYS_LOCATION: '1.3.6.1.2.1.1.6.0',
-  
-  // Printer-specific OIDs
-  PRINTER_STATUS: '1.3.6.1.2.1.25.3.5.1.1.1',
-  PRINTER_DETAILED_STATUS: '1.3.6.1.2.1.25.3.5.1.2.1',
-  
-  // Supply levels (toner/ink)
-  SUPPLY_LEVEL: '1.3.6.1.2.1.43.11.1.1.9.1',
-  SUPPLY_MAX_CAPACITY: '1.3.6.1.2.1.43.11.1.1.8.1',
-  SUPPLY_TYPE: '1.3.6.1.2.1.43.11.1.1.3.1',
-  SUPPLY_UNIT: '1.3.6.1.2.1.43.11.1.1.7.1',
-  SUPPLY_COLOR: '1.3.6.1.2.1.43.12.1.1.4.1',
-  
-  // Paper handling
-  INPUT_CAPACITY_UNIT: '1.3.6.1.2.1.43.8.2.1.9.1',
-  INPUT_MAX_CAPACITY: '1.3.6.1.2.1.43.8.2.1.3.1',
-  INPUT_CURRENT_LEVEL: '1.3.6.1.2.1.43.8.2.1.10.1',
-  
-  // Page counts
-  TOTAL_PAGES: '1.3.6.1.2.1.43.10.2.1.4.1.1',
-  TOTAL_IMPRESSIONS: '1.3.6.1.2.1.43.10.2.1.5.1.1',
-  
-  // Manufacturer-specific OIDs
-  HP: {
-    SERIAL_NUMBER: '1.3.6.1.4.1.11.2.3.9.4.2.1.1.3.3.0',
-    DEVICE_ID: '1.3.6.1.4.1.11.2.3.9.4.2.1.1.3.1.0',
-    CONSUMABLE_STATUS: '1.3.6.1.4.1.11.2.3.9.4.2.1.1.2.1.0',
-    PAGE_COUNT: '1.3.6.1.4.1.11.2.3.9.4.2.1.4.1.2.5.0',
-    TONER_REMAINING: '1.3.6.1.4.1.11.2.3.9.4.2.1.1.2.6.1',
-  }
-};
-
-// Status mappings based on RFC 3805
-const PRINTER_STATUS_CODES = {
-  1: { status: 'other', description: 'Other' },
-  2: { status: 'unknown', description: 'Unknown' },
-  3: { status: 'idle', description: 'Ready' },
-  4: { status: 'printing', description: 'Processing job' },
-  5: { status: 'warmup', description: 'Warming up' },
-  6: { status: 'stopped', description: 'Stopped printing' },
-  7: { status: 'offline', description: 'Offline' },
-  8: { status: 'error', description: 'Error condition' },
-  9: { status: 'maintenance', description: 'Maintenance required' }
-};
-
 // CORS headers
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -66,87 +9,58 @@ const corsHeaders = {
 };
 
 /**
- * Performs SNMP communication with external service or internal SNMP library
+ * Performs SNMP communication with local SNMP service
  */
-async function performSNMP(ipAddress: string, oids: string[]): Promise<Record<string, any> | null> {
+async function performSNMP(ipAddress: string, action: string = 'poll'): Promise<Record<string, any> | null> {
   try {
-    // Check for external SNMP service first
     const snmpServiceUrl = Deno.env.get('SNMP_SERVICE_URL');
-    const snmpServiceKey = Deno.env.get('SNMP_SERVICE_KEY');
     
-    if (snmpServiceUrl) {
-      console.log(`Using external SNMP service: ${snmpServiceUrl}`);
-      
-      const response = await fetch(`${snmpServiceUrl}/snmp/walk`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(snmpServiceKey && { 'Authorization': `Bearer ${snmpServiceKey}` })
-        },
-        body: JSON.stringify({
-          host: ipAddress,
-          community: 'public',
-          oids: oids,
-          version: '2c',
-          timeout: 8000
-        }),
-        signal: AbortSignal.timeout(15000)
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        console.log(`External SNMP successful for ${ipAddress}`);
-        return data.values || data;
-      } else {
-        const errorText = await response.text();
-        throw new Error(`SNMP service error ${response.status}: ${errorText}`);
-      }
+    if (!snmpServiceUrl) {
+      throw new Error('SNMP_SERVICE_URL not configured. Please set up your local SNMP service.');
     }
     
-    // If no external service, provide simulated data for testing
-    console.log(`No SNMP_SERVICE_URL configured, using test data for ${ipAddress}`);
+    console.log(`Using SNMP service: ${snmpServiceUrl}`);
     
-    // Generate realistic test data based on IP address
-    const deviceId = parseInt(ipAddress.split('.').pop() || '1');
-    const isOnline = deviceId % 10 !== 0; // 90% online rate
-    
-    if (!isOnline) {
-      throw new Error('Printer not responding to SNMP requests');
-    }
-    
-    return {
-      [PRINTER_OIDS.SYS_DESCR]: `Canon MAXIFY iB4170 Series Printer ${deviceId}`,
-      [PRINTER_OIDS.SYS_NAME]: `Printer-${deviceId}`,
-      [PRINTER_OIDS.PRINTER_STATUS]: deviceId % 8 === 0 ? 8 : 3, // Error or Ready
-      [PRINTER_OIDS.PRINTER_DETAILED_STATUS]: deviceId % 8 === 0 ? 'Paper jam detected' : 'Ready',
-      [PRINTER_OIDS.SUPPLY_LEVEL + '.1']: Math.max(10, 100 - (deviceId * 3) % 90), // Black toner
-      [PRINTER_OIDS.SUPPLY_LEVEL + '.2']: Math.max(15, 100 - (deviceId * 4) % 85), // Cyan
-      [PRINTER_OIDS.SUPPLY_LEVEL + '.3']: Math.max(20, 100 - (deviceId * 5) % 80), // Magenta
-      [PRINTER_OIDS.SUPPLY_LEVEL + '.4']: Math.max(25, 100 - (deviceId * 6) % 75), // Yellow
-      [PRINTER_OIDS.INPUT_CURRENT_LEVEL + '.1']: Math.max(5, 100 - (deviceId * 2) % 95), // Paper level
-      [PRINTER_OIDS.TOTAL_PAGES]: deviceId * 100 + Math.floor(Math.random() * 1000),
-      [PRINTER_OIDS.HP.SERIAL_NUMBER]: `SN-CA${deviceId.toString().padStart(5, '0')}`
+    let endpoint = '/snmp/poll';
+    let body: any = {
+      host: ipAddress,
+      community: 'public',
+      version: '2c',
+      timeout: 8000
     };
     
+    if (action === 'discover') {
+      endpoint = '/snmp/discover';
+      body = {};
+    }
+    
+    const response = await fetch(`${snmpServiceUrl}${endpoint}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(15000)
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`SNMP service error ${response.status}: ${errorText}`);
+    }
+    
+    const data = await response.json();
+    
+    if (!data.success) {
+      throw new Error(data.error || 'SNMP operation failed');
+    }
+    
+    console.log(`SNMP ${action} successful for ${ipAddress || 'discovery'}`);
+    return data.values || data.printers || data;
+    
   } catch (error) {
-    console.error(`SNMP communication failed for ${ipAddress}:`, error.message);
+    console.error(`SNMP communication failed: ${error.message}`);
     throw error;
   }
-}
-
-/**
- * Main SNMP query function
- */
-async function queryPrinter(ipAddress: string, oids: string[]): Promise<Record<string, any>> {
-  console.log(`Querying printer at ${ipAddress} for ${oids.length} OIDs`);
-  
-  const result = await performSNMP(ipAddress, oids);
-  if (!result) {
-    throw new Error(`Failed to retrieve SNMP data from ${ipAddress}`);
-  }
-  
-  console.log(`Successfully retrieved SNMP data from ${ipAddress}`);
-  return result;
 }
 
 /**
@@ -155,22 +69,46 @@ async function queryPrinter(ipAddress: string, oids: string[]): Promise<Record<s
 function mapSNMPToPrinterData(snmpData: Record<string, any>, ipAddress: string, printerName: string): any {
   console.log("Mapping SNMP data:", Object.keys(snmpData));
   
+  // Standard OIDs
+  const SYS_DESCR = '1.3.6.1.2.1.1.1.0';
+  const SYS_NAME = '1.3.6.1.2.1.1.5.0';
+  const PRINTER_STATUS = '1.3.6.1.2.1.25.3.5.1.1.1';
+  const PRINTER_DETAILED_STATUS = '1.3.6.1.2.1.25.3.5.1.2.1';
+  const SUPPLY_LEVEL_BASE = '1.3.6.1.2.1.43.11.1.1.9.1';
+  const INPUT_CURRENT_LEVEL = '1.3.6.1.2.1.43.8.2.1.10.1';
+  const TOTAL_PAGES = '1.3.6.1.2.1.43.10.2.1.4.1.1';
+  const HP_SERIAL_NUMBER = '1.3.6.1.4.1.11.2.3.9.4.2.1.1.3.3.0';
+  
   // Extract basic information
-  const deviceDescription = snmpData[PRINTER_OIDS.SYS_DESCR] || snmpData[PRINTER_OIDS.DEVICE_DESCR] || 'Unknown Printer';
-  const systemName = snmpData[PRINTER_OIDS.SYS_NAME] || printerName;
-  const statusCode = snmpData[PRINTER_OIDS.PRINTER_STATUS] || 3;
-  const detailedStatus = snmpData[PRINTER_OIDS.PRINTER_DETAILED_STATUS] || 'Ready';
+  const deviceDescription = snmpData[SYS_DESCR] || 'Unknown Printer';
+  const systemName = snmpData[SYS_NAME] || printerName;
+  const statusCode = parseInt(snmpData[PRINTER_STATUS]) || 3;
+  const detailedStatus = snmpData[PRINTER_DETAILED_STATUS] || 'Ready';
   
   // Map status to application format
-  const statusInfo = PRINTER_STATUS_CODES[statusCode] || PRINTER_STATUS_CODES[3];
   let appStatus: 'online' | 'offline' | 'error' | 'warning' | 'maintenance' = 'online';
+  let subStatus = detailedStatus;
   
   switch (statusCode) {
-    case 7: appStatus = 'offline'; break;
-    case 8: appStatus = 'error'; break;
-    case 9: appStatus = 'maintenance'; break;
-    case 5: appStatus = 'warning'; break;
-    default: appStatus = 'online';
+    case 7: 
+      appStatus = 'offline'; 
+      subStatus = 'No Connection';
+      break;
+    case 8: 
+      appStatus = 'error'; 
+      subStatus = detailedStatus || 'Error condition';
+      break;
+    case 9: 
+      appStatus = 'maintenance'; 
+      subStatus = 'Maintenance required';
+      break;
+    case 5: 
+      appStatus = 'warning'; 
+      subStatus = 'Warming up';
+      break;
+    default: 
+      appStatus = 'online';
+      subStatus = detailedStatus || 'Ready';
   }
   
   // Extract supplies information
@@ -178,31 +116,43 @@ function mapSNMPToPrinterData(snmpData: Record<string, any>, ipAddress: string, 
   let totalInkLevel = 0;
   let inkCount = 0;
   
-  // Map specific supply levels
-  const blackToner = snmpData[PRINTER_OIDS.SUPPLY_LEVEL + '.1'] || 0;
-  const cyanToner = snmpData[PRINTER_OIDS.SUPPLY_LEVEL + '.2'] || 0;
-  const magentaToner = snmpData[PRINTER_OIDS.SUPPLY_LEVEL + '.3'] || 0;
-  const yellowToner = snmpData[PRINTER_OIDS.SUPPLY_LEVEL + '.4'] || 0;
-  
-  if (blackToner > 0) { supplies.black = blackToner; totalInkLevel += blackToner; inkCount++; }
-  if (cyanToner > 0) { supplies.cyan = cyanToner; totalInkLevel += cyanToner; inkCount++; }
-  if (magentaToner > 0) { supplies.magenta = magentaToner; totalInkLevel += magentaToner; inkCount++; }
-  if (yellowToner > 0) { supplies.yellow = yellowToner; totalInkLevel += yellowToner; inkCount++; }
-  
-  // Add drum level for display
-  supplies.drum = Math.max(75, 100 - Math.floor(Math.random() * 25));
+  // Look for supply levels (multiple cartridges)
+  for (let i = 1; i <= 6; i++) {
+    const supplyOid = `${SUPPLY_LEVEL_BASE}.${i}`;
+    const level = parseInt(snmpData[supplyOid]);
+    
+    if (!isNaN(level) && level >= 0) {
+      // Map supply index to color (this is printer-specific)
+      const colorMap = {
+        1: 'black',
+        2: 'cyan', 
+        3: 'magenta',
+        4: 'yellow',
+        5: 'drum',
+        6: 'waste'
+      };
+      
+      const colorName = colorMap[i as keyof typeof colorMap] || `supply${i}`;
+      supplies[colorName] = level;
+      
+      if (i <= 4) { // Only count CMYK for overall ink level
+        totalInkLevel += level;
+        inkCount++;
+      }
+    }
+  }
   
   // Calculate overall ink level
   const inkLevel = inkCount > 0 ? Math.floor(totalInkLevel / inkCount) : 0;
   
   // Extract paper information
-  const paperLevel = snmpData[PRINTER_OIDS.INPUT_CURRENT_LEVEL + '.1'] || 0;
+  const paperLevel = parseInt(snmpData[`${INPUT_CURRENT_LEVEL}.1`]) || 0;
   
   // Extract page counts
-  const totalPages = snmpData[PRINTER_OIDS.TOTAL_PAGES] || snmpData[PRINTER_OIDS.TOTAL_IMPRESSIONS] || 0;
+  const totalPages = parseInt(snmpData[TOTAL_PAGES]) || 0;
   
   // Extract serial number
-  const serialNumber = snmpData[PRINTER_OIDS.HP.SERIAL_NUMBER] || 'Unknown';
+  const serialNumber = snmpData[HP_SERIAL_NUMBER] || 'Unknown';
   
   // Generate statistics based on actual data
   const monthlyPrints = Math.floor(totalPages * 0.1) || 0;
@@ -212,11 +162,11 @@ function mapSNMPToPrinterData(snmpData: Record<string, any>, ipAddress: string, 
   return {
     name: printerName || systemName,
     model: deviceDescription,
-    location: '', // This needs to be set manually
+    location: '',
     status: appStatus,
-    subStatus: detailedStatus,
+    subStatus,
     inkLevel,
-    paperLevel: typeof paperLevel === 'number' ? paperLevel : parseInt(paperLevel) || 0,
+    paperLevel,
     jobCount: totalPages,
     ipAddress,
     serialNumber,
@@ -232,56 +182,18 @@ function mapSNMPToPrinterData(snmpData: Record<string, any>, ipAddress: string, 
 }
 
 /**
- * Network discovery
+ * Network discovery using local SNMP service
  */
 async function discoverPrinters(): Promise<Array<{ipAddress: string, name: string, model: string}>> {
-  console.log("Starting SNMP printer discovery...");
+  console.log("Starting SNMP printer discovery via local service...");
   
-  const discoveredPrinters = [];
-  
-  // Discovery ranges to scan
-  const baseRanges = ['192.168.1', '192.168.0', '10.0.0', '172.16.0'];
-  
-  for (const range of baseRanges) {
-    console.log(`Scanning range: ${range}.x`);
-    
-    // Scan a smaller range for faster discovery
-    for (let i = 100; i <= 110; i++) {
-      const ip = `${range}.${i}`;
-      
-      try {
-        const probeOids = [PRINTER_OIDS.SYS_DESCR, PRINTER_OIDS.DEVICE_TYPE];
-        const result = await queryPrinter(ip, probeOids);
-        
-        if (result && result[PRINTER_OIDS.SYS_DESCR]) {
-          const deviceDesc = result[PRINTER_OIDS.SYS_DESCR];
-          const deviceName = result[PRINTER_OIDS.SYS_NAME] || `Printer-${i}`;
-          
-          // Check if it's actually a printer
-          if (deviceDesc.toLowerCase().includes('printer') || 
-              deviceDesc.toLowerCase().includes('laserjet') ||
-              deviceDesc.toLowerCase().includes('pixma') ||
-              deviceDesc.toLowerCase().includes('maxify') ||
-              deviceDesc.toLowerCase().includes('workforce')) {
-            
-            discoveredPrinters.push({
-              ipAddress: ip,
-              name: deviceName,
-              model: deviceDesc
-            });
-            
-            console.log(`Discovered printer: ${deviceName} at ${ip}`);
-          }
-        }
-      } catch (error) {
-        // Skip unreachable IPs
-        continue;
-      }
-    }
+  try {
+    const result = await performSNMP('', 'discover');
+    return result || [];
+  } catch (error) {
+    console.error('Discovery failed:', error);
+    return [];
   }
-  
-  console.log(`Discovery complete. Found ${discoveredPrinters.length} printers`);
-  return discoveredPrinters;
 }
 
 // Main handler
@@ -340,16 +252,15 @@ serve(async (req) => {
       });
     }
     
-    console.log(`Polling printer at ${ipAddress}`);
-    
-    // Query all relevant OIDs
-    const allOids = [
-      ...Object.values(PRINTER_OIDS).filter(oid => typeof oid === 'string'),
-      ...Object.values(PRINTER_OIDS.HP)
-    ];
+    console.log(`Polling printer at ${ipAddress} via local SNMP service`);
     
     try {
-      const snmpResponse = await queryPrinter(ipAddress, allOids);
+      const snmpResponse = await performSNMP(ipAddress, 'poll');
+      
+      if (!snmpResponse) {
+        throw new Error('No SNMP data received');
+      }
+      
       const printerData = mapSNMPToPrinterData(snmpResponse, ipAddress, printerName);
       
       // Update database if printerId provided
@@ -383,7 +294,7 @@ serve(async (req) => {
       return new Response(JSON.stringify({ 
         success: true, 
         data: printerData,
-        method: 'snmp'
+        method: 'local-snmp'
       }), {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
