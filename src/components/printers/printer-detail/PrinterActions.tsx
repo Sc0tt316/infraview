@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, Settings, Trash2 } from 'lucide-react';
 import { usePrinterStatusUpdates } from '@/hooks/usePrinterStatusUpdates';
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
@@ -9,10 +9,16 @@ import { PrinterData } from '@/types/printers';
 
 interface PrinterActionsProps {
   printer: PrinterData;
+  isAdmin: boolean;
+  onEdit?: () => void;
+  onDelete?: () => void;
 }
 
 const PrinterActions: React.FC<PrinterActionsProps> = ({
-  printer
+  printer,
+  isAdmin,
+  onEdit,
+  onDelete
 }) => {
   const {
     isPolling,
@@ -64,6 +70,37 @@ const PrinterActions: React.FC<PrinterActionsProps> = ({
             </p>
           )}
         </div>
+
+        {/* Admin Actions */}
+        {isAdmin && (
+          <div className="space-y-2 pt-2 border-t">
+            <h4 className="text-sm font-medium text-muted-foreground">Admin Actions</h4>
+            
+            {onEdit && (
+              <Button
+                variant="outline"
+                size="default"
+                className="w-full flex items-center justify-center gap-2"
+                onClick={onEdit}
+              >
+                <Settings className="h-4 w-4" />
+                <span>Edit Printer</span>
+              </Button>
+            )}
+            
+            {onDelete && (
+              <Button
+                variant="destructive"
+                size="default"
+                className="w-full flex items-center justify-center gap-2"
+                onClick={onDelete}
+              >
+                <Trash2 className="h-4 w-4" />
+                <span>Delete Printer</span>
+              </Button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
