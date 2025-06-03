@@ -1,4 +1,3 @@
-
 import { apiService } from './api';
 import { toast } from '@/hooks/use-toast';
 import { UserData } from '@/types/user';
@@ -86,6 +85,26 @@ export const userService = {
         return userService.addUser(updateData);
       }
       
+      // Get current user data to check if email is changing
+      const currentUser = await userService.getUserById(id);
+      const isEmailChanged = updateData.email && currentUser && currentUser.email !== updateData.email;
+      
+      // If email is being updated, update it in Supabase Auth as well
+      if (isEmailChanged) {
+        const { error: authError } = await supabase.auth.updateUser({
+          email: updateData.email
+        });
+        
+        if (authError) {
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: `Failed to update email in authentication: ${authError.message}`
+          });
+          return null;
+        }
+      }
+      
       // Convert from UserData format to Supabase profiles format
       const profileData = {
         name: updateData.name,
@@ -111,7 +130,7 @@ export const userService = {
       
       toast({
         title: "Success",
-        description: `User "${profile.name}" has been updated.`
+        description: `User "${profile.name}" has been updated.${isEmailChanged ? ' Email verification may be required.' : ''}`
       });
       
       return {

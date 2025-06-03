@@ -4,7 +4,6 @@ import { PrinterData } from '@/types/printers';
 import { Card } from '@/components/ui/card';
 import TabsNavigation from '@/components/printers/printer-detail/TabsNavigation';
 import PrinterOverview from '@/components/printers/printer-detail/PrinterOverview';
-import PrinterActions from '@/components/printers/printer-detail/PrinterActions';
 import PrintLogs from '@/components/printers/printer-detail/PrintLogs';
 import { useAuth } from '@/context/AuthContext';
 
@@ -52,14 +51,6 @@ const PrinterDetailContent: React.FC<PrinterDetailContentProps> = ({
               isRestarting={isRestarting}
               onRestartPrinter={handleRestartPrinter}
               isAdmin={isAdmin}
-            />
-          )}
-          {activeTab === 'actions' && (
-            <PrinterActions 
-              printer={printer}
-              isAdmin={isAdmin}
-              onEdit={onEdit}
-              onDelete={onDelete}
             />
           )}
           {activeTab === 'logs' && (
