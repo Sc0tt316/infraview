@@ -295,7 +295,7 @@ const EnhancedPrinterCard: React.FC<EnhancedPrinterCardProps> = ({
               {isRestarting ? 'Restarting...' : 'Restart'}
             </AlertDialogAction>
           </AlertDialogFooter>
-        </AlertDialogFooter>
+        </AlertDialogContent>
       </AlertDialog>
     </>
   );
