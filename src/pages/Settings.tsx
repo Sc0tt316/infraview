@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { User, LogOut, Lock, Camera, Upload } from 'lucide-react';
+import { User, LogOut, Lock, Camera, Upload, Edit } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 // Extend the User type with the properties we need
@@ -19,6 +20,7 @@ interface ExtendedUser {
   department?: string;
   profileImage?: string;
 }
+
 const Settings = () => {
   const {
     user,
@@ -28,31 +30,41 @@ const Settings = () => {
   } = useAuth();
   const extendedUser = user as ExtendedUser | null;
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [profileImage, setProfileImage] = useState(extendedUser?.profileImage || '');
+  const [profileName, setProfileName] = useState(extendedUser?.name || '');
+  const [profileDepartment, setProfileDepartment] = useState(extendedUser?.department || '');
+  const [newEmail, setNewEmail] = useState(extendedUser?.email || '');
+  const [emailPassword, setEmailPassword] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
   const handlePasswordChange = (e: React.FormEvent) => {
     e.preventDefault();
     if (!oldPassword) {
       toast({
         title: "Error",
-        description: "Please enter your current password"
+        description: "Please enter your current password",
+        duration: 2000
       });
       return;
     }
     if (!newPassword) {
       toast({
         title: "Error",
-        description: "Please enter a new password"
+        description: "Please enter a new password",
+        duration: 2000
       });
       return;
     }
     if (newPassword !== confirmPassword) {
       toast({
         title: "Error",
-        description: "Passwords do not match"
+        description: "Passwords do not match",
+        duration: 2000
       });
       return;
     }
@@ -66,9 +78,81 @@ const Settings = () => {
     setNewPassword('');
     setConfirmPassword('');
   };
+
+  const handleProfileUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      await updateProfile({
+        name: profileName,
+        department: profileDepartment
+      });
+      
+      setIsProfileModalOpen(false);
+      toast({
+        title: "Success",
+        description: "Profile updated successfully",
+        duration: 2000
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update profile",
+        variant: "destructive",
+        duration: 2000
+      });
+    }
+  };
+
+  const handleEmailChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!emailPassword) {
+      toast({
+        title: "Error",
+        description: "Please enter your current password to change email",
+        variant: "destructive",
+        duration: 2000
+      });
+      return;
+    }
+
+    if (newEmail === extendedUser?.email) {
+      toast({
+        title: "Error",
+        description: "New email is the same as current email",
+        variant: "destructive",
+        duration: 2000
+      });
+      return;
+    }
+
+    try {
+      await updateProfile({
+        email: newEmail
+      });
+      
+      setIsEmailModalOpen(false);
+      setEmailPassword('');
+      toast({
+        title: "Success",
+        description: "Email update initiated. Please check your email for verification.",
+        duration: 3000
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update email",
+        variant: "destructive",
+        duration: 2000
+      });
+    }
+  };
+
   const handleProfileImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
     const reader = new FileReader();
     reader.onload = () => {
       if (typeof reader.result === 'string') {
@@ -80,21 +164,20 @@ const Settings = () => {
         });
         toast({
           title: "Success",
-          description: "Profile image updated successfully"
+          description: "Profile image updated successfully",
+          duration: 2000
         });
       }
     };
     reader.readAsDataURL(file);
   };
+
   const triggerFileInput = () => {
     fileInputRef.current?.click();
   };
-  return <div className="max-w-4xl mx-auto space-y-8">
-      <div>
-        
-        
-      </div>
 
+  return (
+    <div className="max-w-4xl mx-auto space-y-8">
       <Tabs defaultValue="account" className="w-full">
         <TabsList className="mb-4">
           <TabsTrigger value="account">Account</TabsTrigger>
@@ -109,7 +192,6 @@ const Settings = () => {
                 <User className="mr-2 h-5 w-5" />
                 Profile Information
               </CardTitle>
-              
             </CardHeader>
             <CardContent>
               <div className="flex flex-col md:flex-row gap-6 items-start">
@@ -136,11 +218,21 @@ const Settings = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                       <Label htmlFor="name" className="text-xs text-muted-foreground">Full Name</Label>
-                      <p id="name" className="text-sm font-medium">{extendedUser?.name || 'Not set'}</p>
+                      <div className="flex items-center justify-between">
+                        <p id="name" className="text-sm font-medium">{extendedUser?.name || 'Not set'}</p>
+                        <Button variant="ghost" size="sm" onClick={() => setIsProfileModalOpen(true)}>
+                          <Edit className="h-3 w-3" />
+                        </Button>
+                      </div>
                     </div>
                     <div className="space-y-1.5">
                       <Label htmlFor="email" className="text-xs text-muted-foreground">Email Address</Label>
-                      <p id="email" className="text-sm font-medium">{extendedUser?.email || 'Not set'}</p>
+                      <div className="flex items-center justify-between">
+                        <p id="email" className="text-sm font-medium">{extendedUser?.email || 'Not set'}</p>
+                        <Button variant="ghost" size="sm" onClick={() => setIsEmailModalOpen(true)}>
+                          <Edit className="h-3 w-3" />
+                        </Button>
+                      </div>
                     </div>
                     <div className="space-y-1.5">
                       <Label htmlFor="role" className="text-xs text-muted-foreground">Role</Label>
@@ -148,7 +240,12 @@ const Settings = () => {
                     </div>
                     <div className="space-y-1.5">
                       <Label htmlFor="department" className="text-xs text-muted-foreground">Department</Label>
-                      <p id="department" className="text-sm font-medium">{extendedUser?.department || 'Not assigned'}</p>
+                      <div className="flex items-center justify-between">
+                        <p id="department" className="text-sm font-medium">{extendedUser?.department || 'Not assigned'}</p>
+                        <Button variant="ghost" size="sm" onClick={() => setIsProfileModalOpen(true)}>
+                          <Edit className="h-3 w-3" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                   
@@ -172,7 +269,6 @@ const Settings = () => {
                 <Lock className="mr-2 h-5 w-5" />
                 Security Settings
               </CardTitle>
-              
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="flex items-center justify-between">
@@ -190,6 +286,90 @@ const Settings = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Profile Edit Modal */}
+      <Dialog open={isProfileModalOpen} onOpenChange={setIsProfileModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Edit Profile</DialogTitle>
+            <DialogDescription>
+              Update your name and department information.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleProfileUpdate}>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="profile-name">Full Name</Label>
+                <Input 
+                  id="profile-name" 
+                  type="text" 
+                  value={profileName} 
+                  onChange={e => setProfileName(e.target.value)}
+                  placeholder="Enter your full name"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="profile-department">Department</Label>
+                <Input 
+                  id="profile-department" 
+                  type="text" 
+                  value={profileDepartment} 
+                  onChange={e => setProfileDepartment(e.target.value)}
+                  placeholder="Enter your department"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" type="button" onClick={() => setIsProfileModalOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit">Save Changes</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Email Change Modal */}
+      <Dialog open={isEmailModalOpen} onOpenChange={setIsEmailModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Change Email</DialogTitle>
+            <DialogDescription>
+              Enter your new email address and current password for security verification.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleEmailChange}>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="new-email">New Email Address</Label>
+                <Input 
+                  id="new-email" 
+                  type="email" 
+                  value={newEmail} 
+                  onChange={e => setNewEmail(e.target.value)}
+                  placeholder="Enter new email address"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email-password">Current Password</Label>
+                <Input 
+                  id="email-password" 
+                  type="password" 
+                  value={emailPassword} 
+                  onChange={e => setEmailPassword(e.target.value)}
+                  placeholder="Enter your current password"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" type="button" onClick={() => setIsEmailModalOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit">Update Email</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {/* Password Change Modal */}
       <Dialog open={isPasswordModalOpen} onOpenChange={setIsPasswordModalOpen}>
@@ -224,6 +404,8 @@ const Settings = () => {
           </form>
         </DialogContent>
       </Dialog>
-    </div>;
+    </div>
+  );
 };
+
 export default Settings;

@@ -91,15 +91,33 @@ export const userService = {
       
       // If email is being updated, update it in Supabase Auth as well
       if (isEmailChanged) {
-        const { error: authError } = await supabase.auth.updateUser({
-          email: updateData.email
-        });
+        console.log('Updating email in authentication system...');
         
-        if (authError) {
+        // Get the current session to check if we're updating the current user
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session && session.user.id === id) {
+          // If updating current user's email, use updateUser
+          const { error: authError } = await supabase.auth.updateUser({
+            email: updateData.email
+          });
+          
+          if (authError) {
+            console.error('Auth email update error:', authError);
+            toast({
+              variant: "destructive",
+              title: "Error",
+              description: `Failed to update email in authentication: ${authError.message}`
+            });
+            return null;
+          }
+        } else {
+          // For admin updating another user's email, we need to use the admin API
+          console.log('Admin updating another user email - this requires service role key');
           toast({
             variant: "destructive",
-            title: "Error",
-            description: `Failed to update email in authentication: ${authError.message}`
+            title: "Permission Error",
+            description: "Email updates for other users require admin privileges. Contact your system administrator."
           });
           return null;
         }

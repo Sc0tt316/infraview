@@ -3,7 +3,7 @@ import * as React from "react"
 import { toast as sonnerToast, type ToastT } from "sonner"
 
 const TOAST_LIMIT = 5
-const TOAST_TIMEOUT = 3000 // 3 seconds
+const TOAST_TIMEOUT = 2000 // 2 seconds
 export type ToasterToast = ToastT
 
 type ToasterToastActionElement = React.ReactElement
@@ -152,16 +152,19 @@ function toast({ id: toastId, ...props }: Toast) {
     },
   })
 
-  // Set auto-dismiss timeout
+  // Clear any existing timeout for this toast
   if (toastTimeouts.has(id)) {
     clearTimeout(toastTimeouts.get(id))
   }
 
+  // Set auto-dismiss timeout - use the passed duration or default
+  const duration = props.duration || TOAST_TIMEOUT;
   toastTimeouts.set(
     id,
     setTimeout(() => {
       dismiss()
-    }, props.duration || TOAST_TIMEOUT)
+      toastTimeouts.delete(id) // Clean up the timeout reference
+    }, duration)
   )
 
   // Map variant to sonner's supported options
@@ -172,9 +175,15 @@ function toast({ id: toastId, ...props }: Toast) {
     cancel: props.cancel,
     onDismiss: props.onDismiss,
     onAutoClose: props.onAutoClose,
-    duration: props.duration || TOAST_TIMEOUT,
+    duration: duration,
     className: props.className,
-    onClick: () => dismiss(), // Dismiss when clicked
+    onClick: () => {
+      dismiss()
+      if (toastTimeouts.has(id)) {
+        clearTimeout(toastTimeouts.get(id))
+        toastTimeouts.delete(id)
+      }
+    },
   }
   
   // Only add the type if it's destructive
