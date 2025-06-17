@@ -42,7 +42,7 @@ const PrintersContent: React.FC<PrintersContentProps> = ({
   onAddPrinter,
   onPrinterClick
 }) => {
-  const hasActiveFilters = searchQuery || selectedDepartment !== 'all' || selectedStatus !== 'all';
+  const hasActiveFilters = Boolean(searchQuery) || selectedDepartment !== 'all' || selectedStatus !== 'all';
   const hasNoResults = filteredPrinters.length === 0 && hasActiveFilters;
 
   if (isLoading) {
