@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -157,12 +156,12 @@ const AddPrinterFormContainer: React.FC<AddPrinterFormContainerProps> = ({
             });
           }
         } else {
-          const newPrinter = await printerService.addPrinter(printerData);
+          const newPrinterId = await printerService.addPrinter(printerData);
           
-          if (printerData.ipAddress && newPrinter) {
+          if (printerData.ipAddress && newPrinterId) {
             try {
               await printerService.pollPrinter({
-                id: newPrinter.id,
+                id: newPrinterId,
                 name: printerData.name,
                 ipAddress: printerData.ipAddress
               });

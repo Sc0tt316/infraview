@@ -1,8 +1,17 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { PrinterFormData } from '@/types/printers';
+import { PrinterData } from '@/types/printers';
 import { addActivity } from '../activityLogService';
+
+interface PrinterFormData {
+  name: string;
+  model: string;
+  location: string;
+  department?: string;
+  ipAddress?: string;
+  serialNumber?: string;
+}
 
 export const addPrinter = async (printerData: PrinterFormData): Promise<string | null> => {
   try {
