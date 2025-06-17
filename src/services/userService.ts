@@ -1,4 +1,3 @@
-
 import { apiService } from './api';
 import { toast } from '@/hooks/use-toast';
 import { UserData } from '@/types/user';
@@ -263,6 +262,52 @@ export const userService = {
         description: "Failed to add user. Please try again."
       });
       return null;
+    }
+  },
+  
+  // Delete a user
+  deleteUser: async (id: string): Promise<boolean> => {
+    try {
+      const { data: profile, error: fetchError } = await supabase
+        .from('profiles')
+        .select('name, email')
+        .eq('id', id)
+        .single();
+
+      if (fetchError) {
+        throw fetchError;
+      }
+
+      const { error } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', id);
+      
+      if (error) {
+        throw error;
+      }
+      
+      // Log the activity
+      await logUserActivity(
+        'User Deleted',
+        `User "${profile?.name || 'Unknown'}" (${profile?.email || 'No email'}) was removed from the system`,
+        'info'
+      );
+
+      toast({
+        title: "Success",
+        description: `User "${profile?.name || 'Unknown'}" has been deleted successfully.`
+      });
+      
+      return true;
+    } catch (error) {
+      console.error(`Error deleting user ${id}:`, error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to delete user. Please try again."
+      });
+      return false;
     }
   },
   

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -102,6 +101,23 @@ const Users = () => {
       setShowEditModal(true);
     }
   };
+
+  const handleDeleteUser = async () => {
+    if (!selectedUser || !isAdmin) return;
+    
+    try {
+      const success = await userService.deleteUser(selectedUser.id);
+      if (success) {
+        setShowUserDetails(false);
+        setTimeout(() => {
+          setSelectedUser(null);
+          setUserLogs([]);
+        }, 300);
+      }
+    } catch (error) {
+      console.error("Error deleting user:", error);
+    }
+  };
   
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -117,7 +133,7 @@ const Users = () => {
       email: "",
       role: "user",
       department: "",
-      phone: "",
+      phone: "+212",
       status: "active"
     }
   });
@@ -152,15 +168,27 @@ const Users = () => {
   // Handle adding a new user
   const onAddUserSubmit = async (data: UserFormValues) => {
     try {
-      // Call API to add user
-      const newUser = await userService.addUser(data);
+      // Auto-detect status based on recent activity (simplified logic)
+      const userWithStatus = {
+        ...data,
+        status: "active" as const // Default to active for new users
+      };
+      
+      const newUser = await userService.addUser(userWithStatus);
       if (newUser) {
         toast({
           title: "Success",
           description: "User added successfully"
         });
         setShowUserAddModal(false);
-        addUserForm.reset(); // Reset form values
+        addUserForm.reset({
+          name: "",
+          email: "",
+          role: "user",
+          department: "",
+          phone: "+212",
+          status: "active"
+        });
       }
     } catch (error) {
       console.error("Error adding user:", error);
@@ -380,10 +408,20 @@ const Users = () => {
                 <Button variant="outline" onClick={handleCloseUserDetails}>
                   Close
                 </Button>
-                {isAdmin && <Button onClick={handleEditUser}>
-                    <Edit className="h-4 w-4 mr-2" />
-                    Edit User
-                  </Button>}
+                {isAdmin && (
+                  <>
+                    <Button onClick={handleEditUser}>
+                      <Edit className="h-4 w-4 mr-2" />
+                      Edit User
+                    </Button>
+                    <Button 
+                      variant="destructive" 
+                      onClick={handleDeleteUser}
+                    >
+                      Delete User
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           </DialogContent>
@@ -476,7 +514,7 @@ const Users = () => {
                     <FormItem>
                       <FormLabel>Phone</FormLabel>
                       <FormControl>
-                        <Input placeholder="Phone number (Optional)" {...field} />
+                        <Input placeholder="+212 6XX XXX XXX" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
