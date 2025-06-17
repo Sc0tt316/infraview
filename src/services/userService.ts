@@ -1,3 +1,4 @@
+
 import { apiService } from './api';
 import { toast } from '@/hooks/use-toast';
 import { UserData } from '@/types/user';
@@ -98,7 +99,7 @@ export const userService = {
   },
   
   // Update user profile
-  updateUser: async (id: string, updateData: Partial<UserData>): Promise<UserData | null> => {
+  updateUser: async (id: string, updateData: Partial<UserData & { password?: string }>): Promise<UserData | null> => {
     try {
       // Handle special case for new users
       if (id === "new") {
@@ -108,38 +109,53 @@ export const userService = {
       // Get current user data to check if email is changing
       const currentUser = await userService.getUserById(id);
       const isEmailChanged = updateData.email && currentUser && currentUser.email !== updateData.email;
+      const isPasswordChanged = updateData.password && updateData.password.length >= 6;
       
-      // If email is being updated, update it in Supabase Auth as well
-      if (isEmailChanged) {
-        console.log('Updating email in authentication system...');
+      // If email or password is being updated, update it in Supabase Auth as well
+      if (isEmailChanged || isPasswordChanged) {
+        console.log('Updating authentication credentials...');
         
         // Get the current session to check if we're updating the current user
         const { data: { session } } = await supabase.auth.getSession();
         
         if (session && session.user.id === id) {
-          // If updating current user's email, use updateUser
-          const { error: authError } = await supabase.auth.updateUser({
-            email: updateData.email
-          });
+          // If updating current user's credentials, use updateUser
+          const updatePayload: any = {};
+          if (isEmailChanged) updatePayload.email = updateData.email;
+          if (isPasswordChanged) updatePayload.password = updateData.password;
+          
+          const { error: authError } = await supabase.auth.updateUser(updatePayload);
           
           if (authError) {
-            console.error('Auth email update error:', authError);
+            console.error('Auth update error:', authError);
             toast({
               variant: "destructive",
               title: "Error",
-              description: `Failed to update email in authentication: ${authError.message}`
+              description: `Failed to update authentication: ${authError.message}`
             });
             return null;
           }
         } else {
-          // For admin updating another user's email, we need to use the admin API
-          console.log('Admin updating another user email - this requires service role key');
-          toast({
-            variant: "destructive",
-            title: "Permission Error",
-            description: "Email updates for other users require admin privileges. Contact your system administrator."
-          });
-          return null;
+          // For admin updating another user's credentials, we need to use the admin API
+          if (isEmailChanged || isPasswordChanged) {
+            console.log('Admin updating another user credentials - using admin API');
+            
+            const updatePayload: any = {};
+            if (isEmailChanged) updatePayload.email = updateData.email;
+            if (isPasswordChanged) updatePayload.password = updateData.password;
+            
+            const { error: adminAuthError } = await supabase.auth.admin.updateUserById(id, updatePayload);
+            
+            if (adminAuthError) {
+              console.error('Admin auth update error:', adminAuthError);
+              toast({
+                variant: "destructive",
+                title: "Error",
+                description: `Failed to update user authentication: ${adminAuthError.message}`
+              });
+              return null;
+            }
+          }
         }
       }
       
@@ -150,7 +166,6 @@ export const userService = {
         role: updateData.role,
         department: updateData.department,
         phone: updateData.phone,
-        status: updateData.status,
         last_active: new Date().toISOString(),
         profile_image: updateData.profileImage
       };
@@ -167,15 +182,20 @@ export const userService = {
       }
       
       // Log the activity
+      const changes = [];
+      if (isEmailChanged) changes.push('email changed');
+      if (isPasswordChanged) changes.push('password changed');
+      const changesText = changes.length > 0 ? ` (${changes.join(', ')})` : '';
+      
       await logUserActivity(
         'User Updated',
-        `User "${profile.name}" profile was updated${isEmailChanged ? ' (email changed)' : ''}`,
+        `User "${profile.name}" profile was updated${changesText}`,
         'success'
       );
 
       toast({
         title: "Success",
-        description: `User "${profile.name}" has been updated.${isEmailChanged ? ' Email verification may be required.' : ''}`
+        description: `User "${profile.name}" has been updated.${isEmailChanged ? ' Email updated in authentication.' : ''}${isPasswordChanged ? ' Password changed.' : ''}`
       });
       
       return {
@@ -305,6 +325,14 @@ export const userService = {
 
       if (fetchError) {
         throw fetchError;
+      }
+
+      // Delete from auth first, then from profiles
+      const { error: authError } = await supabase.auth.admin.deleteUser(id);
+      
+      if (authError) {
+        console.error('Auth deletion error:', authError);
+        // Continue with profile deletion even if auth deletion fails
       }
 
       const { error } = await supabase

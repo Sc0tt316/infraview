@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -18,23 +19,24 @@ import { userService } from '@/services/userService';
 import { toast } from '@/hooks/use-toast';
 import { useUsersRealtime } from '@/hooks/useUsersRealtime';
 
-// Define the form schema for adding/editing users
+// Define the form schema for adding users
 const userFormSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
   email: z.string().email("Invalid email address."),
   role: z.enum(["admin", "user", "manager"]),
   department: z.string().optional(),
   phone: z.string().optional(),
-  password: z.string().min(6, { message: "Password must be at least 6 characters." }).optional()
+  password: z.string().min(6, { message: "Password must be at least 6 characters." })
 });
 
+// Define the form schema for editing users (removed status, added password)
 const editUserFormSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
   email: z.string().email("Invalid email address."),
   role: z.enum(["admin", "user", "manager"]),
   department: z.string().optional(),
   phone: z.string().optional(),
-  status: z.enum(["active", "inactive", "pending"])
+  password: z.string().min(6, { message: "Password must be at least 6 characters." }).optional()
 });
 
 type UserFormValues = z.infer<typeof userFormSchema>;
@@ -51,9 +53,7 @@ const Users = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const {
-    user
-  } = useAuth();
+  const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
   
   const {
@@ -73,8 +73,6 @@ const Users = () => {
 
   const fetchUserLogs = async (userId: string) => {
     try {
-      // Mock function for now, would be replaced with real data fetching
-      // const logs = await userService.getUserLogs(userId);
       const logs = [
         { id: '1', action: 'Login', timestamp: new Date().toISOString(), details: 'User logged in successfully' },
         { id: '2', action: 'Print job', timestamp: new Date(Date.now() - 86400000).toISOString(), details: 'User submitted print job "Document.pdf"' },
@@ -87,9 +85,9 @@ const Users = () => {
     }
   };
 
-  const handleRowClick = (user: User) => {
-    setSelectedUser(user);
-    fetchUserLogs(user.id);
+  const handleRowClick = (userRow: User) => {
+    setSelectedUser(userRow);
+    fetchUserLogs(userRow.id);
     setShowUserDetails(true);
   };
 
@@ -106,7 +104,7 @@ const Users = () => {
   };
 
   const handleEditUser = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent the row click event
+    e.stopPropagation();
     if (selectedUser && isAdmin) {
       setShowEditModal(true);
     }
@@ -114,6 +112,16 @@ const Users = () => {
 
   const handleDeleteUser = async () => {
     if (!selectedUser || !isAdmin) return;
+    
+    // Prevent admin from deleting their own account
+    if (selectedUser.id === user?.id) {
+      toast({
+        title: "Error",
+        description: "You cannot delete your own account.",
+        variant: "destructive"
+      });
+      return;
+    }
     
     try {
       const success = await userService.deleteUser(selectedUser.id);
@@ -132,7 +140,7 @@ const Users = () => {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     await refetch();
-    setTimeout(() => setIsRefreshing(false), 1000); // Keep animation visible for 1 second
+    setTimeout(() => setIsRefreshing(false), 1000);
   };
 
   // Form for adding a new user
@@ -157,7 +165,7 @@ const Users = () => {
       role: (selectedUser?.role as "admin" | "user" | "manager") || "user",
       department: selectedUser?.department || "",
       phone: selectedUser?.phone || "",
-      status: (selectedUser?.status as "active" | "inactive" | "pending") || "active"
+      password: ""
     }
   });
 
@@ -170,7 +178,7 @@ const Users = () => {
         role: selectedUser.role,
         department: selectedUser.department || "",
         phone: selectedUser.phone || "",
-        status: selectedUser.status || "active"
+        password: ""
       });
     }
   }, [selectedUser, editUserForm]);
@@ -178,12 +186,7 @@ const Users = () => {
   // Handle adding a new user
   const onAddUserSubmit = async (data: UserFormValues) => {
     try {
-      const userWithStatus = {
-        ...data,
-        status: "active" as const
-      };
-      
-      const newUser = await userService.addUser(userWithStatus);
+      const newUser = await userService.addUser(data);
       if (newUser) {
         toast({
           title: "Success",
@@ -214,7 +217,6 @@ const Users = () => {
     if (!selectedUser) return;
     
     try {
-      // Call API to update user
       const updatedUser = await userService.updateUser(selectedUser.id, data);
       if (updatedUser) {
         toast({
@@ -222,7 +224,7 @@ const Users = () => {
           description: "User updated successfully"
         });
         setShowEditModal(false);
-        setShowUserDetails(false); // Close details modal as well
+        setShowUserDetails(false);
       }
     } catch (error) {
       console.error("Error updating user:", error);
@@ -264,7 +266,8 @@ const Users = () => {
     }
   };
 
-  return <div className="space-y-6">
+  return (
+    <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-xl font-semibold">Users</h1>
@@ -279,9 +282,11 @@ const Users = () => {
           >
             <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
           </Button>
-          {isAdmin && <Button onClick={handleAddUser}>
+          {isAdmin && (
+            <Button onClick={handleAddUser}>
               <Plus className="h-4 w-4 mr-2" /> Add User
-            </Button>}
+            </Button>
+          )}
         </div>
       </div>
 
@@ -294,7 +299,12 @@ const Users = () => {
           <div className="flex flex-col md:flex-row gap-4 mb-6">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <Input placeholder="Search users..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-9" />
+              <Input 
+                placeholder="Search users..." 
+                value={searchQuery} 
+                onChange={e => setSearchQuery(e.target.value)} 
+                className="pl-9" 
+              />
             </div>
             <Select value={roleFilter} onValueChange={setRoleFilter}>
               <SelectTrigger className="w-full md:w-[180px]">
@@ -309,11 +319,16 @@ const Users = () => {
             </Select>
           </div>
 
-          {isLoading ? <div className="flex justify-center py-8">
+          {isLoading ? (
+            <div className="flex justify-center py-8">
               <RefreshCw className="h-8 w-8 animate-spin text-primary/70" />
-            </div> : filteredUsers.length === 0 ? <div className="text-center py-8 text-muted-foreground">
+            </div>
+          ) : filteredUsers.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
               No users found. Adjust your search or filters.
-            </div> : <Table>
+            </div>
+          ) : (
+            <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>User</TableHead>
@@ -323,34 +338,46 @@ const Users = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredUsers.map(user => <TableRow key={user.id} className="cursor-pointer hover:bg-muted/70" onClick={() => handleRowClick(user)}>
+                {filteredUsers.map(userRow => (
+                  <TableRow 
+                    key={userRow.id} 
+                    className="cursor-pointer hover:bg-muted/70" 
+                    onClick={() => handleRowClick(userRow)}
+                  >
                     <TableCell className="font-medium">
                       <div className="flex items-center gap-3">
                         <Avatar className="h-8 w-8">
-                          {user.profileImage ? <AvatarImage src={user.profileImage} alt={user.name} /> : <AvatarFallback>
-                              {user.name?.charAt(0) || 'U'}
-                            </AvatarFallback>}
+                          {userRow.profileImage ? (
+                            <AvatarImage src={userRow.profileImage} alt={userRow.name} />
+                          ) : (
+                            <AvatarFallback>
+                              {userRow.name?.charAt(0) || 'U'}
+                            </AvatarFallback>
+                          )}
                         </Avatar>
-                        <span>{user.name}</span>
+                        <span>{userRow.name}</span>
                       </div>
                     </TableCell>
-                    <TableCell>{user.email}</TableCell>
+                    <TableCell>{userRow.email}</TableCell>
                     <TableCell>
-                      <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
-                        {user.role === 'admin' ? 'Admin' : user.role === 'manager' ? 'Manager' : 'User'}
+                      <Badge variant={userRow.role === 'admin' ? 'default' : 'secondary'}>
+                        {userRow.role === 'admin' ? 'Admin' : userRow.role === 'manager' ? 'Manager' : 'User'}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {renderStatusBadge(user.status || 'active')}
+                      {renderStatusBadge(userRow.status || 'active')}
                     </TableCell>
-                  </TableRow>)}
+                  </TableRow>
+                ))}
               </TableBody>
-            </Table>}
+            </Table>
+          )}
         </CardContent>
       </Card>
 
       {/* User Detail Modal */}
-      {selectedUser && <Dialog open={showUserDetails} onOpenChange={handleCloseUserDetails}>
+      {selectedUser && (
+        <Dialog open={showUserDetails} onOpenChange={handleCloseUserDetails}>
           <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
               <DialogTitle>User Details</DialogTitle>
@@ -361,9 +388,13 @@ const Users = () => {
             <div className="py-4 space-y-6">
               <div className="flex flex-col items-center gap-4">
                 <Avatar className="h-20 w-20">
-                  {selectedUser.profileImage ? <AvatarImage src={selectedUser.profileImage} alt={selectedUser.name} /> : <AvatarFallback className="text-xl">
+                  {selectedUser.profileImage ? (
+                    <AvatarImage src={selectedUser.profileImage} alt={selectedUser.name} />
+                  ) : (
+                    <AvatarFallback className="text-xl">
                       {selectedUser.name?.charAt(0) || 'U'}
-                    </AvatarFallback>}
+                    </AvatarFallback>
+                  )}
                 </Avatar>
                 <div className="text-center">
                   <h3 className="text-xl font-semibold">{selectedUser.name}</h3>
@@ -375,14 +406,18 @@ const Users = () => {
               </div>
               
               <div className="border rounded-md p-4 space-y-4">
-                {selectedUser.department && <div className="flex justify-between">
+                {selectedUser.department && (
+                  <div className="flex justify-between">
                     <span className="text-muted-foreground">Department:</span>
                     <span>{selectedUser.department}</span>
-                  </div>}
-                {selectedUser.phone && <div className="flex justify-between">
+                  </div>
+                )}
+                {selectedUser.phone && (
+                  <div className="flex justify-between">
                     <span className="text-muted-foreground">Phone:</span>
                     <span>{selectedUser.phone}</span>
-                  </div>}
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Status:</span>
                   {renderStatusBadge(selectedUser.status || 'active')}
@@ -423,18 +458,21 @@ const Users = () => {
                       <Edit className="h-4 w-4 mr-2" />
                       Edit User
                     </Button>
-                    <Button 
-                      variant="destructive" 
-                      onClick={handleDeleteUser}
-                    >
-                      Delete User
-                    </Button>
+                    {selectedUser.id !== user?.id && (
+                      <Button 
+                        variant="destructive" 
+                        onClick={handleDeleteUser}
+                      >
+                        Delete User
+                      </Button>
+                    )}
                   </>
                 )}
               </div>
             </div>
           </DialogContent>
-        </Dialog>}
+        </Dialog>
+      )}
 
       {/* Add User Modal */}
       <Dialog open={showUserAddModal} onOpenChange={setShowUserAddModal}>
@@ -564,7 +602,7 @@ const Users = () => {
           <DialogHeader>
             <DialogTitle>Edit User</DialogTitle>
             <DialogDescription>
-              Update user information
+              Update user information and change password
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
@@ -592,6 +630,20 @@ const Users = () => {
                       <FormLabel>Email</FormLabel>
                       <FormControl>
                         <Input type="email" placeholder="user@example.com" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={editUserForm.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>New Password (Optional)</FormLabel>
+                      <FormControl>
+                        <Input type="password" placeholder="Enter new password to change" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -652,32 +704,6 @@ const Users = () => {
                   )}
                 />
                 
-                <FormField
-                  control={editUserForm.control}
-                  name="status"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Status</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select status" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="active">Active</SelectItem>
-                          <SelectItem value="inactive">Inactive</SelectItem>
-                          <SelectItem value="pending">Pending</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
                 <div className="flex justify-end gap-2">
                   <Button variant="outline" type="button" onClick={() => setShowEditModal(false)}>
                     Cancel
@@ -691,7 +717,8 @@ const Users = () => {
           </div>
         </DialogContent>
       </Dialog>
-    </div>;
+    </div>
+  );
 };
 
 export default Users;

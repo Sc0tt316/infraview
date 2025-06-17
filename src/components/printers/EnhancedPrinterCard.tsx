@@ -45,6 +45,7 @@ const EnhancedPrinterCard: React.FC<EnhancedPrinterCardProps> = ({
 
   const handleEdit = (e: React.MouseEvent) => {
     e.stopPropagation();
+    console.log('Edit button clicked for printer:', printer);
     if (onEdit && isAdmin) {
       onEdit(printer);
     }
@@ -52,19 +53,27 @@ const EnhancedPrinterCard: React.FC<EnhancedPrinterCardProps> = ({
 
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
+    console.log('Delete button clicked for printer:', printer);
     if (onDelete && isAdmin) {
       onDelete(printer);
     }
   };
 
-  const handleCardClick = () => {
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Ensure we're not clicking on the dropdown or its children
+    const target = e.target as HTMLElement;
+    if (target.closest('[data-radix-popper-content-wrapper]') || target.closest('button')) {
+      return;
+    }
+    
+    console.log('Card clicked for printer:', printer);
     if (onViewDetails) {
       onViewDetails(printer);
     }
   };
 
   return (
-    <Card className="cursor-pointer hover:shadow-md transition-shadow duration-200 h-full">
+    <Card className="cursor-pointer hover:shadow-md transition-shadow duration-200 h-full" onClick={handleCardClick}>
       <CardContent className="p-4 h-full flex flex-col">
         {/* Header */}
         <div className="flex items-start justify-between mb-4">

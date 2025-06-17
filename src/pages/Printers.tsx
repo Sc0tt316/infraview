@@ -39,6 +39,7 @@ const Printers = () => {
   };
   
   const handlePrinterClick = (printer: PrinterData) => {
+    console.log('Printer clicked:', printer);
     setSelectedPrinterId(printer.id);
   };
 
@@ -47,26 +48,37 @@ const Printers = () => {
   };
 
   const handleDeletePrinter = (printer: PrinterData) => {
+    console.log('Delete printer requested:', printer);
     setPrinterToDelete(printer);
   };
 
   const handleEditPrinter = (printer: PrinterData) => {
+    console.log('Edit printer requested:', printer);
     setPrinterToEdit(printer);
   };
 
   const confirmDeletePrinter = async () => {
     if (printerToDelete) {
+      console.log('Confirming delete for printer:', printerToDelete);
       const success = await printerService.deletePrinter(printerToDelete.id, printerToDelete.name);
       if (success) {
         setPrinterToDelete(null);
-        refetchPrinters();
+        // Force immediate refresh to show updated list
+        await refetchPrinters();
       }
     }
   };
 
-  const handlePrinterEditSuccess = () => {
+  const handlePrinterEditSuccess = async () => {
     setPrinterToEdit(null);
-    refetchPrinters();
+    // Force immediate refresh to show updated list
+    await refetchPrinters();
+  };
+
+  const handlePrinterAddSuccess = async () => {
+    setShowAddPrinter(false);
+    // Force immediate refresh to show updated list
+    await refetchPrinters();
   };
 
   // Apply filters
@@ -129,12 +141,7 @@ const Printers = () => {
       <PrintersContent
         isLoading={isLoading}
         filteredPrinters={filteredPrinters}
-        departmentFilter={departmentFilter}
-        setDepartmentFilter={setDepartmentFilter}
-        statusFilter={statusFilter}
-        setStatusFilter={setStatusFilter}
         searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
         selectedDepartment={departmentFilter}
         selectedStatus={statusFilter}
         isAdmin={isAdmin || false}
@@ -143,6 +150,11 @@ const Printers = () => {
         onPrinterSelect={handlePrinterClick}
         onEditPrinter={handleEditPrinter}
         onDeletePrinter={handleDeletePrinter}
+        departmentFilter={departmentFilter}
+        setDepartmentFilter={setDepartmentFilter}
+        statusFilter={statusFilter}
+        setStatusFilter={setStatusFilter}
+        setSearchQuery={setSearchQuery}
       />
 
       <PrinterDialogs
@@ -157,6 +169,7 @@ const Printers = () => {
         isAdmin={isAdmin || false}
         onConfirmDelete={confirmDeletePrinter}
         onPrinterEditSuccess={handlePrinterEditSuccess}
+        onPrinterAddSuccess={handlePrinterAddSuccess}
       />
     </div>
   );
