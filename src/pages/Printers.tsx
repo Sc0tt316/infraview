@@ -4,6 +4,7 @@ import { usePrinters } from '@/hooks/usePrinters';
 import { useAuth } from '@/context/AuthContext';
 import { PrinterData } from '@/types/printers';
 import { printerService } from '@/services/printer';
+import { alertService } from '@/services/analytics/alertService';
 import PrintersHeader from '@/components/printers/PrintersHeader';
 import PrintersContent from '@/components/printers/PrintersContent';
 import PrinterDialogs from '@/components/printers/PrinterDialogs';
@@ -27,6 +28,8 @@ const Printers = () => {
     // Use SNMP to update all printers when refreshing
     try {
       await printerService.pollAllPrinters();
+      // After updating printer data, check for alerts
+      await alertService.monitorPrinters(printers);
     } catch (error) {
       console.error('Error polling printers:', error);
     } finally {
@@ -99,10 +102,19 @@ const Printers = () => {
     const interval = setInterval(() => {
       console.log("Auto-refreshing printer data...");
       refetchPrinters();
+      // Check for alerts on auto-refresh
+      alertService.monitorPrinters(printers);
     }, 5 * 60 * 1000); // 5 minutes
     
     return () => clearInterval(interval);
-  }, [printers.length, refetchPrinters]);
+  }, [printers.length, refetchPrinters, printers]);
+
+  // Monitor printers for alerts when printer data changes
+  useEffect(() => {
+    if (printers.length > 0) {
+      alertService.monitorPrinters(printers);
+    }
+  }, [printers]);
 
   return (
     <div className="space-y-6">

@@ -1,21 +1,22 @@
 
 import React from 'react';
-import { RefreshCw } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import EnhancedPrinterCard from './EnhancedPrinterCard';
-import PrinterFilters from './PrinterFilters';
-import EmptyPrinterState from './EmptyPrinterState';
+import { Button } from '@/components/ui/button';
+import { Plus } from 'lucide-react';
 import { PrinterData } from '@/types/printers';
+import PrinterFilters from './PrinterFilters';
+import EnhancedPrinterCard from './EnhancedPrinterCard';
+import EmptyPrinterState from './EmptyPrinterState';
 
 interface PrintersContentProps {
   isLoading: boolean;
   filteredPrinters: PrinterData[];
   departmentFilter: string;
-  setDepartmentFilter: (dept: string) => void;
+  setDepartmentFilter: (value: string) => void;
   statusFilter: string;
-  setStatusFilter: (status: string) => void;
+  setStatusFilter: (value: string) => void;
   searchQuery: string;
-  setSearchQuery: (query: string) => void;
+  setSearchQuery: (value: string) => void;
   isAdmin: boolean;
   onAddPrinter: () => void;
   onPrinterClick: (printer: PrinterData) => void;
@@ -40,51 +41,48 @@ const PrintersContent: React.FC<PrintersContentProps> = ({
 }) => {
   if (isLoading) {
     return (
-      <div className="flex justify-center py-8">
-        <RefreshCw className="h-8 w-8 animate-spin text-primary/70" />
+      <div className="flex justify-center py-12">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-2 text-muted-foreground">Loading printers...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <>
-      {/* Filters */}
-      <Card className="border border-border">
-        <CardHeader className="pb-3">
-          <CardTitle>All Printers</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <PrinterFilters
-            departmentFilter={departmentFilter}
-            setDepartmentFilter={setDepartmentFilter}
-            statusFilter={statusFilter}
-            setStatusFilter={setStatusFilter}
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-          />
-        </CardContent>
-      </Card>
+    <div className="space-y-6">
+      <PrinterFilters
+        departmentFilter={departmentFilter}
+        setDepartmentFilter={setDepartmentFilter}
+        statusFilter={statusFilter}
+        setStatusFilter={setStatusFilter}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+      />
 
       {filteredPrinters.length === 0 ? (
         <EmptyPrinterState 
-          onAddPrinter={onAddPrinter}
           isAdmin={isAdmin}
+          onAddPrinter={onAddPrinter}
+          hasNoResults={searchQuery.length > 0 || departmentFilter !== 'all' || statusFilter !== 'all'}
         />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filteredPrinters.map((printer) => (
             <EnhancedPrinterCard
               key={printer.id}
               printer={printer}
-              onOpenDetails={(id) => onPrinterClick(printer)}
+              onOpenDetails={() => onPrinterClick(printer)}
               onOpenEdit={() => onEditPrinter(printer)}
               onOpenDelete={() => onDeletePrinter(printer)}
               isAdmin={isAdmin}
+              showOwnDeleteDialog={false}
             />
           ))}
         </div>
       )}
-    </>
+    </div>
   );
 };
 

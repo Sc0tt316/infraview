@@ -6,6 +6,13 @@ import { addActivity } from '../activityLogService';
 // Function to delete a printer from the database
 export const deletePrinter = async (printerId: string, printerName: string): Promise<boolean> => {
   try {
+    // Get printer details before deleting for activity log
+    const { data: printer } = await supabase
+      .from('printers')
+      .select('name, model, location')
+      .eq('id', printerId)
+      .single();
+
     const { error } = await supabase
       .from('printers')
       .delete()
@@ -18,17 +25,17 @@ export const deletePrinter = async (printerId: string, printerName: string): Pro
     // Log the activity
     await addActivity({
       printerId,
-      printerName,
+      printerName: printer?.name || printerName,
       action: 'Printer Deleted',
       timestamp: new Date().toISOString(),
-      details: `Printer "${printerName}" was deleted from the system`,
+      details: `Printer "${printer?.name || printerName}" was permanently removed from the system`,
       status: 'info'
     });
 
     // Show success notification
     toast({
       title: 'Printer Deleted',
-      description: `${printerName} has been successfully removed.`
+      description: `${printer?.name || printerName} has been successfully removed.`
     });
     
     return true;

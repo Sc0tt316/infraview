@@ -1,7 +1,28 @@
+
 import { apiService } from './api';
 import { toast } from '@/hooks/use-toast';
 import { UserData } from '@/types/user';
 import { supabase } from '@/integrations/supabase/client';
+
+// Activity logging function for user operations
+const logUserActivity = async (action: string, details: string, status: 'success' | 'error' | 'info' = 'success') => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    await supabase
+      .from('printer_activities')
+      .insert({
+        action,
+        details,
+        status,
+        timestamp: new Date().toISOString(),
+        user_id: user?.email || 'System',
+        printer_name: 'User Management'
+      });
+  } catch (error) {
+    console.error('Error logging user activity:', error);
+  }
+};
 
 // User service functions
 export const userService = {
@@ -146,6 +167,13 @@ export const userService = {
         throw error;
       }
       
+      // Log the activity
+      await logUserActivity(
+        'User Updated',
+        `User "${profile.name}" profile was updated${isEmailChanged ? ' (email changed)' : ''}`,
+        'success'
+      );
+
       toast({
         title: "Success",
         description: `User "${profile.name}" has been updated.${isEmailChanged ? ' Email verification may be required.' : ''}`
@@ -204,6 +232,13 @@ export const userService = {
         throw error;
       }
       
+      // Log the activity
+      await logUserActivity(
+        'User Added',
+        `New user "${profile.name}" was added to the system with role: ${profile.role}`,
+        'success'
+      );
+
       toast({
         title: "Success",
         description: `User "${profile.name}" has been added successfully.`

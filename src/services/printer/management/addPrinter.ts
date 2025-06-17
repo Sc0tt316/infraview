@@ -1,63 +1,57 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { PrinterData } from '@/types/printers';
+import { PrinterFormData } from '@/types/printers';
 import { addActivity } from '../activityLogService';
 
-// Add a new printer to the database
-export const addPrinter = async (printerData: Omit<PrinterData, 'id'>): Promise<PrinterData | null> => {
+export const addPrinter = async (printerData: PrinterFormData): Promise<string | null> => {
   try {
+    console.log('Adding printer:', printerData);
+    
+    const printerToAdd = {
+      name: printerData.name,
+      model: printerData.model,
+      location: printerData.location,
+      department: printerData.department || null,
+      ip_address: printerData.ipAddress || null,
+      serial_number: printerData.serialNumber || null,
+      status: 'offline',
+      ink_level: 100,
+      paper_level: 100,
+      job_count: 0,
+      last_active: new Date().toISOString(),
+      added_date: new Date().toISOString()
+    };
+
     const { data, error } = await supabase
       .from('printers')
-      .insert({
-        name: printerData.name,
-        model: printerData.model,
-        location: printerData.location,
-        status: 'offline', // Always start as offline
-        ink_level: 0, // Will be auto-detected
-        paper_level: 0, // Will be auto-detected
-        ip_address: printerData.ipAddress || null,
-        department: printerData.department || null,
-        serial_number: printerData.serialNumber || null,
-        job_count: 0,
-        last_active: new Date().toISOString()
-      })
-      .select()
+      .insert(printerToAdd)
+      .select('*')
       .single();
 
     if (error) {
+      console.error('Error adding printer:', error);
       throw error;
     }
+
+    console.log('Printer added successfully:', data);
 
     // Log the activity
     await addActivity({
       printerId: data.id,
-      printerName: printerData.name,
+      printerName: data.name,
+      action: 'Printer Added',
       timestamp: new Date().toISOString(),
-      action: "Printer Added",
-      user: "admin",
-      details: `New printer "${printerData.name}" added to the system`,
-      status: "success"
+      details: `New printer "${data.name}" (${data.model}) was added to ${data.location}`,
+      status: 'success'
     });
 
-    // Convert database format to PrinterData format
-    const newPrinter: PrinterData = {
-      id: data.id,
-      name: data.name,
-      model: data.model,
-      location: data.location,
-      status: data.status as 'online' | 'offline' | 'error' | 'warning' | 'maintenance',
-      inkLevel: data.ink_level,
-      paperLevel: data.paper_level,
-      jobCount: data.job_count,
-      lastActive: data.last_active ? new Date(data.last_active).toLocaleString() : 'Never',
-      ipAddress: data.ip_address,
-      department: data.department,
-      serialNumber: data.serial_number,
-      addedDate: data.added_date,
-    };
+    toast({
+      title: "Printer Added",
+      description: `${data.name} has been successfully added.`
+    });
 
-    return newPrinter;
+    return data.id;
   } catch (error) {
     console.error('Error adding printer:', error);
     toast({

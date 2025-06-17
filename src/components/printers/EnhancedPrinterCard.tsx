@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { PrinterData } from '@/types/printers';
@@ -24,6 +23,7 @@ interface EnhancedPrinterCardProps {
   onOpenEdit?: () => void;
   onOpenDelete?: () => void;
   isAdmin: boolean;
+  showOwnDeleteDialog?: boolean; // New prop to control internal delete dialog
 }
 
 const EnhancedPrinterCard: React.FC<EnhancedPrinterCardProps> = ({
@@ -31,7 +31,8 @@ const EnhancedPrinterCard: React.FC<EnhancedPrinterCardProps> = ({
   onOpenDetails,
   onOpenEdit,
   onOpenDelete,
-  isAdmin
+  isAdmin,
+  showOwnDeleteDialog = true
 }) => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showRestartDialog, setShowRestartDialog] = useState(false);
@@ -133,6 +134,15 @@ const EnhancedPrinterCard: React.FC<EnhancedPrinterCardProps> = ({
         description: "Failed to delete the printer. Please try again.",
         variant: "destructive"
       });
+    }
+  };
+
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (showOwnDeleteDialog) {
+      setShowDeleteDialog(true);
+    } else if (onOpenDelete) {
+      onOpenDelete();
     }
   };
 
@@ -246,10 +256,7 @@ const EnhancedPrinterCard: React.FC<EnhancedPrinterCardProps> = ({
                   </DropdownMenuItem>
                   
                   <DropdownMenuItem 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowDeleteDialog(true);
-                    }}
+                    onClick={handleDeleteClick}
                     className="text-red-600"
                   >
                     <Trash2 className="mr-2 h-4 w-4" />
@@ -262,23 +269,25 @@ const EnhancedPrinterCard: React.FC<EnhancedPrinterCardProps> = ({
         </CardContent>
       </Card>
 
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Printer</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete "{printer.name}"? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* Only show delete dialog if showOwnDeleteDialog is true */}
+      {showOwnDeleteDialog && (
+        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Printer</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete "{printer.name}"? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
 
       {/* Restart Confirmation Dialog */}
       <AlertDialog open={showRestartDialog} onOpenChange={setShowRestartDialog}>
