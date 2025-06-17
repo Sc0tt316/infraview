@@ -135,9 +135,12 @@ const Printers = () => {
         setStatusFilter={setStatusFilter}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
+        selectedDepartment={departmentFilter}
+        selectedStatus={statusFilter}
         isAdmin={isAdmin || false}
         onAddPrinter={handleAddPrinter}
         onPrinterClick={handlePrinterClick}
+        onPrinterSelect={handlePrinterClick}
         onEditPrinter={handleEditPrinter}
         onDeletePrinter={handleDeletePrinter}
       />
