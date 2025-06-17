@@ -1,87 +1,67 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
 import { PrinterData } from '@/types/printers';
-import PrinterFilters from './PrinterFilters';
 import EnhancedPrinterCard from './EnhancedPrinterCard';
 import EmptyPrinterState from './EmptyPrinterState';
 
 interface PrintersContentProps {
-  isLoading: boolean;
   filteredPrinters: PrinterData[];
-  departmentFilter: string;
-  setDepartmentFilter: (value: string) => void;
-  statusFilter: string;
-  setStatusFilter: (value: string) => void;
   searchQuery: string;
-  setSearchQuery: (value: string) => void;
-  isAdmin: boolean;
-  onAddPrinter: () => void;
-  onPrinterClick: (printer: PrinterData) => void;
+  selectedDepartment: string;
+  selectedStatus: string;
+  isLoading: boolean;
+  onPrinterSelect: (printer: PrinterData) => void;
   onEditPrinter: (printer: PrinterData) => void;
   onDeletePrinter: (printer: PrinterData) => void;
+  isAdmin: boolean;
 }
 
 const PrintersContent: React.FC<PrintersContentProps> = ({
-  isLoading,
   filteredPrinters,
-  departmentFilter,
-  setDepartmentFilter,
-  statusFilter,
-  setStatusFilter,
   searchQuery,
-  setSearchQuery,
-  isAdmin,
-  onAddPrinter,
-  onPrinterClick,
+  selectedDepartment,
+  selectedStatus,
+  isLoading,
+  onPrinterSelect,
   onEditPrinter,
-  onDeletePrinter
+  onDeletePrinter,
+  isAdmin
 }) => {
+  const hasActiveFilters = searchQuery || selectedDepartment !== 'all' || selectedStatus !== 'all';
+  const hasNoResults = filteredPrinters.length === 0 && hasActiveFilters;
+
   if (isLoading) {
     return (
-      <div className="flex justify-center py-12">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-2 text-muted-foreground">Loading printers...</p>
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {Array.from({ length: 8 }).map((_, index) => (
+          <div key={index} className="h-64 bg-muted rounded-lg animate-pulse" />
+        ))}
       </div>
     );
   }
 
-  return (
-    <div className="space-y-6">
-      <PrinterFilters
-        departmentFilter={departmentFilter}
-        setDepartmentFilter={setDepartmentFilter}
-        statusFilter={statusFilter}
-        setStatusFilter={setStatusFilter}
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
+  if (filteredPrinters.length === 0) {
+    return (
+      <EmptyPrinterState 
+        isAdmin={isAdmin}
+        onAddPrinter={() => {}}
+        hasNoResults={hasNoResults}
       />
+    );
+  }
 
-      {filteredPrinters.length === 0 ? (
-        <EmptyPrinterState 
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      {filteredPrinters.map((printer) => (
+        <EnhancedPrinterCard
+          key={printer.id}
+          printer={printer}
+          onViewDetails={() => onPrinterSelect(printer)}
+          onEdit={() => onEditPrinter(printer)}
+          onDelete={() => onDeletePrinter(printer)}
           isAdmin={isAdmin}
-          onAddPrinter={onAddPrinter}
-          hasNoResults={searchQuery.length > 0 || departmentFilter !== 'all' || statusFilter !== 'all'}
         />
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredPrinters.map((printer) => (
-            <EnhancedPrinterCard
-              key={printer.id}
-              printer={printer}
-              onOpenDetails={() => onPrinterClick(printer)}
-              onOpenEdit={() => onEditPrinter(printer)}
-              onOpenDelete={() => onDeletePrinter(printer)}
-              isAdmin={isAdmin}
-              showOwnDeleteDialog={false}
-            />
-          ))}
-        </div>
-      )}
+      ))}
     </div>
   );
 };

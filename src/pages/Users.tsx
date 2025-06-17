@@ -25,10 +25,20 @@ const userFormSchema = z.object({
   role: z.enum(["admin", "user", "manager"]),
   department: z.string().optional(),
   phone: z.string().optional(),
+  password: z.string().min(6, { message: "Password must be at least 6 characters." }).optional()
+});
+
+const editUserFormSchema = z.object({
+  name: z.string().min(2, { message: "Name must be at least 2 characters." }),
+  email: z.string().email("Invalid email address."),
+  role: z.enum(["admin", "user", "manager"]),
+  department: z.string().optional(),
+  phone: z.string().optional(),
   status: z.enum(["active", "inactive", "pending"])
 });
 
 type UserFormValues = z.infer<typeof userFormSchema>;
+type EditUserFormValues = z.infer<typeof editUserFormSchema>;
 
 const Users = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -133,14 +143,14 @@ const Users = () => {
       email: "",
       role: "user",
       department: "",
-      phone: "+212",
-      status: "active"
+      phone: "+212 ",
+      password: ""
     }
   });
 
   // Form for editing an existing user
-  const editUserForm = useForm<UserFormValues>({
-    resolver: zodResolver(userFormSchema),
+  const editUserForm = useForm<EditUserFormValues>({
+    resolver: zodResolver(editUserFormSchema),
     defaultValues: {
       name: selectedUser?.name || "",
       email: selectedUser?.email || "",
@@ -168,10 +178,9 @@ const Users = () => {
   // Handle adding a new user
   const onAddUserSubmit = async (data: UserFormValues) => {
     try {
-      // Auto-detect status based on recent activity (simplified logic)
       const userWithStatus = {
         ...data,
-        status: "active" as const // Default to active for new users
+        status: "active" as const
       };
       
       const newUser = await userService.addUser(userWithStatus);
@@ -186,8 +195,8 @@ const Users = () => {
           email: "",
           role: "user",
           department: "",
-          phone: "+212",
-          status: "active"
+          phone: "+212 ",
+          password: ""
         });
       }
     } catch (error) {
@@ -201,7 +210,7 @@ const Users = () => {
   };
 
   // Handle editing an existing user
-  const onEditUserSubmit = async (data: UserFormValues) => {
+  const onEditUserSubmit = async (data: EditUserFormValues) => {
     if (!selectedUser) return;
     
     try {
@@ -469,6 +478,20 @@ const Users = () => {
                 
                 <FormField
                   control={addUserForm.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Password</FormLabel>
+                      <FormControl>
+                        <Input type="password" placeholder="Enter password" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={addUserForm.control}
                   name="role"
                   render={({ field }) => (
                     <FormItem>
@@ -516,32 +539,6 @@ const Users = () => {
                       <FormControl>
                         <Input placeholder="+212 6XX XXX XXX" {...field} />
                       </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={addUserForm.control}
-                  name="status"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Status</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select status" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="active">Active</SelectItem>
-                          <SelectItem value="inactive">Inactive</SelectItem>
-                          <SelectItem value="pending">Pending</SelectItem>
-                        </SelectContent>
-                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}

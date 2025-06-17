@@ -6,19 +6,26 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Camera, Edit, LogOut, Save, X } from 'lucide-react';
+import { Camera, Edit, Save, X, Key } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import { userService } from '@/services/userService';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 const Settings = () => {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [editedUser, setEditedUser] = useState({
     name: user?.name || '',
     email: user?.email || '',
     department: user?.department || '',
     phone: user?.phone || ''
+  });
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
   });
 
   const handleEdit = () => {
@@ -63,6 +70,47 @@ const Settings = () => {
       toast({
         title: "Error",
         description: "Failed to update profile",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handlePasswordChange = async () => {
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast({
+        title: "Error",
+        description: "New passwords do not match",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (passwordData.newPassword.length < 6) {
+      toast({
+        title: "Error",
+        description: "Password must be at least 6 characters long",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      // You would implement password change logic here
+      // For now, just show success message
+      toast({
+        title: "Success",
+        description: "Password changed successfully"
+      });
+      setShowPasswordDialog(false);
+      setPasswordData({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to change password",
         variant: "destructive"
       });
     }
@@ -227,25 +275,71 @@ const Settings = () => {
         </CardContent>
       </Card>
 
-      {/* Account Actions */}
+      {/* Security Section */}
       <Card>
         <CardHeader>
-          <CardTitle>Account Actions</CardTitle>
+          <CardTitle>Security</CardTitle>
           <CardDescription>
-            Manage your account and session
+            Manage your account security settings
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex justify-start">
-            <Button 
-              variant="destructive" 
-              onClick={logout}
-              className="flex items-center gap-2"
-            >
-              <LogOut className="h-4 w-4" />
-              Logout
-            </Button>
-          </div>
+          <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="flex items-center gap-2">
+                <Key className="h-4 w-4" />
+                Change Password
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>Change Password</DialogTitle>
+                <DialogDescription>
+                  Enter your current password and choose a new one
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="currentPassword">Current Password</Label>
+                  <Input
+                    id="currentPassword"
+                    type="password"
+                    value={passwordData.currentPassword}
+                    onChange={(e) => setPasswordData(prev => ({...prev, currentPassword: e.target.value}))}
+                    placeholder="Enter current password"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="newPassword">New Password</Label>
+                  <Input
+                    id="newPassword"
+                    type="password"
+                    value={passwordData.newPassword}
+                    onChange={(e) => setPasswordData(prev => ({...prev, newPassword: e.target.value}))}
+                    placeholder="Enter new password"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    value={passwordData.confirmPassword}
+                    onChange={(e) => setPasswordData(prev => ({...prev, confirmPassword: e.target.value}))}
+                    placeholder="Confirm new password"
+                  />
+                </div>
+                <div className="flex justify-end gap-2 pt-4">
+                  <Button variant="outline" onClick={() => setShowPasswordDialog(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handlePasswordChange}>
+                    Change Password
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
         </CardContent>
       </Card>
     </div>

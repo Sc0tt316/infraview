@@ -201,59 +201,88 @@ export const userService = {
   },
   
   // Add a new user
-  addUser: async (userData: Partial<UserData>): Promise<UserData | null> => {
+  addUser: async (userData: Partial<UserData & { password?: string }>): Promise<UserData | null> => {
     try {
-      // Generate a temporary ID for new user - will be replaced by Supabase
-      const tempId = crypto.randomUUID();
-      
-      // Set default status based on user role
-      const userStatus = userData.role === 'admin' ? 'active' : 'pending';
-      
-      // Create the new user profile
-      const newUserData = {
-        id: tempId, // Temporary ID will be replaced by Supabase
-        name: userData.name || '',
-        email: userData.email || '',
-        role: userData.role || 'user',
-        department: userData.department || '',
-        phone: userData.phone || '',
-        status: userData.status || userStatus,
-        profile_image: userData.profileImage
-      };
-      
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .insert([newUserData])
-        .select('*')
-        .single();
-      
-      if (error) {
-        throw error;
-      }
-      
-      // Log the activity
-      await logUserActivity(
-        'User Added',
-        `New user "${profile.name}" was added to the system with role: ${profile.role}`,
-        'success'
-      );
+      // First create the user in Supabase Auth if password is provided
+      if (userData.password && userData.email) {
+        const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+          email: userData.email,
+          password: userData.password,
+          email_confirm: true // Auto-confirm email
+        });
+        
+        if (authError) {
+          console.error('Auth user creation error:', authError);
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: `Failed to create user account: ${authError.message}`
+          });
+          return null;
+        }
+        
+        // Use the auth user ID for the profile
+        const userId = authData.user.id;
+        
+        // Create the profile with the auth user ID
+        const profileData = {
+          id: userId,
+          name: userData.name || '',
+          email: userData.email,
+          role: userData.role || 'user',
+          department: userData.department || '',
+          phone: userData.phone || '',
+          status: 'active',
+          profile_image: userData.profileImage
+        };
+        
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .insert([profileData])
+          .select('*')
+          .single();
+        
+        if (profileError) {
+          console.error('Profile creation error:', profileError);
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: `Failed to create user profile: ${profileError.message}`
+          });
+          return null;
+        }
+        
+        // Log the activity
+        await logUserActivity(
+          'User Added',
+          `New user "${profile.name}" was added to the system with role: ${profile.role}`,
+          'success'
+        );
 
-      toast({
-        title: "Success",
-        description: `User "${profile.name}" has been added successfully.`
-      });
-      
-      return {
-        id: profile.id,
-        name: profile.name || 'Unknown',
-        email: profile.email || 'No email',
-        role: profile.role as 'admin' | 'manager' | 'user' || 'user',
-        department: profile.department || '',
-        phone: profile.phone || '',
-        status: profile.status as 'active' | 'inactive' | 'pending',
-        lastActive: profile.last_active,
-        profileImage: profile.profile_image
-      };
+        toast({
+          title: "Success",
+          description: `User "${profile.name}" has been added successfully.`
+        });
+        
+        return {
+          id: profile.id,
+          name: profile.name || 'Unknown',
+          email: profile.email || 'No email',
+          role: profile.role as 'admin' | 'manager' | 'user' || 'user',
+          department: profile.department || '',
+          phone: profile.phone || '',
+          status: profile.status as 'active' | 'inactive' | 'pending',
+          lastActive: profile.last_active,
+          profileImage: profile.profile_image
+        };
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Email and password are required to create a new user."
+        });
+        return null;
+      }
     } catch (error) {
       console.error('Error adding user:', error);
       toast({
