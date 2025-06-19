@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { Alert, AlertFilter, AlertSeverity } from '@/types/alerts';
@@ -51,7 +52,7 @@ export const useAlerts = () => {
         } : undefined,
         user: alertData.user,
         isResolved: alertData.resolved,
-        resolvedAt: alertData.resolved_at,
+        resolvedAt: alertData.resolved_at || undefined,
         resolvedBy: undefined
       }));
       
