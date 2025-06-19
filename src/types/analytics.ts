@@ -1,4 +1,3 @@
-
 // Defining shared types for analytics data
 
 export interface DepartmentVolume {
@@ -59,6 +58,7 @@ export interface AlertData {
   message: string;
   description?: string;
   resolved?: boolean;
+  resolved_at?: string;
   timeAgo?: string;
   entityId?: string;
   entityType?: string;

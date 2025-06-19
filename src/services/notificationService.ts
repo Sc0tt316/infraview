@@ -15,7 +15,7 @@ class NotificationService {
   private readonly STORAGE_KEY = 'app_notifications';
   private readonly MAX_NOTIFICATIONS = 50;
   private notificationThrottles: Record<string, number> = {};
-  private readonly THROTTLE_TIME = 300000; // Increased to 5 minutes to reduce spam
+  private readonly THROTTLE_TIME = 300000; // 5 minutes
   
   getNotifications(): Notification[] {
     try {
@@ -38,20 +38,19 @@ class NotificationService {
     
     if (this.notificationThrottles[throttleKey] && 
         now - this.notificationThrottles[throttleKey] < this.THROTTLE_TIME) {
-      console.log(`Notification throttled: ${title}`);
       return null;
     }
     
-    // Only show notifications for critical events to minimize spam
+    // Only show notifications for critical events
     const allowedTypes = ['alert', 'critical', 'error'];
     if (type && !allowedTypes.includes(type)) {
-      console.log(`Notification suppressed for non-critical type: ${type}`);
       return null;
     }
     
     try {
       const notifications = this.getNotifications();
       
+      // Check for recent duplicates
       const recentDuplicate = notifications.find(n => 
         n.title === title && 
         n.message === message && 
@@ -59,7 +58,6 @@ class NotificationService {
       );
       
       if (recentDuplicate) {
-        console.log(`Duplicate notification suppressed: ${title}`);
         return null;
       }
       
@@ -81,7 +79,6 @@ class NotificationService {
       }
       
       this.saveNotifications(updatedNotifications);
-      
       return newNotification;
     } catch (error) {
       console.error('Error adding notification:', error);
@@ -89,9 +86,14 @@ class NotificationService {
     }
   }
   
-  // New method to create notification from alert (only for critical alerts)
-  addAlertNotification(alert: { id: string; title: string; description: string; severity: string; printer?: { id: string; name: string } }): Notification | null {
-    // Only create notifications for critical alerts to reduce spam
+  addAlertNotification(alert: { 
+    id: string; 
+    title: string; 
+    description: string; 
+    severity: string; 
+    printer?: { id: string; name: string } 
+  }): Notification | null {
+    // Only create notifications for critical alerts
     if (alert.severity !== 'critical') {
       return null;
     }
@@ -109,21 +111,23 @@ class NotificationService {
     const updatedNotifications = notifications.map(notification => 
       notification.id === id ? { ...notification, read: true } : notification
     );
-    
     this.saveNotifications(updatedNotifications);
   }
   
   markAllAsRead(): void {
     const notifications = this.getNotifications();
-    const updatedNotifications = notifications.map(notification => ({ ...notification, read: true }));
-    
+    const updatedNotifications = notifications.map(notification => ({ 
+      ...notification, 
+      read: true 
+    }));
     this.saveNotifications(updatedNotifications);
   }
   
   deleteNotification(id: string): void {
     const notifications = this.getNotifications();
-    const updatedNotifications = notifications.filter(notification => notification.id !== id);
-    
+    const updatedNotifications = notifications.filter(notification => 
+      notification.id !== id
+    );
     this.saveNotifications(updatedNotifications);
   }
   
