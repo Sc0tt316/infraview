@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { Alert, AlertFilter, AlertSeverity } from '@/types/alerts';
@@ -12,6 +11,20 @@ export const useAlerts = () => {
   const [statusFilter, setStatusFilter] = useState<AlertFilter>('all');
   const [severityFilter, setSeverityFilter] = useState<AlertSeverity | 'all'>('all');
   const [relatedToFilter, setRelatedToFilter] = useState<'all' | 'user' | 'printer'>('all');
+  
+  // Helper function to map severity levels
+  const mapSeverityLevel = (level: 'critical' | 'warning' | 'info'): AlertSeverity => {
+    switch (level) {
+      case 'critical':
+        return 'critical';
+      case 'warning':
+        return 'medium';
+      case 'info':
+        return 'low';
+      default:
+        return 'low';
+    }
+  };
   
   // Load alerts from Supabase
   const loadAlerts = async () => {
@@ -31,7 +44,7 @@ export const useAlerts = () => {
         title: alertData.title,
         description: alertData.description || alertData.message,
         timestamp: alertData.timestamp,
-        severity: alertData.level,
+        severity: mapSeverityLevel(alertData.level),
         printer: alertData.printer ? {
           id: alertData.printer.id,
           name: alertData.printer.name
