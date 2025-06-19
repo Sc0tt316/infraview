@@ -15,7 +15,7 @@ class NotificationService {
   private readonly STORAGE_KEY = 'app_notifications';
   private readonly MAX_NOTIFICATIONS = 50;
   private notificationThrottles: Record<string, number> = {};
-  private readonly THROTTLE_TIME = 60000;
+  private readonly THROTTLE_TIME = 300000; // Increased to 5 minutes to reduce spam
   
   getNotifications(): Notification[] {
     try {
@@ -39,6 +39,13 @@ class NotificationService {
     if (this.notificationThrottles[throttleKey] && 
         now - this.notificationThrottles[throttleKey] < this.THROTTLE_TIME) {
       console.log(`Notification throttled: ${title}`);
+      return null;
+    }
+    
+    // Only show notifications for critical events to minimize spam
+    const allowedTypes = ['alert', 'critical', 'error'];
+    if (type && !allowedTypes.includes(type)) {
+      console.log(`Notification suppressed for non-critical type: ${type}`);
       return null;
     }
     
@@ -82,8 +89,13 @@ class NotificationService {
     }
   }
   
-  // New method to create notification from alert
+  // New method to create notification from alert (only for critical alerts)
   addAlertNotification(alert: { id: string; title: string; description: string; severity: string; printer?: { id: string; name: string } }): Notification | null {
+    // Only create notifications for critical alerts to reduce spam
+    if (alert.severity !== 'critical') {
+      return null;
+    }
+    
     const title = `${alert.severity.toUpperCase()}: ${alert.title}`;
     const message = alert.printer ? 
       `${alert.description} (${alert.printer.name})` : 
@@ -94,7 +106,7 @@ class NotificationService {
   
   markAsRead(id: string): void {
     const notifications = this.getNotifications();
-     const updatedNotifications = notifications.map(notification => 
+    const updatedNotifications = notifications.map(notification => 
       notification.id === id ? { ...notification, read: true } : notification
     );
     

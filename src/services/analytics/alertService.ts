@@ -1,81 +1,89 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-import { AlertData } from '@/types/analytics';
-import { alertMonitoringService } from '../printer/alertMonitoringService';
+import { AlertLevel, AlertData } from '@/types/analytics';
 
-// Alerts service
+export interface AlertsQuery {
+  limit?: number;
+  status?: 'all' | 'active' | 'resolved';
+  level?: AlertLevel | 'all';
+  sortBy?: 'timestamp' | 'level' | 'title';
+  sortOrder?: 'asc' | 'desc';
+}
+
 export const alertService = {
-  getAlerts: async (options: { limit?: number, status?: 'all' | 'active' | 'resolved', level?: 'all' | 'critical' | 'warning' | 'info', sortBy?: string, sortOrder?: 'asc' | 'desc' } = {}): Promise<AlertData[]> => {
-    try {
-      const { limit = 100, status = 'all', level = 'all', sortBy = 'timestamp', sortOrder = 'desc' } = options;
-      
-      let query = supabase
-        .from('alerts')
-        .select(`
-          *,
-          printers (
-            name,
-            location,
-            model
-          )
-        `);
-      
-      // Apply status filter
-      if (status === 'active') {
-        query = query.eq('is_resolved', false);
-      } else if (status === 'resolved') {
-        query = query.eq('is_resolved', true);
-      }
-      
-      // Apply level filter
-      if (level !== 'all') {
-        query = query.eq('severity', level);
-      }
-      
-      // Apply sorting
-      if (sortBy === 'timestamp') {
-        query = query.order('created_at', { ascending: sortOrder === 'asc' });
-      } else {
-        query = query.order(sortBy, { ascending: sortOrder === 'asc' });
-      }
-      
-      // Apply limit
-      query = query.limit(limit);
-      
-      const { data: alerts, error } = await query;
-      
-      if (error) {
-        throw error;
-      }
-      
-      // Transform to AlertData format
-      return (alerts || []).map(alert => ({
-        id: alert.id,
-        timestamp: alert.created_at,
-        level: alert.severity as 'critical' | 'warning' | 'info',
-        title: alert.title,
-        status: alert.is_resolved ? 'resolved' : 'active',
-        description: alert.description,
-        message: alert.description,
-        entityId: alert.printer_id,
-        entityType: 'printer',
-        entityName: alert.printers?.name || 'Unknown Printer',
-        resolved: alert.is_resolved,
-        timeAgo: '', // Will be calculated on frontend
-        printer: alert.printer_id ? {
-          id: alert.printer_id,
-          name: alert.printers?.name || 'Unknown Printer'
-        } : undefined,
-        user: undefined
-      }));
-    } catch (error) {
-      console.error('Error fetching alerts:', error);
-      toast.error("Failed to fetch alerts. Please try again.");
-      return [];
+  getAlerts: async (query: AlertsQuery = {}): Promise<AlertData[]> => {
+    const { 
+      limit = 50, 
+      status = 'all', 
+      level = 'all', 
+      sortBy = 'timestamp', 
+      sortOrder = 'desc' 
+    } = query;
+
+    let supabaseQuery = supabase
+      .from('alerts')
+      .select(`
+        id,
+        title,
+        description,
+        level,
+        timestamp: created_at,
+        resolved: is_resolved,
+        resolved_at,
+        printer_id,
+        printers (
+          id,
+          name,
+          location
+        )
+      `);
+
+    // Apply status filter
+    if (status === 'active') {
+      supabaseQuery = supabaseQuery.eq('is_resolved', false);
+    } else if (status === 'resolved') {
+      supabaseQuery = supabaseQuery.eq('is_resolved', true);
     }
+
+    // Apply level filter
+    if (level !== 'all') {
+      supabaseQuery = supabaseQuery.eq('level', level);
+    }
+
+    // Apply sorting
+    supabaseQuery = supabaseQuery.order(
+      sortBy === 'timestamp' ? 'created_at' : sortBy,
+      { ascending: sortOrder === 'asc' }
+    );
+
+    // Apply limit
+    supabaseQuery = supabaseQuery.limit(limit);
+
+    const { data: alerts, error } = await supabaseQuery;
+
+    if (error) {
+      console.error('Error fetching alerts:', error);
+      throw error;
+    }
+
+    return (alerts || []).map(alert => ({
+      id: alert.id,
+      title: alert.title,
+      description: alert.description,
+      message: alert.description,
+      level: alert.level as AlertLevel,
+      timestamp: alert.timestamp,
+      resolved: alert.resolved,
+      resolvedAt: alert.resolved_at,
+      printer: alert.printers ? {
+        id: alert.printers.id,
+        name: alert.printers.name,
+        location: alert.printers.location
+      } : undefined,
+      user: undefined
+    }));
   },
-  
+
   resolveAlert: async (alertId: string): Promise<boolean> => {
     try {
       const { error } = await supabase
@@ -85,20 +93,35 @@ export const alertService = {
           resolved_at: new Date().toISOString()
         })
         .eq('id', alertId);
-      
+
       if (error) {
-        throw error;
+        console.error('Error resolving alert:', error);
+        return false;
       }
-      
-      toast.success("Alert resolved successfully");
+
       return true;
     } catch (error) {
       console.error('Error resolving alert:', error);
-      toast.error("Failed to resolve alert. Please try again.");
       return false;
     }
   },
 
-  // Check all printers for alerts and create them
-  monitorPrinters: alertMonitoringService.checkPrintersForAlerts
+  clearResolvedAlerts: async (): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from('alerts')
+        .delete()
+        .eq('is_resolved', true);
+
+      if (error) {
+        console.error('Error clearing resolved alerts:', error);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error clearing resolved alerts:', error);
+      return false;
+    }
+  }
 };

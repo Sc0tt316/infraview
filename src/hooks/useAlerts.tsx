@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { Alert, AlertFilter, AlertSeverity } from '@/types/alerts';
@@ -51,7 +52,7 @@ export const useAlerts = () => {
         } : undefined,
         user: alertData.user,
         isResolved: alertData.resolved,
-        resolvedAt: undefined,
+        resolvedAt: alertData.resolvedAt,
         resolvedBy: undefined
       }));
       
@@ -133,36 +134,40 @@ export const useAlerts = () => {
   const resolveAlert = async (alertId: string) => {
     const success = await alertService.resolveAlert(alertId);
     if (success) {
-      // Reload alerts to get updated data
       await loadAlerts();
     }
   };
   
   // Resolve all alerts
   const resolveAllAlerts = async () => {
-    // Resolve all unresolved alerts
     const unresolvedAlerts = alerts.filter(alert => !alert.isResolved);
     for (const alert of unresolvedAlerts) {
       await alertService.resolveAlert(alert.id);
     }
-    
-    // Reload alerts
     await loadAlerts();
   };
   
-  // Clear all resolved alerts (this would need a new API method)
+  // Clear all resolved alerts
   const clearResolvedAlerts = async () => {
-    // For now, just reload - in a real implementation, you'd delete resolved alerts
-    await loadAlerts();
+    const success = await alertService.clearResolvedAlerts();
+    if (success) {
+      await loadAlerts();
+      toast({
+        title: "Success",
+        description: "All resolved alerts have been cleared."
+      });
+    } else {
+      toast({
+        title: "Error",
+        description: "Failed to clear resolved alerts.",
+        variant: "destructive"
+      });
+    }
   };
   
   // Refresh alerts
   const refreshAlerts = () => {
     loadAlerts();
-    toast({
-      title: "Refreshed",
-      description: "Alert data has been refreshed."
-    });
   };
   
   return {

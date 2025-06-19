@@ -1,4 +1,3 @@
-
 import { apiService } from './api';
 import { toast } from '@/hooks/use-toast';
 import { UserData } from '@/types/user';
@@ -98,18 +97,44 @@ export const userService = {
     }
   },
   
-  // Update user profile
-  updateUser: async (id: string, updateData: Partial<UserData & { password?: string }>): Promise<UserData | null> => {
+  // Verify current user password before allowing edits
+  verifyCurrentPassword: async (email: string, password: string): Promise<boolean> => {
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+      
+      return !error;
+    } catch (error) {
+      console.error('Password verification error:', error);
+      return false;
+    }
+  },
+  
+  // Update user profile (now requires password verification for sensitive changes)
+  updateUser: async (id: string, updateData: Partial<UserData & { password?: string }>, isPasswordVerified: boolean = false): Promise<UserData | null> => {
     try {
       // Handle special case for new users
       if (id === "new") {
         return userService.addUser(updateData);
       }
       
-      // Get current user data to check if email is changing
+      // Get current user data to check if sensitive data is changing
       const currentUser = await userService.getUserById(id);
       const isEmailChanged = updateData.email && currentUser && currentUser.email !== updateData.email;
       const isPasswordChanged = updateData.password && updateData.password.length >= 6;
+      const isRoleChanged = updateData.role && currentUser && currentUser.role !== updateData.role;
+      
+      // For sensitive changes, require password verification
+      if ((isEmailChanged || isPasswordChanged || isRoleChanged) && !isPasswordVerified) {
+        toast({
+          variant: "destructive",
+          title: "Password Verification Required",
+          description: "Please verify your current password before making sensitive changes."
+        });
+        return null;
+      }
       
       // If email or password is being updated, update it in Supabase Auth as well
       if (isEmailChanged || isPasswordChanged) {
@@ -136,7 +161,7 @@ export const userService = {
             return null;
           }
         } else {
-          // For admin updating another user's credentials, we need to use the admin API
+          // For admin updating another user's credentials, use admin API
           if (isEmailChanged || isPasswordChanged) {
             console.log('Admin updating another user credentials - using admin API');
             
@@ -181,10 +206,11 @@ export const userService = {
         throw error;
       }
       
-      // Log the activity
+      // Log the activity (only for successful updates, not info messages)
       const changes = [];
       if (isEmailChanged) changes.push('email changed');
       if (isPasswordChanged) changes.push('password changed');
+      if (isRoleChanged) changes.push('role changed');
       const changesText = changes.length > 0 ? ` (${changes.join(', ')})` : '';
       
       await logUserActivity(
@@ -193,9 +219,10 @@ export const userService = {
         'success'
       );
 
+      // Only show success toast, not info about changes
       toast({
         title: "Success",
-        description: `User "${profile.name}" has been updated.${isEmailChanged ? ' Email updated in authentication.' : ''}${isPasswordChanged ? ' Password changed.' : ''}`
+        description: `User "${profile.name}" has been updated successfully.`
       });
       
       return {
