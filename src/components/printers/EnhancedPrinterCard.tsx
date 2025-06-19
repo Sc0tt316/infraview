@@ -3,10 +3,12 @@ import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Printer, Wifi, WifiOff, AlertTriangle, MoreVertical } from 'lucide-react';
+import { Printer, Wifi, WifiOff, AlertTriangle, MoreVertical, RefreshCw } from 'lucide-react';
 import { PrinterData } from '@/types/printers';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
+import { printerService } from '@/services/printer';
+import { toast } from '@/hooks/use-toast';
 
 interface EnhancedPrinterCardProps {
   printer: PrinterData;
@@ -23,6 +25,8 @@ const EnhancedPrinterCard: React.FC<EnhancedPrinterCardProps> = ({
   onViewDetails,
   isAdmin = false
 }) => {
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case 'online': return 'bg-green-500';
@@ -43,6 +47,39 @@ const EnhancedPrinterCard: React.FC<EnhancedPrinterCardProps> = ({
     }
   };
 
+  const handleRefresh = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsRefreshing(true);
+    
+    try {
+      if (printer.ipAddress) {
+        await printerService.pollPrinter({
+          id: printer.id,
+          name: printer.name,
+          ipAddress: printer.ipAddress
+        });
+        toast({
+          title: "Success",
+          description: "Printer status refreshed successfully",
+        });
+      } else {
+        toast({
+          title: "Warning",
+          description: "No IP address configured for this printer",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to refresh printer status",
+        variant: "destructive"
+      });
+    } finally {
+      setTimeout(() => setIsRefreshing(false), 1000);
+    }
+  };
+
   const handleEdit = (e: React.MouseEvent) => {
     e.stopPropagation();
     console.log('Edit button clicked for printer:', printer);
@@ -60,7 +97,6 @@ const EnhancedPrinterCard: React.FC<EnhancedPrinterCardProps> = ({
   };
 
   const handleCardClick = (e: React.MouseEvent) => {
-    // Ensure we're not clicking on the dropdown or its children
     const target = e.target as HTMLElement;
     if (target.closest('[data-radix-popper-content-wrapper]') || target.closest('button')) {
       return;
@@ -108,6 +144,10 @@ const EnhancedPrinterCard: React.FC<EnhancedPrinterCardProps> = ({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="bg-background border shadow-md">
+                  <DropdownMenuItem onClick={handleRefresh} disabled={isRefreshing}>
+                    <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                    Refresh
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={handleEdit}>
                     Edit Printer
                   </DropdownMenuItem>

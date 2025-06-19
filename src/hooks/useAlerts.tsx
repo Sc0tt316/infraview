@@ -1,7 +1,8 @@
+
 import { useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { Alert, AlertFilter, AlertSeverity } from '@/types/alerts';
-import { apiService } from '@/services/api';
+import { alertService } from '@/services/analytics/alertService';
 
 export const useAlerts = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -12,19 +13,36 @@ export const useAlerts = () => {
   const [severityFilter, setSeverityFilter] = useState<AlertSeverity | 'all'>('all');
   const [relatedToFilter, setRelatedToFilter] = useState<'all' | 'user' | 'printer'>('all');
   
-  // Load alerts
+  // Load alerts from Supabase
   const loadAlerts = async () => {
     setIsLoading(true);
     try {
-      // Get alerts from API service
-      const storedAlerts = await apiService.get<Alert[]>('alerts');
+      const alertsData = await alertService.getAlerts({
+        limit: 100,
+        status: 'all',
+        level: 'all',
+        sortBy: 'timestamp',
+        sortOrder: 'desc'
+      });
       
-      if (storedAlerts && storedAlerts.length > 0) {
-        setAlerts(storedAlerts);
-      } else {
-        // Create empty alerts array if none exist
-        setAlerts([]);
-      }
+      // Transform AlertData to Alert format
+      const transformedAlerts: Alert[] = alertsData.map(alertData => ({
+        id: alertData.id,
+        title: alertData.title,
+        description: alertData.description || alertData.message,
+        timestamp: alertData.timestamp,
+        severity: alertData.level,
+        printer: alertData.printer ? {
+          id: alertData.printer.id,
+          name: alertData.printer.name
+        } : undefined,
+        user: alertData.user,
+        isResolved: alertData.resolved,
+        resolvedAt: undefined,
+        resolvedBy: undefined
+      }));
+      
+      setAlerts(transformedAlerts);
     } catch (error) {
       console.error("Error loading alerts:", error);
       toast({
@@ -72,9 +90,9 @@ export const useAlerts = () => {
     if (relatedToFilter !== 'all') {
       result = result.filter(alert => {
         if (relatedToFilter === 'printer') {
-          return !!alert.printer; // Has printer information
+          return !!alert.printer;
         } else if (relatedToFilter === 'user') {
-          return !alert.printer; // No printer = user related
+          return !alert.printer;
         }
         return true;
       });
@@ -89,7 +107,6 @@ export const useAlerts = () => {
         low: 3 
       };
       
-      // Type casting to make TypeScript happy
       const aSeverity = a.severity as keyof typeof severityOrder;
       const bSeverity = b.severity as keyof typeof severityOrder;
       
@@ -101,60 +118,29 @@ export const useAlerts = () => {
   
   // Resolve alert with persistence
   const resolveAlert = async (alertId: string) => {
-    const updatedAlerts = alerts.map(alert => 
-      alert.id === alertId
-        ? {
-            ...alert,
-            isResolved: true,
-            resolvedAt: new Date().toISOString(),
-            resolvedBy: "Admin User"
-          }
-        : alert
-    );
-    
-    // Update state
-    setAlerts(updatedAlerts);
-    
-    // Save to localStorage via apiService
-    await apiService.post('alerts', updatedAlerts);
-    
-    toast({
-      title: "Alert Resolved",
-      description: "The alert has been marked as resolved."
-    });
+    const success = await alertService.resolveAlert(alertId);
+    if (success) {
+      // Reload alerts to get updated data
+      await loadAlerts();
+    }
   };
   
   // Resolve all alerts
   const resolveAllAlerts = async () => {
-    // Only resolve alerts that are not already resolved
-    const updatedAlerts = alerts.map(alert => 
-      !alert.isResolved
-        ? {
-            ...alert,
-            isResolved: true,
-            resolvedAt: new Date().toISOString(),
-            resolvedBy: "Admin User"
-          }
-        : alert
-    );
+    // Resolve all unresolved alerts
+    const unresolvedAlerts = alerts.filter(alert => !alert.isResolved);
+    for (const alert of unresolvedAlerts) {
+      await alertService.resolveAlert(alert.id);
+    }
     
-    // Update state
-    setAlerts(updatedAlerts);
-    
-    // Save to localStorage via apiService
-    await apiService.post('alerts', updatedAlerts);
+    // Reload alerts
+    await loadAlerts();
   };
   
-  // Clear all resolved alerts
+  // Clear all resolved alerts (this would need a new API method)
   const clearResolvedAlerts = async () => {
-    // Keep only the active alerts
-    const updatedAlerts = alerts.filter(alert => !alert.isResolved);
-    
-    // Update state
-    setAlerts(updatedAlerts);
-    
-    // Save to localStorage via apiService
-    await apiService.post('alerts', updatedAlerts);
+    // For now, just reload - in a real implementation, you'd delete resolved alerts
+    await loadAlerts();
   };
   
   // Refresh alerts

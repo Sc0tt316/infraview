@@ -2,6 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { PrinterData } from '@/types/printers';
+import { notificationService } from '@/services/notificationService';
 
 export interface AlertCondition {
   id: string;
@@ -11,7 +12,6 @@ export interface AlertCondition {
   checkCondition: (printer: PrinterData) => boolean;
 }
 
-// Define alert conditions
 const alertConditions: AlertCondition[] = [
   {
     id: 'ink_critical',
@@ -68,29 +68,24 @@ const alertConditions: AlertCondition[] = [
 ];
 
 export const alertMonitoringService = {
-  // Check all printers for alert conditions
   checkPrintersForAlerts: async (printers: PrinterData[]): Promise<void> => {
     for (const printer of printers) {
       await alertMonitoringService.checkPrinterAlerts(printer);
     }
   },
 
-  // Check a single printer for alert conditions
   checkPrinterAlerts: async (printer: PrinterData): Promise<void> => {
     for (const condition of alertConditions) {
       if (condition.checkCondition(printer)) {
         await alertMonitoringService.createAlert(printer, condition);
       } else {
-        // If condition is no longer met, resolve any existing alerts
         await alertMonitoringService.resolveAlert(printer.id, condition.id);
       }
     }
   },
 
-  // Create an alert if it doesn't already exist
   createAlert: async (printer: PrinterData, condition: AlertCondition): Promise<void> => {
     try {
-      // Check if alert already exists for this printer and condition
       const { data: existingAlert } = await supabase
         .from('alerts')
         .select('id')
@@ -100,22 +95,39 @@ export const alertMonitoringService = {
         .single();
 
       if (existingAlert) {
-        return; // Alert already exists
+        return;
       }
 
-      // Create new alert
-      const { error } = await supabase
+      const alertData = {
+        printer_id: printer.id,
+        title: condition.title,
+        description: `${condition.description} for printer "${printer.name}" at ${printer.location}`,
+        severity: condition.severity,
+        is_resolved: false
+      };
+
+      const { data: newAlert, error } = await supabase
         .from('alerts')
-        .insert({
-          printer_id: printer.id,
-          title: condition.title,
-          description: `${condition.description} for printer "${printer.name}" at ${printer.location}`,
-          severity: condition.severity,
-          is_resolved: false
-        });
+        .insert(alertData)
+        .select()
+        .single();
 
       if (error) {
         throw error;
+      }
+
+      // Create notification for the new alert
+      if (newAlert) {
+        notificationService.addAlertNotification({
+          id: newAlert.id,
+          title: condition.title,
+          description: alertData.description,
+          severity: condition.severity,
+          printer: {
+            id: printer.id,
+            name: printer.name
+          }
+        });
       }
 
       // Show toast notification for critical alerts
@@ -131,7 +143,6 @@ export const alertMonitoringService = {
     }
   },
 
-  // Resolve an alert
   resolveAlert: async (printerId: string, conditionId: string): Promise<void> => {
     try {
       const condition = alertConditions.find(c => c.id === conditionId);
@@ -147,7 +158,7 @@ export const alertMonitoringService = {
         .eq('title', condition.title)
         .eq('is_resolved', false);
 
-      if (error && error.code !== 'PGRST116') { // Ignore "no rows updated" error
+      if (error && error.code !== 'PGRST116') {
         throw error;
       }
     } catch (error) {
@@ -155,7 +166,6 @@ export const alertMonitoringService = {
     }
   },
 
-  // Get all active alerts
   getActiveAlerts: async (): Promise<any[]> => {
     try {
       const { data: alerts, error } = await supabase

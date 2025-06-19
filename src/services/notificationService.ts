@@ -7,15 +7,15 @@ export interface Notification {
   message: string;
   timestamp: Date;
   read: boolean;
-  type?: string; // 'printer', 'user', 'alert', 'analytics'
-  resourceId?: string; // ID of the related resource
+  type?: string;
+  resourceId?: string;
 }
 
 class NotificationService {
   private readonly STORAGE_KEY = 'app_notifications';
-  private readonly MAX_NOTIFICATIONS = 50; // Limit total notifications
-  private notificationThrottles: Record<string, number> = {}; // Track notification timestamps by type
-  private readonly THROTTLE_TIME = 60000; // 1 minute between similar notifications
+  private readonly MAX_NOTIFICATIONS = 50;
+  private notificationThrottles: Record<string, number> = {};
+  private readonly THROTTLE_TIME = 60000;
   
   getNotifications(): Notification[] {
     try {
@@ -33,21 +33,18 @@ class NotificationService {
   }
   
   addNotification(title: string, message: string, type?: string, resourceId?: string): Notification | null {
-    // Create a throttle key based on type and resourceId if available
     const throttleKey = `${type || 'general'}_${resourceId || 'none'}`;
     const now = Date.now();
     
-    // Check if this type of notification has been sent recently
     if (this.notificationThrottles[throttleKey] && 
         now - this.notificationThrottles[throttleKey] < this.THROTTLE_TIME) {
       console.log(`Notification throttled: ${title}`);
-      return null; // Skip creating the notification
+      return null;
     }
     
     try {
       const notifications = this.getNotifications();
       
-      // Check for duplicate notifications with same title and message in the last minute
       const recentDuplicate = notifications.find(n => 
         n.title === title && 
         n.message === message && 
@@ -69,10 +66,8 @@ class NotificationService {
         resourceId
       };
       
-      // Add to throttle tracker
       this.notificationThrottles[throttleKey] = now;
       
-      // Limit total notifications by removing oldest if needed
       let updatedNotifications = [newNotification, ...notifications];
       if (updatedNotifications.length > this.MAX_NOTIFICATIONS) {
         updatedNotifications = updatedNotifications.slice(0, this.MAX_NOTIFICATIONS);
@@ -87,9 +82,19 @@ class NotificationService {
     }
   }
   
+  // New method to create notification from alert
+  addAlertNotification(alert: { id: string; title: string; description: string; severity: string; printer?: { id: string; name: string } }): Notification | null {
+    const title = `${alert.severity.toUpperCase()}: ${alert.title}`;
+    const message = alert.printer ? 
+      `${alert.description} (${alert.printer.name})` : 
+      alert.description;
+    
+    return this.addNotification(title, message, 'alert', alert.id);
+  }
+  
   markAsRead(id: string): void {
     const notifications = this.getNotifications();
-    const updatedNotifications = notifications.map(notification => 
+     const updatedNotifications = notifications.map(notification => 
       notification.id === id ? { ...notification, read: true } : notification
     );
     
