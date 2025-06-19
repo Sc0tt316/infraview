@@ -52,7 +52,7 @@ export const useAlerts = () => {
         } : undefined,
         user: alertData.user,
         isResolved: alertData.resolved,
-        resolvedAt: alertData.resolvedAt,
+        resolvedAt: alertData.resolved_at,
         resolvedBy: undefined
       }));
       

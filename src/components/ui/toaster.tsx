@@ -12,7 +12,7 @@ export function Toaster() {
     toasts.forEach((toast) => {
       if (toast.id) {
         const timer = setTimeout(() => {
-          dismiss(toast.id);
+          dismiss(String(toast.id));
         }, 5000);
         
         return () => clearTimeout(timer);
@@ -41,7 +41,7 @@ export function Toaster() {
             data-state="open"
             role="status"
             aria-live="polite"
-            onClick={() => id && dismiss(id)}
+            onClick={() => id && dismiss(String(id))}
             {...props}
           >
             <div className="grid gap-1">

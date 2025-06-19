@@ -1,6 +1,10 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { AlertLevel, AlertData } from '@/types/analytics';
+import { AlertData } from '@/types/analytics';
+import { alertMonitoringService } from '@/services/printer/alertMonitoringService';
+import { PrinterData } from '@/types/printers';
+
+export type AlertLevel = 'critical' | 'warning' | 'info';
 
 export interface AlertsQuery {
   limit?: number;
@@ -26,7 +30,7 @@ export const alertService = {
         id,
         title,
         description,
-        level,
+        severity,
         timestamp: created_at,
         resolved: is_resolved,
         resolved_at,
@@ -45,14 +49,14 @@ export const alertService = {
       supabaseQuery = supabaseQuery.eq('is_resolved', true);
     }
 
-    // Apply level filter
+    // Apply level filter (map to severity column)
     if (level !== 'all') {
-      supabaseQuery = supabaseQuery.eq('level', level);
+      supabaseQuery = supabaseQuery.eq('severity', level);
     }
 
     // Apply sorting
     supabaseQuery = supabaseQuery.order(
-      sortBy === 'timestamp' ? 'created_at' : sortBy,
+      sortBy === 'timestamp' ? 'created_at' : sortBy === 'level' ? 'severity' : sortBy,
       { ascending: sortOrder === 'asc' }
     );
 
@@ -71,10 +75,11 @@ export const alertService = {
       title: alert.title,
       description: alert.description,
       message: alert.description,
-      level: alert.level as AlertLevel,
+      level: alert.severity as AlertLevel,
       timestamp: alert.timestamp,
       resolved: alert.resolved,
-      resolvedAt: alert.resolved_at,
+      resolved_at: alert.resolved_at,
+      status: alert.resolved ? 'resolved' : 'active',
       printer: alert.printers ? {
         id: alert.printers.id,
         name: alert.printers.name,
@@ -123,5 +128,10 @@ export const alertService = {
       console.error('Error clearing resolved alerts:', error);
       return false;
     }
+  },
+
+  monitorPrinters: async (printers: PrinterData[]): Promise<void> => {
+    // Delegate to the alertMonitoringService
+    await alertMonitoringService.checkPrintersForAlerts(printers);
   }
 };
