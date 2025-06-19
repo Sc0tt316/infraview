@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { Alert, AlertFilter, AlertSeverity } from '@/types/alerts';
@@ -152,16 +151,6 @@ export const useAlerts = () => {
     const success = await alertService.clearResolvedAlerts();
     if (success) {
       await loadAlerts();
-      toast({
-        title: "Success",
-        description: "All resolved alerts have been cleared."
-      });
-    } else {
-      toast({
-        title: "Error",
-        description: "Failed to clear resolved alerts.",
-        variant: "destructive"
-      });
     }
   };
   
