@@ -18,6 +18,7 @@ interface PrinterDialogsProps {
   isAdmin: boolean;
   onConfirmDelete: () => void;
   onPrinterEditSuccess: () => void;
+  onPrinterAddSuccess: () => void;
 }
 
 const PrinterDialogs: React.FC<PrinterDialogsProps> = ({
@@ -31,7 +32,8 @@ const PrinterDialogs: React.FC<PrinterDialogsProps> = ({
   setSelectedPrinterId,
   isAdmin,
   onConfirmDelete,
-  onPrinterEditSuccess
+  onPrinterEditSuccess,
+  onPrinterAddSuccess
 }) => {
   return (
     <>
@@ -39,7 +41,10 @@ const PrinterDialogs: React.FC<PrinterDialogsProps> = ({
       <Dialog open={showAddPrinter} onOpenChange={setShowAddPrinter}>
         <DialogContent className="sm:max-w-[600px]">
           {showAddPrinter && (
-            <AddPrinterFormContainer onCancel={() => setShowAddPrinter(false)} />
+            <AddPrinterFormContainer 
+              onCancel={() => setShowAddPrinter(false)} 
+              onSuccess={onPrinterAddSuccess}
+            />
           )}
         </DialogContent>
       </Dialog>
