@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
@@ -20,8 +19,8 @@ const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
 }) => {
   return <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
       <div>
-        <h1 className="text-xl font-semibold">Analytics</h1>
-        <p className="text-muted-foreground">Printer usage insights and statistics</p>
+        
+        
       </div>
       
       <div className="flex items-center gap-3">
