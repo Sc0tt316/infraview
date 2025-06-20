@@ -42,25 +42,86 @@ function App() {
                   <Route path="/login" element={<Login />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
                   <Route
-                    path="/*"
+                    path="/"
                     element={
                       <ProtectedRoute>
                         <Layout>
-                          <Routes>
-                            <Route path="/" element={<Index />} />
-                            <Route path="/printers" element={<Printers />} />
-                            <Route path="/printers/:id" element={<PrinterDetail />} />
-                            <Route path="/users" element={<Users />} />
-                            <Route path="/alerts" element={<Alerts />} />
-                            <Route path="/analytics" element={<Analytics />} />
-                            <Route path="/activity" element={<Activity />} />
-                            <Route path="/settings" element={<Settings />} />
-                            <Route path="*" element={<NotFound />} />
-                          </Routes>
+                          <Index />
                         </Layout>
                       </ProtectedRoute>
                     }
                   />
+                  <Route
+                    path="/printers"
+                    element={
+                      <ProtectedRoute>
+                        <Layout>
+                          <Printers />
+                        </Layout>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/printers/:id"
+                    element={
+                      <ProtectedRoute>
+                        <Layout>
+                          <PrinterDetail />
+                        </Layout>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/users"
+                    element={
+                      <ProtectedRoute>
+                        <Layout>
+                          <Users />
+                        </Layout>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/alerts"
+                    element={
+                      <ProtectedRoute>
+                        <Layout>
+                          <Alerts />
+                        </Layout>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/analytics"
+                    element={
+                      <ProtectedRoute>
+                        <Layout>
+                          <Analytics />
+                        </Layout>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/activity"
+                    element={
+                      <ProtectedRoute>
+                        <Layout>
+                          <Activity />
+                        </Layout>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/settings"
+                    element={
+                      <ProtectedRoute>
+                        <Layout>
+                          <Settings />
+                        </Layout>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route path="*" element={<NotFound />} />
                 </Routes>
               </Suspense>
               <Toaster />
