@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -21,27 +20,33 @@ import { useUsersRealtime } from '@/hooks/useUsersRealtime';
 
 // Define the form schema for adding users
 const userFormSchema = z.object({
-  name: z.string().min(2, { message: "Name must be at least 2 characters." }),
+  name: z.string().min(2, {
+    message: "Name must be at least 2 characters."
+  }),
   email: z.string().email("Invalid email address."),
   role: z.enum(["admin", "user", "manager"]),
   department: z.string().optional(),
   phone: z.string().optional(),
-  password: z.string().min(6, { message: "Password must be at least 6 characters." })
+  password: z.string().min(6, {
+    message: "Password must be at least 6 characters."
+  })
 });
 
 // Define the form schema for editing users (removed status, added password)
 const editUserFormSchema = z.object({
-  name: z.string().min(2, { message: "Name must be at least 2 characters." }),
+  name: z.string().min(2, {
+    message: "Name must be at least 2 characters."
+  }),
   email: z.string().email("Invalid email address."),
   role: z.enum(["admin", "user", "manager"]),
   department: z.string().optional(),
   phone: z.string().optional(),
-  password: z.string().min(6, { message: "Password must be at least 6 characters." }).optional()
+  password: z.string().min(6, {
+    message: "Password must be at least 6 characters."
+  }).optional()
 });
-
 type UserFormValues = z.infer<typeof userFormSchema>;
 type EditUserFormValues = z.infer<typeof editUserFormSchema>;
-
 const Users = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
@@ -52,10 +57,10 @@ const Users = () => {
   const [showUserAddModal, setShowUserAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
-
-  const { user } = useAuth();
+  const {
+    user
+  } = useAuth();
   const isAdmin = user?.role === 'admin';
-  
   const {
     users,
     isLoading,
@@ -70,27 +75,35 @@ const Users = () => {
     const result = searchUsers(searchQuery, roleFiltered);
     setFilteredUsers(result);
   }, [searchQuery, roleFilter, users, filterUsersByRole, searchUsers]);
-
   const fetchUserLogs = async (userId: string) => {
     try {
-      const logs = [
-        { id: '1', action: 'Login', timestamp: new Date().toISOString(), details: 'User logged in successfully' },
-        { id: '2', action: 'Print job', timestamp: new Date(Date.now() - 86400000).toISOString(), details: 'User submitted print job "Document.pdf"' },
-        { id: '3', action: 'Password changed', timestamp: new Date(Date.now() - 172800000).toISOString(), details: 'User changed their password' }
-      ];
+      const logs = [{
+        id: '1',
+        action: 'Login',
+        timestamp: new Date().toISOString(),
+        details: 'User logged in successfully'
+      }, {
+        id: '2',
+        action: 'Print job',
+        timestamp: new Date(Date.now() - 86400000).toISOString(),
+        details: 'User submitted print job "Document.pdf"'
+      }, {
+        id: '3',
+        action: 'Password changed',
+        timestamp: new Date(Date.now() - 172800000).toISOString(),
+        details: 'User changed their password'
+      }];
       setUserLogs(logs);
     } catch (error) {
       console.error('Error fetching user logs:', error);
       setUserLogs([]);
     }
   };
-
   const handleRowClick = (userRow: User) => {
     setSelectedUser(userRow);
     fetchUserLogs(userRow.id);
     setShowUserDetails(true);
   };
-
   const handleCloseUserDetails = () => {
     setShowUserDetails(false);
     setTimeout(() => {
@@ -98,21 +111,18 @@ const Users = () => {
       setUserLogs([]);
     }, 300);
   };
-
   const handleAddUser = () => {
     setShowUserAddModal(true);
   };
-
   const handleEditUser = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (selectedUser && isAdmin) {
       setShowEditModal(true);
     }
   };
-
   const handleDeleteUser = async () => {
     if (!selectedUser || !isAdmin) return;
-    
+
     // Prevent admin from deleting their own account
     if (selectedUser.id === user?.id) {
       toast({
@@ -122,7 +132,6 @@ const Users = () => {
       });
       return;
     }
-    
     try {
       const success = await userService.deleteUser(selectedUser.id);
       if (success) {
@@ -136,7 +145,6 @@ const Users = () => {
       console.error("Error deleting user:", error);
     }
   };
-  
   const handleRefresh = async () => {
     setIsRefreshing(true);
     await refetch();
@@ -162,7 +170,7 @@ const Users = () => {
     defaultValues: {
       name: selectedUser?.name || "",
       email: selectedUser?.email || "",
-      role: (selectedUser?.role as "admin" | "user" | "manager") || "user",
+      role: selectedUser?.role as "admin" | "user" | "manager" || "user",
       department: selectedUser?.department || "",
       phone: selectedUser?.phone || "",
       password: ""
@@ -215,7 +223,6 @@ const Users = () => {
   // Handle editing an existing user
   const onEditUserSubmit = async (data: EditUserFormValues) => {
     if (!selectedUser) return;
-    
     try {
       const updatedUser = await userService.updateUser(selectedUser.id, data);
       if (updatedUser) {
@@ -240,53 +247,36 @@ const Users = () => {
   const renderStatusBadge = (status: string) => {
     switch (status) {
       case 'active':
-        return (
-          <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
+        return <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
             Active
-          </Badge>
-        );
+          </Badge>;
       case 'inactive':
-        return (
-          <Badge variant="outline" className="bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-100">
+        return <Badge variant="outline" className="bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-100">
             Inactive
-          </Badge>
-        );
+          </Badge>;
       case 'pending':
-        return (
-          <Badge variant="outline" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100">
+        return <Badge variant="outline" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100">
             Pending
-          </Badge>
-        );
+          </Badge>;
       default:
-        return (
-          <Badge variant="outline">
+        return <Badge variant="outline">
             {status || 'Unknown'}
-          </Badge>
-        );
+          </Badge>;
     }
   };
-
-  return (
-    <div className="space-y-6">
+  return <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold">Users</h1>
-          <p className="text-muted-foreground">Manage user accounts and permissions</p>
+          
+          
         </div>
         <div className="flex items-center gap-2">
-          <Button 
-            variant="outline" 
-            size="icon" 
-            onClick={handleRefresh} 
-            disabled={isLoading}
-          >
+          <Button variant="outline" size="icon" onClick={handleRefresh} disabled={isLoading}>
             <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
           </Button>
-          {isAdmin && (
-            <Button onClick={handleAddUser}>
+          {isAdmin && <Button onClick={handleAddUser}>
               <Plus className="h-4 w-4 mr-2" /> Add User
-            </Button>
-          )}
+            </Button>}
         </div>
       </div>
 
@@ -299,12 +289,7 @@ const Users = () => {
           <div className="flex flex-col md:flex-row gap-4 mb-6">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <Input 
-                placeholder="Search users..." 
-                value={searchQuery} 
-                onChange={e => setSearchQuery(e.target.value)} 
-                className="pl-9" 
-              />
+              <Input placeholder="Search users..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-9" />
             </div>
             <Select value={roleFilter} onValueChange={setRoleFilter}>
               <SelectTrigger className="w-full md:w-[180px]">
@@ -319,16 +304,11 @@ const Users = () => {
             </Select>
           </div>
 
-          {isLoading ? (
-            <div className="flex justify-center py-8">
+          {isLoading ? <div className="flex justify-center py-8">
               <RefreshCw className="h-8 w-8 animate-spin text-primary/70" />
-            </div>
-          ) : filteredUsers.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
+            </div> : filteredUsers.length === 0 ? <div className="text-center py-8 text-muted-foreground">
               No users found. Adjust your search or filters.
-            </div>
-          ) : (
-            <Table>
+            </div> : <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>User</TableHead>
@@ -338,22 +318,13 @@ const Users = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredUsers.map(userRow => (
-                  <TableRow 
-                    key={userRow.id} 
-                    className="cursor-pointer hover:bg-muted/70" 
-                    onClick={() => handleRowClick(userRow)}
-                  >
+                {filteredUsers.map(userRow => <TableRow key={userRow.id} className="cursor-pointer hover:bg-muted/70" onClick={() => handleRowClick(userRow)}>
                     <TableCell className="font-medium">
                       <div className="flex items-center gap-3">
                         <Avatar className="h-8 w-8">
-                          {userRow.profileImage ? (
-                            <AvatarImage src={userRow.profileImage} alt={userRow.name} />
-                          ) : (
-                            <AvatarFallback>
+                          {userRow.profileImage ? <AvatarImage src={userRow.profileImage} alt={userRow.name} /> : <AvatarFallback>
                               {userRow.name?.charAt(0) || 'U'}
-                            </AvatarFallback>
-                          )}
+                            </AvatarFallback>}
                         </Avatar>
                         <span>{userRow.name}</span>
                       </div>
@@ -367,17 +338,14 @@ const Users = () => {
                     <TableCell>
                       {renderStatusBadge(userRow.status || 'active')}
                     </TableCell>
-                  </TableRow>
-                ))}
+                  </TableRow>)}
               </TableBody>
-            </Table>
-          )}
+            </Table>}
         </CardContent>
       </Card>
 
       {/* User Detail Modal */}
-      {selectedUser && (
-        <Dialog open={showUserDetails} onOpenChange={handleCloseUserDetails}>
+      {selectedUser && <Dialog open={showUserDetails} onOpenChange={handleCloseUserDetails}>
           <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
               <DialogTitle>User Details</DialogTitle>
@@ -388,13 +356,9 @@ const Users = () => {
             <div className="py-4 space-y-6">
               <div className="flex flex-col items-center gap-4">
                 <Avatar className="h-20 w-20">
-                  {selectedUser.profileImage ? (
-                    <AvatarImage src={selectedUser.profileImage} alt={selectedUser.name} />
-                  ) : (
-                    <AvatarFallback className="text-xl">
+                  {selectedUser.profileImage ? <AvatarImage src={selectedUser.profileImage} alt={selectedUser.name} /> : <AvatarFallback className="text-xl">
                       {selectedUser.name?.charAt(0) || 'U'}
-                    </AvatarFallback>
-                  )}
+                    </AvatarFallback>}
                 </Avatar>
                 <div className="text-center">
                   <h3 className="text-xl font-semibold">{selectedUser.name}</h3>
@@ -406,18 +370,14 @@ const Users = () => {
               </div>
               
               <div className="border rounded-md p-4 space-y-4">
-                {selectedUser.department && (
-                  <div className="flex justify-between">
+                {selectedUser.department && <div className="flex justify-between">
                     <span className="text-muted-foreground">Department:</span>
                     <span>{selectedUser.department}</span>
-                  </div>
-                )}
-                {selectedUser.phone && (
-                  <div className="flex justify-between">
+                  </div>}
+                {selectedUser.phone && <div className="flex justify-between">
                     <span className="text-muted-foreground">Phone:</span>
                     <span>{selectedUser.phone}</span>
-                  </div>
-                )}
+                  </div>}
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Status:</span>
                   {renderStatusBadge(selectedUser.status || 'active')}
@@ -427,10 +387,8 @@ const Users = () => {
               {/* User Activity Logs */}
               <div>
                 <h4 className="text-sm font-medium mb-3">Recent Activity</h4>
-                {userLogs.length > 0 ? (
-                  <div className="border rounded-md divide-y">
-                    {userLogs.map((log) => (
-                      <div key={log.id} className="p-3">
+                {userLogs.length > 0 ? <div className="border rounded-md divide-y">
+                    {userLogs.map(log => <div key={log.id} className="p-3">
                         <div className="flex justify-between items-center mb-1">
                           <span className="font-medium text-sm">{log.action}</span>
                           <span className="text-xs text-muted-foreground">
@@ -438,41 +396,29 @@ const Users = () => {
                           </span>
                         </div>
                         <p className="text-sm text-muted-foreground">{log.details}</p>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-4 border rounded-md text-muted-foreground">
+                      </div>)}
+                  </div> : <div className="text-center py-4 border rounded-md text-muted-foreground">
                     No recent activity found for this user.
-                  </div>
-                )}
+                  </div>}
               </div>
               
               <div className="flex gap-2 justify-end">
                 <Button variant="outline" onClick={handleCloseUserDetails}>
                   Close
                 </Button>
-                {isAdmin && (
-                  <>
+                {isAdmin && <>
                     <Button onClick={handleEditUser}>
                       <Edit className="h-4 w-4 mr-2" />
                       Edit User
                     </Button>
-                    {selectedUser.id !== user?.id && (
-                      <Button 
-                        variant="destructive" 
-                        onClick={handleDeleteUser}
-                      >
+                    {selectedUser.id !== user?.id && <Button variant="destructive" onClick={handleDeleteUser}>
                         Delete User
-                      </Button>
-                    )}
-                  </>
-                )}
+                      </Button>}
+                  </>}
               </div>
             </div>
           </DialogContent>
-        </Dialog>
-      )}
+        </Dialog>}
 
       {/* Add User Modal */}
       <Dialog open={showUserAddModal} onOpenChange={setShowUserAddModal}>
@@ -486,58 +432,41 @@ const Users = () => {
           <div className="py-4">
             <Form {...addUserForm}>
               <form className="space-y-4" onSubmit={addUserForm.handleSubmit(onAddUserSubmit)}>
-                <FormField
-                  control={addUserForm.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
+                <FormField control={addUserForm.control} name="name" render={({
+                field
+              }) => <FormItem>
                       <FormLabel>Name</FormLabel>
                       <FormControl>
                         <Input placeholder="Enter user name" {...field} />
                       </FormControl>
                       <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                    </FormItem>} />
                 
-                <FormField
-                  control={addUserForm.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
+                <FormField control={addUserForm.control} name="email" render={({
+                field
+              }) => <FormItem>
                       <FormLabel>Email</FormLabel>
                       <FormControl>
                         <Input type="email" placeholder="user@example.com" {...field} />
                       </FormControl>
                       <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                    </FormItem>} />
                 
-                <FormField
-                  control={addUserForm.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
+                <FormField control={addUserForm.control} name="password" render={({
+                field
+              }) => <FormItem>
                       <FormLabel>Password</FormLabel>
                       <FormControl>
                         <Input type="password" placeholder="Enter password" {...field} />
                       </FormControl>
                       <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                    </FormItem>} />
                 
-                <FormField
-                  control={addUserForm.control}
-                  name="role"
-                  render={({ field }) => (
-                    <FormItem>
+                <FormField control={addUserForm.control} name="role" render={({
+                field
+              }) => <FormItem>
                       <FormLabel>Role</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select a role" />
@@ -550,37 +479,27 @@ const Users = () => {
                         </SelectContent>
                       </Select>
                       <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                    </FormItem>} />
                 
-                <FormField
-                  control={addUserForm.control}
-                  name="department"
-                  render={({ field }) => (
-                    <FormItem>
+                <FormField control={addUserForm.control} name="department" render={({
+                field
+              }) => <FormItem>
                       <FormLabel>Department</FormLabel>
                       <FormControl>
                         <Input placeholder="Department (Optional)" {...field} />
                       </FormControl>
                       <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                    </FormItem>} />
                 
-                <FormField
-                  control={addUserForm.control}
-                  name="phone"
-                  render={({ field }) => (
-                    <FormItem>
+                <FormField control={addUserForm.control} name="phone" render={({
+                field
+              }) => <FormItem>
                       <FormLabel>Phone</FormLabel>
                       <FormControl>
                         <Input placeholder="+212 6XX XXX XXX" {...field} />
                       </FormControl>
                       <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                    </FormItem>} />
                 
                 <div className="flex justify-end gap-2">
                   <Button variant="outline" type="button" onClick={() => setShowUserAddModal(false)}>
@@ -608,58 +527,41 @@ const Users = () => {
           <div className="py-4">
             <Form {...editUserForm}>
               <form className="space-y-4" onSubmit={editUserForm.handleSubmit(onEditUserSubmit)}>
-                <FormField
-                  control={editUserForm.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
+                <FormField control={editUserForm.control} name="name" render={({
+                field
+              }) => <FormItem>
                       <FormLabel>Name</FormLabel>
                       <FormControl>
                         <Input placeholder="Enter user name" {...field} />
                       </FormControl>
                       <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                    </FormItem>} />
                 
-                <FormField
-                  control={editUserForm.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
+                <FormField control={editUserForm.control} name="email" render={({
+                field
+              }) => <FormItem>
                       <FormLabel>Email</FormLabel>
                       <FormControl>
                         <Input type="email" placeholder="user@example.com" {...field} />
                       </FormControl>
                       <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                    </FormItem>} />
                 
-                <FormField
-                  control={editUserForm.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
+                <FormField control={editUserForm.control} name="password" render={({
+                field
+              }) => <FormItem>
                       <FormLabel>New Password (Optional)</FormLabel>
                       <FormControl>
                         <Input type="password" placeholder="Enter new password to change" {...field} />
                       </FormControl>
                       <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                    </FormItem>} />
                 
-                <FormField
-                  control={editUserForm.control}
-                  name="role"
-                  render={({ field }) => (
-                    <FormItem>
+                <FormField control={editUserForm.control} name="role" render={({
+                field
+              }) => <FormItem>
                       <FormLabel>Role</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select a role" />
@@ -672,37 +574,27 @@ const Users = () => {
                         </SelectContent>
                       </Select>
                       <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                    </FormItem>} />
                 
-                <FormField
-                  control={editUserForm.control}
-                  name="department"
-                  render={({ field }) => (
-                    <FormItem>
+                <FormField control={editUserForm.control} name="department" render={({
+                field
+              }) => <FormItem>
                       <FormLabel>Department</FormLabel>
                       <FormControl>
                         <Input placeholder="Department (Optional)" {...field} />
                       </FormControl>
                       <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                    </FormItem>} />
                 
-                <FormField
-                  control={editUserForm.control}
-                  name="phone"
-                  render={({ field }) => (
-                    <FormItem>
+                <FormField control={editUserForm.control} name="phone" render={({
+                field
+              }) => <FormItem>
                       <FormLabel>Phone</FormLabel>
                       <FormControl>
                         <Input placeholder="Phone number (Optional)" {...field} />
                       </FormControl>
                       <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                    </FormItem>} />
                 
                 <div className="flex justify-end gap-2">
                   <Button variant="outline" type="button" onClick={() => setShowEditModal(false)}>
@@ -717,8 +609,6 @@ const Users = () => {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
-  );
+    </div>;
 };
-
 export default Users;
