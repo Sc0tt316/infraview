@@ -7,13 +7,13 @@ import { useEffect } from "react"
 export function Toaster() {
   const { toasts, dismiss } = useToast()
 
-  // Auto-dismiss toasts after 5 seconds
+  // Auto-dismiss toasts after 3 seconds
   useEffect(() => {
     toasts.forEach((toast) => {
       if (toast.id) {
         const timer = setTimeout(() => {
           dismiss(String(toast.id));
-        }, 5000);
+        }, 3000);
         
         return () => clearTimeout(timer);
       }
@@ -41,7 +41,11 @@ export function Toaster() {
             data-state="open"
             role="status"
             aria-live="polite"
-            onClick={() => id && dismiss(String(id))}
+            onClick={() => {
+              if (id) {
+                dismiss(String(id));
+              }
+            }}
             {...props}
           >
             <div className="grid gap-1">

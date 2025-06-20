@@ -29,14 +29,14 @@ const Logo: React.FC<LogoProps> = ({ size = 'md', className }) => {
       >
         <img 
           src="/lovable-uploads/79c40e69-54c0-4cbd-a41c-369e4c8bb316.png" 
-          alt="M-Printer Logo" 
+          alt="M-InfraView Logo" 
           className={cn(
             "object-contain",
             sizeClasses[validSize].logo
           )}
         />
       </div>
-      <span className={cn("font-medium text-primary truncate", sizeClasses[validSize].text)}>M-Printer</span>
+      <span className={cn("font-medium text-primary truncate", sizeClasses[validSize].text)}>M-InfraView</span>
     </Link>
   );
 };
