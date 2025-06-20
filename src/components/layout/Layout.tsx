@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import NotificationDropdown from "./NotificationDropdown";
+import { supabase } from "@/integrations/supabase/client";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -34,12 +35,36 @@ const sidebarLinks = [
 ];
 
 const Layout = ({ children }: LayoutProps) => {
-  const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
+  const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [userProfile, setUserProfile] = useState<any>(null);
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
+
+  // Fetch user profile with image
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (user?.id) {
+        try {
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+          
+          if (data && !error) {
+            setUserProfile(data);
+          }
+        } catch (error) {
+          console.error('Error fetching user profile:', error);
+        }
+      }
+    };
+
+    fetchUserProfile();
+  }, [user?.id]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -58,15 +83,12 @@ const Layout = ({ children }: LayoutProps) => {
 
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth >= 1024) {
-        setIsSidebarExpanded(true);
-      } else {
+      if (window.innerWidth < 1024) {
         setIsSidebarExpanded(false);
       }
     };
 
     handleResize();
-
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
@@ -86,17 +108,17 @@ const Layout = ({ children }: LayoutProps) => {
     <div className={cn("flex h-screen overflow-hidden bg-background dark:bg-gray-900")}>
       <motion.aside
         className={cn(
-          "fixed inset-y-0 left-0 z-30 bg-white/90 dark:bg-gray-900/90 backdrop-blur-lg border-r border-border/40 shadow-lg transition-all duration-300 ease-in-out lg:relative lg:shadow-none"
+          "fixed inset-y-0 left-0 z-30 bg-white/90 dark:bg-gray-900/90 backdrop-blur-lg border-r border-border/40 shadow-lg transition-all duration-300 ease-in-out lg:relative lg:shadow-none overflow-hidden"
         )}
         animate={{ 
-          width: isSidebarExpanded ? 288 : 80
+          width: isSidebarExpanded ? 256 : 80
         }}
         transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
       >
         <div className="flex flex-col h-full">
-          <div className="flex items-center justify-between p-6 border-b border-border/40">
-            <Link to="/" className="flex items-center gap-3">
-              <div className="h-10 w-10 bg-[#300054] flex items-center justify-center rounded-md border border-[#ff6b6b]">
+          <div className="flex items-center justify-between p-6 border-b border-border/40 min-h-[80px]">
+            <Link to="/" className="flex items-center gap-3 min-w-0">
+              <div className="h-10 w-10 bg-[#300054] flex items-center justify-center rounded-md border border-[#ff6b6b] flex-shrink-0">
                 <img 
                   src="/lovable-uploads/79c40e69-54c0-4cbd-a41c-369e4c8bb316.png" 
                   alt="M-Printer Logo" 
@@ -110,7 +132,7 @@ const Layout = ({ children }: LayoutProps) => {
                     animate={{ opacity: 1, width: "auto" }}
                     exit={{ opacity: 0, width: 0 }}
                     transition={{ duration: 0.2 }}
-                    className="text-xl font-medium text-primary truncate"
+                    className="text-xl font-medium text-primary truncate whitespace-nowrap"
                   >
                     M-Printer
                   </motion.span>
@@ -119,7 +141,7 @@ const Layout = ({ children }: LayoutProps) => {
             </Link>
             <button 
               onClick={toggleSidebar}
-              className="lg:hidden p-1 rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+              className="lg:hidden p-1 rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors flex-shrink-0"
             >
               <X size={20} />
             </button>
@@ -136,7 +158,7 @@ const Layout = ({ children }: LayoutProps) => {
                     <Link
                       to={link.path}
                       className={cn(
-                        "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 relative",
+                        "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 relative min-w-0",
                         isActive 
                           ? "bg-primary/10 text-primary dark:bg-primary/20" 
                           : "text-muted-foreground hover:bg-accent hover:text-foreground dark:hover:bg-gray-800"
@@ -145,6 +167,7 @@ const Layout = ({ children }: LayoutProps) => {
                       <motion.span
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.95 }}
+                        className="flex-shrink-0"
                       >
                         <IconComponent size={18} className={isActive ? "text-primary" : ""}/>
                       </motion.span>
@@ -155,6 +178,7 @@ const Layout = ({ children }: LayoutProps) => {
                             animate={{ opacity: 1, width: "auto" }}
                             exit={{ opacity: 0, width: 0 }}
                             transition={{ duration: 0.2 }}
+                            className="truncate whitespace-nowrap"
                           >
                             {link.label}
                           </motion.span>
@@ -175,12 +199,15 @@ const Layout = ({ children }: LayoutProps) => {
           </nav>
 
           <div className="mt-auto p-4 border-t border-border/40 dark:border-gray-800">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src="" alt={user?.name || "User"} />
+            <div className="flex items-center justify-between min-w-0">
+              <div className="flex items-center gap-3 min-w-0 flex-1">
+                <Avatar className="h-8 w-8 flex-shrink-0">
+                  <AvatarImage 
+                    src={userProfile?.profile_image || ""} 
+                    alt={userProfile?.name || user?.name || "User"} 
+                  />
                   <AvatarFallback className="bg-primary/10 text-primary">
-                    {user?.name?.charAt(0) || 'U'}
+                    {(userProfile?.name || user?.name || 'U').charAt(0)}
                   </AvatarFallback>
                 </Avatar>
                 <AnimatePresence>
@@ -190,10 +217,14 @@ const Layout = ({ children }: LayoutProps) => {
                       animate={{ opacity: 1, width: "auto" }}
                       exit={{ opacity: 0, width: 0 }}
                       transition={{ duration: 0.2 }}
-                      className="flex-1"
+                      className="flex-1 min-w-0"
                     >
-                      <p className="text-sm font-medium">{user?.name || "User"}</p>
-                      <p className="text-xs text-muted-foreground">{user?.email || "user@example.com"}</p>
+                      <p className="text-sm font-medium truncate">
+                        {userProfile?.name || user?.name || "User"}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {userProfile?.email || user?.email || "user@example.com"}
+                      </p>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -204,12 +235,12 @@ const Layout = ({ children }: LayoutProps) => {
               <Button
                 variant="ghost"
                 className={cn(
-                  "flex items-center gap-2 rounded-lg text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors",
-                  isSidebarExpanded ? "px-4 py-2 justify-start" : "p-2 justify-center"
+                  "flex items-center gap-2 rounded-lg text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors min-w-0",
+                  isSidebarExpanded ? "px-4 py-2 justify-start w-full" : "p-2 justify-center"
                 )}
                 onClick={() => navigate('/settings')}
               >
-                <Settings size={16} />
+                <Settings size={16} className="flex-shrink-0" />
                 <AnimatePresence>
                   {isSidebarExpanded && (
                     <motion.span
@@ -217,6 +248,7 @@ const Layout = ({ children }: LayoutProps) => {
                       animate={{ opacity: 1, width: "auto" }}
                       exit={{ opacity: 0, width: 0 }}
                       transition={{ duration: 0.2 }}
+                      className="truncate whitespace-nowrap"
                     >
                       Settings
                     </motion.span>
@@ -227,12 +259,12 @@ const Layout = ({ children }: LayoutProps) => {
               <Button
                 variant="ghost"
                 className={cn(
-                  "flex items-center gap-2 rounded-lg text-sm font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors",
-                  isSidebarExpanded ? "px-4 py-2 justify-start" : "p-2 justify-center"
+                  "flex items-center gap-2 rounded-lg text-sm font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors min-w-0",
+                  isSidebarExpanded ? "px-4 py-2 justify-start w-full" : "p-2 justify-center"
                 )}
                 onClick={handleLogout}
               >
-                <LogOut size={16} />
+                <LogOut size={16} className="flex-shrink-0" />
                 <AnimatePresence>
                   {isSidebarExpanded && (
                     <motion.span
@@ -240,6 +272,7 @@ const Layout = ({ children }: LayoutProps) => {
                       animate={{ opacity: 1, width: "auto" }}
                       exit={{ opacity: 0, width: 0 }}
                       transition={{ duration: 0.2 }}
+                      className="truncate whitespace-nowrap"
                     >
                       Logout
                     </motion.span>
@@ -251,10 +284,7 @@ const Layout = ({ children }: LayoutProps) => {
         </div>
       </motion.aside>
 
-      <div className={cn(
-        "relative flex flex-col flex-1 overflow-y-auto transition-all duration-300",
-        isSidebarExpanded ? "lg:ml-72" : "lg:ml-20"
-      )}>
+      <div className="flex flex-col flex-1 overflow-hidden">
         <header 
           className={cn(
             "sticky top-0 z-10 w-full bg-background/70 dark:bg-gray-900/70 backdrop-blur-lg transition-all duration-200",
@@ -287,7 +317,7 @@ const Layout = ({ children }: LayoutProps) => {
           </div>
         </header>
 
-        <main className="flex-1 p-4 lg:p-6 dark:bg-gray-900 transition-colors duration-200">
+        <main className="flex-1 p-4 lg:p-6 dark:bg-gray-900 transition-colors duration-200 overflow-auto">
           {children}
         </main>
       </div>
