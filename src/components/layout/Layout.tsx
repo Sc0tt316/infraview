@@ -34,7 +34,7 @@ const sidebarLinks = [
 ];
 
 const Layout = ({ children }: LayoutProps) => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
@@ -54,20 +54,14 @@ const Layout = ({ children }: LayoutProps) => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
-
-  useEffect(() => {
-    if (window.innerWidth < 1024) {
-      setIsSidebarOpen(false);
-    }
-  }, [location.pathname]);
+  const toggleSidebar = () => setIsSidebarExpanded(!isSidebarExpanded);
 
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 1024) {
-        setIsSidebarOpen(true);
+        setIsSidebarExpanded(true);
       } else {
-        setIsSidebarOpen(false);
+        setIsSidebarExpanded(false);
       }
     };
 
@@ -90,27 +84,12 @@ const Layout = ({ children }: LayoutProps) => {
 
   return (
     <div className={cn("flex h-screen overflow-hidden bg-background dark:bg-gray-900")}>
-      <AnimatePresence>
-        {isSidebarOpen && window.innerWidth < 1024 && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-20 bg-black/20 backdrop-blur-sm dark:bg-black/50 lg:hidden"
-            onClick={() => setIsSidebarOpen(false)}
-          />
-        )}
-      </AnimatePresence>
-
       <motion.aside
         className={cn(
-          "fixed inset-y-0 left-0 z-30 w-72 bg-white/90 dark:bg-gray-900/90 backdrop-blur-lg border-r border-border/40 shadow-lg transform transition-transform duration-300 ease-in-out lg:relative lg:shadow-none",
-          isSidebarOpen ? "translate-x-0" : "-translate-x-full lg:w-0 lg:opacity-0"
+          "fixed inset-y-0 left-0 z-30 bg-white/90 dark:bg-gray-900/90 backdrop-blur-lg border-r border-border/40 shadow-lg transition-all duration-300 ease-in-out lg:relative lg:shadow-none"
         )}
         animate={{ 
-          x: isSidebarOpen ? 0 : -288,
-          width: isSidebarOpen ? 288 : 0
+          width: isSidebarExpanded ? 288 : 80
         }}
         transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
       >
@@ -124,10 +103,22 @@ const Layout = ({ children }: LayoutProps) => {
                   className="h-8 w-8 object-contain"
                 />
               </div>
-              <span className="text-xl font-medium text-primary truncate">M-Printer</span>
+              <AnimatePresence>
+                {isSidebarExpanded && (
+                  <motion.span 
+                    initial={{ opacity: 0, width: 0 }}
+                    animate={{ opacity: 1, width: "auto" }}
+                    exit={{ opacity: 0, width: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="text-xl font-medium text-primary truncate"
+                  >
+                    M-Printer
+                  </motion.span>
+                )}
+              </AnimatePresence>
             </Link>
             <button 
-              onClick={() => setIsSidebarOpen(false)}
+              onClick={toggleSidebar}
               className="lg:hidden p-1 rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
             >
               <X size={20} />
@@ -145,7 +136,7 @@ const Layout = ({ children }: LayoutProps) => {
                     <Link
                       to={link.path}
                       className={cn(
-                        "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200",
+                        "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 relative",
                         isActive 
                           ? "bg-primary/10 text-primary dark:bg-primary/20" 
                           : "text-muted-foreground hover:bg-accent hover:text-foreground dark:hover:bg-gray-800"
@@ -157,7 +148,18 @@ const Layout = ({ children }: LayoutProps) => {
                       >
                         <IconComponent size={18} className={isActive ? "text-primary" : ""}/>
                       </motion.span>
-                      <span>{link.label}</span>
+                      <AnimatePresence>
+                        {isSidebarExpanded && (
+                          <motion.span
+                            initial={{ opacity: 0, width: 0 }}
+                            animate={{ opacity: 1, width: "auto" }}
+                            exit={{ opacity: 0, width: 0 }}
+                            transition={{ duration: 0.2 }}
+                          >
+                            {link.label}
+                          </motion.span>
+                        )}
+                      </AnimatePresence>
                       {isActive && (
                         <motion.div
                           layoutId="sidebar-indicator"
@@ -181,30 +183,68 @@ const Layout = ({ children }: LayoutProps) => {
                     {user?.name?.charAt(0) || 'U'}
                   </AvatarFallback>
                 </Avatar>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">{user?.name || "User"}</p>
-                  <p className="text-xs text-muted-foreground">{user?.email || "user@example.com"}</p>
-                </div>
+                <AnimatePresence>
+                  {isSidebarExpanded && (
+                    <motion.div 
+                      initial={{ opacity: 0, width: 0 }}
+                      animate={{ opacity: 1, width: "auto" }}
+                      exit={{ opacity: 0, width: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="flex-1"
+                    >
+                      <p className="text-sm font-medium">{user?.name || "User"}</p>
+                      <p className="text-xs text-muted-foreground">{user?.email || "user@example.com"}</p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </div>
             
-            <div className="flex flex-col mt-3 space-y-2">
+            <div className={cn("flex mt-3", isSidebarExpanded ? "flex-col space-y-2" : "flex-col space-y-2 items-center")}>
               <Button
                 variant="ghost"
-                className="flex items-center gap-2 px-4 py-2 justify-start rounded-lg text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
+                className={cn(
+                  "flex items-center gap-2 rounded-lg text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors",
+                  isSidebarExpanded ? "px-4 py-2 justify-start" : "p-2 justify-center"
+                )}
                 onClick={() => navigate('/settings')}
               >
                 <Settings size={16} />
-                <span>Settings</span>
+                <AnimatePresence>
+                  {isSidebarExpanded && (
+                    <motion.span
+                      initial={{ opacity: 0, width: 0 }}
+                      animate={{ opacity: 1, width: "auto" }}
+                      exit={{ opacity: 0, width: 0 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      Settings
+                    </motion.span>
+                  )}
+                </AnimatePresence>
               </Button>
               
               <Button
                 variant="ghost"
-                className="flex items-center gap-2 px-4 py-2 justify-start rounded-lg text-sm font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                className={cn(
+                  "flex items-center gap-2 rounded-lg text-sm font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors",
+                  isSidebarExpanded ? "px-4 py-2 justify-start" : "p-2 justify-center"
+                )}
                 onClick={handleLogout}
               >
                 <LogOut size={16} />
-                <span>Logout</span>
+                <AnimatePresence>
+                  {isSidebarExpanded && (
+                    <motion.span
+                      initial={{ opacity: 0, width: 0 }}
+                      animate={{ opacity: 1, width: "auto" }}
+                      exit={{ opacity: 0, width: 0 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      Logout
+                    </motion.span>
+                  )}
+                </AnimatePresence>
               </Button>
             </div>
           </div>
@@ -213,7 +253,7 @@ const Layout = ({ children }: LayoutProps) => {
 
       <div className={cn(
         "relative flex flex-col flex-1 overflow-y-auto transition-all duration-300",
-        !isSidebarOpen && "lg:w-full"
+        isSidebarExpanded ? "lg:ml-72" : "lg:ml-20"
       )}>
         <header 
           className={cn(
@@ -223,7 +263,7 @@ const Layout = ({ children }: LayoutProps) => {
         >
           <div className="flex items-center justify-between p-4 lg:px-6">
             <button 
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              onClick={toggleSidebar}
               className="p-2 rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
             >
               <Menu size={20} />
