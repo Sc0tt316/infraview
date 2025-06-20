@@ -45,9 +45,7 @@ function App() {
                     path="/"
                     element={
                       <ProtectedRoute>
-                        <Layout>
-                          <Index />
-                        </Layout>
+                        <Index />
                       </ProtectedRoute>
                     }
                   />
@@ -55,9 +53,7 @@ function App() {
                     path="/printers"
                     element={
                       <ProtectedRoute>
-                        <Layout>
-                          <Printers />
-                        </Layout>
+                        <Printers />
                       </ProtectedRoute>
                     }
                   />
@@ -65,9 +61,7 @@ function App() {
                     path="/printers/:id"
                     element={
                       <ProtectedRoute>
-                        <Layout>
-                          <PrinterDetail />
-                        </Layout>
+                        <PrinterDetail />
                       </ProtectedRoute>
                     }
                   />
@@ -75,9 +69,7 @@ function App() {
                     path="/users"
                     element={
                       <ProtectedRoute>
-                        <Layout>
-                          <Users />
-                        </Layout>
+                        <Users />
                       </ProtectedRoute>
                     }
                   />
@@ -85,9 +77,7 @@ function App() {
                     path="/alerts"
                     element={
                       <ProtectedRoute>
-                        <Layout>
-                          <Alerts />
-                        </Layout>
+                        <Alerts />
                       </ProtectedRoute>
                     }
                   />
@@ -95,9 +85,7 @@ function App() {
                     path="/analytics"
                     element={
                       <ProtectedRoute>
-                        <Layout>
-                          <Analytics />
-                        </Layout>
+                        <Analytics />
                       </ProtectedRoute>
                     }
                   />
@@ -105,9 +93,7 @@ function App() {
                     path="/activity"
                     element={
                       <ProtectedRoute>
-                        <Layout>
-                          <Activity />
-                        </Layout>
+                        <Activity />
                       </ProtectedRoute>
                     }
                   />
@@ -115,9 +101,7 @@ function App() {
                     path="/settings"
                     element={
                       <ProtectedRoute>
-                        <Layout>
-                          <Settings />
-                        </Layout>
+                        <Settings />
                       </ProtectedRoute>
                     }
                   />
