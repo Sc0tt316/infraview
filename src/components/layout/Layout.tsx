@@ -195,7 +195,7 @@ const Layout = ({
 
           <div className="mt-auto p-4 border-t border-border/40 dark:border-gray-800">
             <div className="flex items-center justify-between min-w-0">
-              <div className="flex items-center gap-3 min-w-0 flex-1 mx-[9px]">
+              <div className="flex items-center gap-3 min-w-0 flex-1 mx-[8px]">
                 <Avatar className="h-8 w-8 flex-shrink-0">
                   <AvatarImage src={userProfile?.profile_image || ""} alt={userProfile?.name || user?.name || "User"} />
                   <AvatarFallback className="bg-primary/10 text-primary">
