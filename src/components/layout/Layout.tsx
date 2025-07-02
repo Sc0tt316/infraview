@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Menu, X, Home, Printer, Users as UsersIcon, BarChart2, LogOut, Settings } from "lucide-react";
+import { Menu, X, Home, Printer, Server, Users as UsersIcon, BarChart2, LogOut, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
@@ -13,27 +13,38 @@ import { supabase } from "@/integrations/supabase/client";
 interface LayoutProps {
   children: React.ReactNode;
 }
-const sidebarLinks = [{
-  path: "/",
-  label: "Dashboard",
-  icon: Home
-}, {
-  path: "/printers",
-  label: "Printers",
-  icon: Printer
-}, {
-  path: "/users",
-  label: "Users",
-  icon: UsersIcon
-}, {
-  path: "/analytics",
-  label: "Analytics",
-  icon: BarChart2
-}, {
-  path: "/alerts",
-  label: "Alerts",
-  icon: Settings
-}];
+const sidebarLinks = [
+  {
+    path: "/",
+    label: "Dashboard",
+    icon: Home
+  },
+  {
+    path: "/printers",
+    label: "Printers",
+    icon: Printer
+  },
+  {
+    path: "/servers",
+    label: "Servers",
+    icon: Server
+  },
+  {
+    path: "/users",
+    label: "Users",
+    icon: UsersIcon
+  },
+  {
+    path: "/analytics",
+    label: "Analytics",
+    icon: BarChart2
+  },
+  {
+    path: "/alerts",
+    label: "Alerts",
+    icon: Settings
+  }
+];
 const Layout = ({
   children
 }: LayoutProps) => {

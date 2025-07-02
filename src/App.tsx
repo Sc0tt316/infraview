@@ -11,6 +11,7 @@ import Login from "./pages/Login";
 import ResetPassword from "./pages/ResetPassword";
 import Printers from "./pages/Printers";
 import PrinterDetail from "./pages/PrinterDetail";
+import Servers from "./pages/Servers";
 import Users from "./pages/Users";
 import Alerts from "./pages/Alerts";
 import Analytics from "./pages/Analytics";
@@ -62,6 +63,14 @@ function App() {
                     element={
                       <ProtectedRoute>
                         <PrinterDetail />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/servers"
+                    element={
+                      <ProtectedRoute>
+                        <Servers />
                       </ProtectedRoute>
                     }
                   />
