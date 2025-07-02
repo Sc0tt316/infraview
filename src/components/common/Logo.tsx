@@ -22,12 +22,12 @@ const Logo: React.FC<LogoProps> = ({ size = 'md', className }) => {
     <Link to="/" className="flex items-center gap-3">
       <div 
         className={cn(
-          "bg-[#300054] flex items-center justify-center rounded-md border border-[#ff6b6b] transition-transform duration-500 hover:rotate-[360deg]",
+          "bg-primary flex items-center justify-center rounded-md border transition-transform duration-500 hover:rotate-[360deg]",
           sizeClasses[validSize].container,
           className
         )}
       >
-        <span className={cn("text-[#ff6b6b] font-bold", sizeClasses[validSize].text)}>M</span>
+        <span className={cn("text-primary-foreground font-bold", sizeClasses[validSize].text)}>M</span>
       </div>
       <span className={cn("font-medium text-primary truncate", sizeClasses[validSize].text)}>M-InfraView</span>
     </Link>
