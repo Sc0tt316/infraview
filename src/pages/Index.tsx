@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import MainDashboard from '@/components/dashboard/MainDashboard';
 import { usePrinters } from '@/hooks/usePrinters';
+import { useServers } from '@/hooks/useServers';
 import { useQuery } from '@tanstack/react-query';
 import { printerService } from '@/services/printer';
 import { analyticsService } from '@/services/analytics';
@@ -16,6 +17,7 @@ const Index: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { printers = [], refetch: refetchPrinters } = usePrinters();
+  const { servers = [], refetch: refetchServers } = useServers();
   const [alerts, setAlerts] = useState([]);
   
   // Auto-refresh interval in milliseconds (30 seconds)
@@ -56,13 +58,14 @@ const Index: React.FC = () => {
     try {
       await Promise.all([
         refetchPrinters(),
+        refetchServers(),
         refetchActivities(),
         fetchAlerts()
       ]);
     } catch (error) {
       console.error('Error refreshing dashboard data:', error);
     }
-  }, [refetchPrinters, refetchActivities]);
+  }, [refetchPrinters, refetchServers, refetchActivities]);
 
   // Fetch alerts from database
   const fetchAlerts = async () => {
@@ -136,7 +139,8 @@ const Index: React.FC = () => {
 
   return (
     <MainDashboard 
-      printers={printers} 
+      printers={printers}
+      servers={servers}
       recentActivities={recentActivities} 
       alerts={alerts}
       onViewAllAlerts={handleViewAllAlerts}
