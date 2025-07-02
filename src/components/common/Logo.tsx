@@ -27,14 +27,7 @@ const Logo: React.FC<LogoProps> = ({ size = 'md', className }) => {
           className
         )}
       >
-        <img 
-          src="/lovable-uploads/79c40e69-54c0-4cbd-a41c-369e4c8bb316.png" 
-          alt="M-InfraView Logo" 
-          className={cn(
-            "object-contain",
-            sizeClasses[validSize].logo
-          )}
-        />
+        <span className={cn("text-[#ff6b6b] font-bold", sizeClasses[validSize].text)}>M</span>
       </div>
       <span className={cn("font-medium text-primary truncate", sizeClasses[validSize].text)}>M-InfraView</span>
     </Link>

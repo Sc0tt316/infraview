@@ -2,7 +2,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { Home, Printer, Users, BarChart2, BellRing, Settings, LogOut } from 'lucide-react';
+import { Home, Printer, Users, BarChart2, Bell, Settings, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
 import { User } from '@/types/user';
@@ -40,8 +40,8 @@ const Sidebar: React.FC<SidebarProps> = ({
     href: '/printers',
     icon: Printer
   }, {
-    name: 'Users',
-    href: '/users',
+    name: 'Servers',
+    href: '/servers',
     icon: Users
   }, {
     name: 'Analytics',
@@ -50,7 +50,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   }, {
     name: 'Alerts',
     href: '/alerts',
-    icon: BellRing
+    icon: Bell
   }];
 
   // Safe implementation of getting user initials

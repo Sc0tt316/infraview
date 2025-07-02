@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Server, CheckCircle, FileText, AlertTriangle } from 'lucide-react';
+import { Server, CheckCircle, Printer, Users } from 'lucide-react';
 import StatsCard from '@/components/dashboard/StatsCard';
 import { PrinterData } from '@/types/printers';
 import { ServerData } from '@/types/servers';
@@ -30,16 +30,14 @@ const StatsOverview: React.FC<StatsOverviewProps> = ({ printers, servers, active
         icon={CheckCircle}
       />
       <StatsCard
-        title="Print Jobs Today"
-        value={178}
-        icon={FileText}
-        description="Completed and pending"
+        title="Total Printers"
+        value={totalPrinters}
+        icon={Printer}
       />
       <StatsCard
-        title="Active Alerts"
-        value={activeAlerts}
-        icon={AlertTriangle}
-        trend={activeAlerts > 1 ? { value: 12, isPositive: false } : undefined}
+        title="Online Printers"
+        value={onlinePrinters}
+        icon={Users}
       />
     </div>
   );
