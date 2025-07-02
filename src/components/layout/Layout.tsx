@@ -10,9 +10,12 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Button } from "@/components/ui/button";
 import NotificationDropdown from "./NotificationDropdown";
 import { supabase } from "@/integrations/supabase/client";
+import Logo from "@/components/common/Logo";
+
 interface LayoutProps {
   children: React.ReactNode;
 }
+
 const sidebarLinks = [
   {
     path: "/",
@@ -45,6 +48,7 @@ const sidebarLinks = [
     icon: Settings
   }
 ];
+
 const Layout = ({
   children
 }: LayoutProps) => {
@@ -81,6 +85,7 @@ const Layout = ({
     };
     fetchUserProfile();
   }, [user?.id]);
+
   useEffect(() => {
     const handleScroll = () => {
       if (window.scrollY > 10) {
@@ -92,7 +97,9 @@ const Layout = ({
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
   const toggleSidebar = () => setIsSidebarExpanded(!isSidebarExpanded);
+
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth < 1024) {
@@ -103,6 +110,7 @@ const Layout = ({
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
   const pageVariants = {
     initial: {
       opacity: 0,
@@ -125,10 +133,12 @@ const Layout = ({
       }
     }
   };
+
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
+
   return <div className={cn("flex h-screen overflow-hidden bg-background dark:bg-gray-900")}>
       <motion.aside className={cn("fixed inset-y-0 left-0 z-30 bg-white/90 dark:bg-gray-900/90 backdrop-blur-lg border-r border-border/40 shadow-lg transition-all duration-300 ease-in-out lg:relative lg:shadow-none overflow-hidden")} animate={{
       width: isSidebarExpanded ? 256 : 80
@@ -138,27 +148,7 @@ const Layout = ({
     }}>
         <div className="flex flex-col h-full">
           <div className="flex items-center justify-between p-6 border-b border-border/40 min-h-[80px]">
-            <Link to="/" className="flex items-center gap-3 min-w-0">
-              <div className="h-10 w-10 bg-[#300054] flex items-center justify-center rounded-md border border-[#ff6b6b] flex-shrink-0">
-                <img src="/lovable-uploads/79c40e69-54c0-4cbd-a41c-369e4c8bb316.png" alt="M-Printer Logo" className="h-8 w-8 object-contain" />
-              </div>
-              <AnimatePresence>
-                {isSidebarExpanded && <motion.span initial={{
-                opacity: 0,
-                width: 0
-              }} animate={{
-                opacity: 1,
-                width: "auto"
-              }} exit={{
-                opacity: 0,
-                width: 0
-              }} transition={{
-                duration: 0.2
-              }} className="text-xl font-medium text-primary truncate whitespace-nowrap">
-                    M-Printer
-                  </motion.span>}
-              </AnimatePresence>
-            </Link>
+            <Logo size="sm" />
             <button onClick={toggleSidebar} className="lg:hidden p-1 rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors flex-shrink-0">
               <X size={20} />
             </button>
@@ -305,4 +295,5 @@ const Layout = ({
       </div>
     </div>;
 };
+
 export default Layout;

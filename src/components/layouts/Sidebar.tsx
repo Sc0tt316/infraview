@@ -8,6 +8,7 @@ import { useAuth } from '@/context/AuthContext';
 import { User } from '@/types/user';
 import { useTheme } from '@/context/ThemeContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import Logo from '@/components/common/Logo';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -68,10 +69,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       {/* Logo and Brand */}
       <div className="flex h-16 items-center px-4 border-b border-border py-0 mx-0 my-0">
         <div className={cn("flex items-center transition-all duration-300", isOpen ? "justify-start" : "justify-center w-full")}>
-          <div className="h-10 w-10 bg-primary/10 flex items-center justify-center rounded-md border border-primary/20">
-            <span className="text-primary font-bold text-xl">M</span>
-          </div>
-          {isOpen && <span className="ml-3 text-xl font-semibold text-primary truncate max-w-[150px] my-0 py-0 px-0 text-center mx-[20px]">M-Printer</span>}
+          <Logo size="sm" />
         </div>
       </div>
       
