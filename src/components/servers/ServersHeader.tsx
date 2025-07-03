@@ -7,12 +7,16 @@ interface ServersHeaderProps {
   onAddServer: () => void;
   onRefresh: () => void;
   isLoading?: boolean;
+  isRefreshing?: boolean;
+  isAdmin?: boolean;
 }
 
 const ServersHeader: React.FC<ServersHeaderProps> = ({
   onAddServer,
   onRefresh,
-  isLoading = false
+  isLoading = false,
+  isRefreshing = false,
+  isAdmin = false
 }) => {
   return (
     <div className="flex items-center justify-between">
@@ -27,15 +31,17 @@ const ServersHeader: React.FC<ServersHeaderProps> = ({
           variant="outline"
           size="sm"
           onClick={onRefresh}
-          disabled={isLoading}
+          disabled={isLoading || isRefreshing}
         >
-          <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
           Refresh
         </Button>
-        <Button onClick={onAddServer}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Server
-        </Button>
+        {isAdmin && (
+          <Button onClick={onAddServer}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Server
+          </Button>
+        )}
       </div>
     </div>
   );
