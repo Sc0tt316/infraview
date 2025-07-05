@@ -36,6 +36,16 @@ const Servers = () => {
     setLocalServers(prev => [...prev, serverData]);
   };
 
+  const handleRemoveServer = (serverId: string) => {
+    setLocalServers(prev => prev.filter(server => server.id !== serverId));
+    console.log('Server removed:', serverId);
+  };
+
+  const handleRefreshServer = (serverId: string) => {
+    console.log('Server refreshed:', serverId);
+    // In a real implementation, this would refresh individual server data
+  };
+
   // Apply filters
   const filteredServers = allServers.filter(server => {
     // Department filter
@@ -97,6 +107,8 @@ const Servers = () => {
         setDepartmentFilter={setDepartmentFilter}
         statusFilter={statusFilter}
         setStatusFilter={setStatusFilter}
+        onRemoveServer={handleRemoveServer}
+        onRefreshServer={handleRefreshServer}
       />
     </div>
   );

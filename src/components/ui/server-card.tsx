@@ -4,12 +4,21 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ServerData } from '@/types/servers';
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Server, Cpu, HardDrive, MemoryStick } from "lucide-react";
+import { Server, Cpu, HardDrive, MemoryStick, MoreVertical, Trash2, RefreshCw } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 
 interface ServerCardProps {
   server: ServerData;
   onOpenDetails: (id: string) => void;
   isAdmin: boolean;
+  onRemoveServer?: (serverId: string) => void;
+  onRefreshServer?: (serverId: string) => void;
 }
 
 const getStatusBadge = (status: string) => {
@@ -32,10 +41,34 @@ const getStatusBadge = (status: string) => {
 export const ServerCard: React.FC<ServerCardProps> = ({ 
   server, 
   onOpenDetails, 
-  isAdmin 
+  isAdmin,
+  onRemoveServer,
+  onRefreshServer
 }) => {
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Prevent card click when clicking on dropdown menu
+    if ((e.target as HTMLElement).closest('[data-dropdown-menu]')) {
+      return;
+    }
+    onOpenDetails(server.id);
+  };
+
+  const handleRemoveServer = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onRemoveServer) {
+      onRemoveServer(server.id);
+    }
+  };
+
+  const handleRefreshServer = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onRefreshServer) {
+      onRefreshServer(server.id);
+    }
+  };
+
   return (
-    <Card className="overflow-hidden transition-all hover:shadow-md cursor-pointer" onClick={() => onOpenDetails(server.id)}>
+    <Card className="overflow-hidden transition-all hover:shadow-md cursor-pointer" onClick={handleCardClick}>
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2">
@@ -49,7 +82,37 @@ export const ServerCard: React.FC<ServerCardProps> = ({
               </div>
             </div>
           </div>
-          {getStatusBadge(server.status)}
+          <div className="flex items-center gap-2">
+            {getStatusBadge(server.status)}
+            {isAdmin && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    data-dropdown-menu
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem onClick={handleRefreshServer}>
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Refresh Server
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={handleRemoveServer}
+                    className="text-red-600 focus:text-red-600"
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Remove Server
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
         </div>
       </CardHeader>
       

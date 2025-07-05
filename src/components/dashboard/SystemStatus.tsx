@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Zap, RefreshCw, Ban, RotateCw } from 'lucide-react';
+import { Zap, RefreshCw, Bell, RotateCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface SystemStatusData {
@@ -91,10 +91,10 @@ const SystemStatus: React.FC = () => {
           </div>
           <div className="flex items-center">
             <div className={`h-10 w-10 ${statusData.errorRate < 5 ? 'bg-green-50' : 'bg-yellow-50'} flex items-center justify-center rounded-full mr-3`}>
-              <Ban className={`h-5 w-5 ${statusData.errorRate < 5 ? 'text-green-600' : 'text-yellow-600'}`} />
+              <Bell className={`h-5 w-5 ${statusData.errorRate < 5 ? 'text-green-600' : 'text-yellow-600'}`} />
             </div>
             <div>
-              <p className="text-sm font-medium">Error Rate</p>
+              <p className="text-sm font-medium">Alerts</p>
               <p className="text-xs text-muted-foreground">
                 {statusData.errorRate < 5 ? 'Normal' : 'Elevated'} ({statusData.errorRate.toFixed(1)}%)
               </p>
