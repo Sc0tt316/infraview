@@ -1,12 +1,8 @@
 
 import * as React from "react"
-import { toast as sonnerToast, type ToastT } from "sonner"
 
 const TOAST_LIMIT = 5
 const TOAST_TIMEOUT = 2000 // 2 seconds
-export type ToasterToast = ToastT
-
-type ToasterToastActionElement = React.ReactElement
 
 export const actionTypes = {
   ADD_TOAST: "ADD_TOAST",
@@ -31,13 +27,13 @@ type Action =
         id: string
         title?: React.ReactNode
         description?: React.ReactNode
-        action?: ToasterToastActionElement
+        action?: React.ReactElement
         variant?: "default" | "destructive"
       }
     }
   | {
       type: ActionType["UPDATE_TOAST"]
-      toast: Partial<ToasterToast> & { id: string }
+      toast: Partial<any> & { id: string }
     }
   | {
       type: ActionType["DISMISS_TOAST"]
@@ -49,61 +45,33 @@ type Action =
     }
 
 interface State {
-  toasts: ToasterToast[]
+  toasts: any[]
 }
-
-const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>()
 
 const reducer = (state: State, action: Action): State => {
   switch (action.type) {
     case actionTypes.ADD_TOAST:
       return {
         ...state,
-        toasts: [action.toast as unknown as ToasterToast, ...state.toasts].slice(0, TOAST_LIMIT),
+        toasts: [],
       }
 
     case actionTypes.UPDATE_TOAST:
       return {
         ...state,
-        toasts: state.toasts.map((t) =>
-          t.id === action.toast.id ? { ...t, ...action.toast } : t
-        ),
+        toasts: [],
       }
 
-    case actionTypes.DISMISS_TOAST: {
-      const { toastId } = action
-
-      if (toastId) {
-        sonnerToast.dismiss(toastId)
-      } else {
-        for (const toast of state.toasts) {
-          sonnerToast.dismiss(toast.id)
-        }
-      }
-
+    case actionTypes.DISMISS_TOAST:
       return {
         ...state,
-        toasts: state.toasts.map((t) =>
-          t.id === toastId || !toastId
-            ? {
-                ...t,
-                dismissible: false,
-              }
-            : t
-        ),
+        toasts: [],
       }
-    }
 
     case actionTypes.REMOVE_TOAST:
-      if (action.toastId === undefined) {
-        return {
-          ...state,
-          toasts: [],
-        }
-      }
       return {
         ...state,
-        toasts: state.toasts.filter((t) => t.id !== action.toastId),
+        toasts: [],
       }
   }
 }
@@ -123,77 +91,22 @@ interface Toast {
   id?: string
   title?: React.ReactNode
   description?: React.ReactNode
-  action?: ToasterToastActionElement
+  action?: React.ReactElement
   cancel?: React.ReactNode
   variant?: "default" | "destructive"
   duration?: number
   className?: string
-  onDismiss?: (toast: ToasterToast) => void
-  onAutoClose?: (toast: ToasterToast) => void
+  onDismiss?: (toast: any) => void
+  onAutoClose?: (toast: any) => void
 }
 
 function toast({ id: toastId, ...props }: Toast) {
   const id = toastId || genId()
 
-  const update = (props: ToasterToast) =>
-    dispatch({
-      type: actionTypes.UPDATE_TOAST,
-      toast: { ...props, id },
-    })
+  const update = (props: any) => {}
+  const dismiss = () => {}
 
-  const dismiss = () =>
-    dispatch({ type: actionTypes.DISMISS_TOAST, toastId: id })
-
-  dispatch({
-    type: actionTypes.ADD_TOAST,
-    toast: {
-      ...props,
-      id,
-    },
-  })
-
-  // Clear any existing timeout for this toast
-  if (toastTimeouts.has(id)) {
-    clearTimeout(toastTimeouts.get(id))
-  }
-
-  // Set auto-dismiss timeout - use the passed duration or default
-  const duration = props.duration || TOAST_TIMEOUT;
-  toastTimeouts.set(
-    id,
-    setTimeout(() => {
-      dismiss()
-      toastTimeouts.delete(id) // Clean up the timeout reference
-    }, duration)
-  )
-
-  // Map variant to sonner's supported options
-  const sonnerOptions: any = {
-    id,
-    description: props.description,
-    action: props.action,
-    cancel: props.cancel,
-    onDismiss: props.onDismiss,
-    onAutoClose: props.onAutoClose,
-    duration: duration,
-    className: props.className,
-    onClick: () => {
-      dismiss()
-      if (toastTimeouts.has(id)) {
-        clearTimeout(toastTimeouts.get(id))
-        toastTimeouts.delete(id)
-      }
-    },
-  }
-  
-  // Only add the type if it's destructive
-  if (props.variant === "destructive") {
-    sonnerOptions.type = "error"
-  }
-
-  // Show toast using sonner
-  sonnerToast(props.title as string, sonnerOptions)
-
+  // No-op - notifications disabled
   return {
     id: id,
     dismiss,
@@ -217,8 +130,7 @@ function useToast() {
   return {
     ...state,
     toast,
-    dismiss: (toastId?: string) =>
-      dispatch({ type: actionTypes.DISMISS_TOAST, toastId }),
+    dismiss: (toastId?: string) => {},
   }
 }
 

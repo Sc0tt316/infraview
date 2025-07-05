@@ -30,7 +30,7 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
       <StatsOverview printers={printers} servers={servers} activeAlerts={activeAlerts} />
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <PrinterStatusSummary printers={printers} />
+        <PrinterStatusSummary printers={printers} servers={servers} />
         
         <RecentActivity activities={recentActivities} />
         

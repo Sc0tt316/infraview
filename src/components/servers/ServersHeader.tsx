@@ -26,10 +26,9 @@ const ServersHeader: React.FC<ServersHeaderProps> = ({
           Monitor and manage your server infrastructure
         </p>
       </div>
-      <div className="flex space-x-2">
+      <div className="flex items-center space-x-2">
         <Button
           variant="outline"
-          size="sm"
           onClick={onRefresh}
           disabled={isLoading || isRefreshing}
         >
