@@ -5,8 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus } from 'lucide-react';
-import { toast } from '@/hooks/use-toast';
 
 interface AddServerDialogProps {
   onAddServer: (serverData: any) => void;
@@ -28,11 +26,7 @@ const AddServerDialog: React.FC<AddServerDialogProps> = ({ onAddServer }) => {
     e.preventDefault();
     
     if (!formData.name || !formData.hostname || !formData.ipAddress) {
-      toast({
-        title: "Error",
-        description: "Please fill in all required fields",
-        variant: "destructive"
-      });
+      // Removed toast notification
       return;
     }
 
@@ -65,10 +59,7 @@ const AddServerDialog: React.FC<AddServerDialogProps> = ({ onAddServer }) => {
       operatingSystem: ''
     });
 
-    toast({
-      title: "Success",
-      description: "Server added successfully"
-    });
+    // Removed toast notification
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -79,7 +70,6 @@ const AddServerDialog: React.FC<AddServerDialogProps> = ({ onAddServer }) => {
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button>
-          <Plus className="h-4 w-4 mr-2" />
           Add Server
         </Button>
       </DialogTrigger>

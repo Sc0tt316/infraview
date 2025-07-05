@@ -2,7 +2,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { Home, Printer, Users, BarChart2, Bell, Settings, LogOut } from 'lucide-react';
+import { Home, Printer, Server, BarChart2, Bell, Settings, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
 import { User } from '@/types/user';
@@ -43,7 +43,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   }, {
     name: 'Servers',
     href: '/servers',
-    icon: Users
+    icon: Server
   }, {
     name: 'Analytics',
     href: '/analytics',
@@ -79,9 +79,11 @@ const Sidebar: React.FC<SidebarProps> = ({
         isActive
       }) => cn(isOpen ? "sidebar-link" : "flex flex-col items-center justify-center px-2 py-3 rounded-lg text-xs", isActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent hover:text-foreground", "transition-all duration-200 font-medium")}>
             <item.icon className={cn("flex-shrink-0", isOpen ? "h-5 w-5 mr-3" : "h-5 w-5 mb-1")} />
-            <span className={cn("whitespace-nowrap", !isOpen && "mt-1")}>
-              {item.name}
-            </span>
+            {isOpen && (
+              <span className="whitespace-nowrap">
+                {item.name}
+              </span>
+            )}
           </NavLink>)}
       </nav>
       

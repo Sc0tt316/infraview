@@ -15,7 +15,6 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { notificationService, Notification } from "@/services/notificationService";
 import { formatDistanceToNow } from "date-fns";
-import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 const NotificationDropdown = () => {
@@ -57,11 +56,7 @@ const NotificationDropdown = () => {
                 setNotifications(prev => [notification, ...prev]);
                 setUnreadCount(prev => prev + 1);
                 
-                // Show toast for new alerts
-                toast({
-                  title: "New Alert",
-                  description: newAlert.title
-                });
+                // Removed toast notification
               }
             }
           )
@@ -117,17 +112,11 @@ const NotificationDropdown = () => {
             navigate('/');
         }
         
-        toast({
-          title: "Success",
-          description: `Navigating to ${type} page`
-        });
+        // Removed toast notification
         setOpen(false);
       } catch (error) {
         console.error("Navigation error:", error);
-        toast({
-          title: "Error",
-          description: "Failed to navigate to the requested page"
-        });
+        // Removed toast notification
       }
     }
   };
@@ -136,10 +125,7 @@ const NotificationDropdown = () => {
     notificationService.clearAllNotifications();
     setNotifications([]);
     setUnreadCount(0);
-    toast({
-      title: "Success",
-      description: "All notifications have been cleared"
-    });
+    // Removed toast notification
   };
 
   return (

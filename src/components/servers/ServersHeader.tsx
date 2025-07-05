@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Plus, RefreshCw } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface ServersHeaderProps {
@@ -33,12 +33,10 @@ const ServersHeader: React.FC<ServersHeaderProps> = ({
           onClick={onRefresh}
           disabled={isLoading || isRefreshing}
         >
-          <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-          Refresh
+          <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
         </Button>
         {isAdmin && (
           <Button onClick={onAddServer}>
-            <Plus className="h-4 w-4 mr-2" />
             Add Server
           </Button>
         )}
