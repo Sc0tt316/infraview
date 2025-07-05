@@ -37,7 +37,7 @@ const StatsOverview: React.FC<StatsOverviewProps> = ({ printers, servers, active
       <StatsCard
         title="Online Printers"
         value={onlinePrinters}
-        icon={Users}
+        icon={CheckCircle}
       />
     </div>
   );

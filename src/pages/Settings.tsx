@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -15,6 +14,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 const Settings = () => {
   const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
+  const [profileImage, setProfileImage] = useState(user?.profileImage || '');
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [editedUser, setEditedUser] = useState({
     name: user?.name || '',
     email: user?.email || '',
@@ -28,6 +29,26 @@ const Settings = () => {
     confirmPassword: ''
   });
 
+  const handlePhotoClick = () => {
+    if (isEditing && fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Create a URL for the selected image
+      const imageUrl = URL.createObjectURL(file);
+      setProfileImage(imageUrl);
+      
+      toast({
+        title: "Photo Updated",
+        description: "Profile photo will be saved when you save your profile"
+      });
+    }
+  };
+
   const handleEdit = () => {
     setIsEditing(true);
     setEditedUser({
@@ -40,6 +61,7 @@ const Settings = () => {
 
   const handleCancel = () => {
     setIsEditing(false);
+    setProfileImage(user?.profileImage || '');
     setEditedUser({
       name: user?.name || '',
       email: user?.email || '',
@@ -55,7 +77,8 @@ const Settings = () => {
       const updatedUser = await userService.updateUser(user.id, {
         ...editedUser,
         role: user.role,
-        status: user.status || 'active'
+        status: user.status || 'active',
+        profileImage: profileImage
       });
 
       if (updatedUser) {
@@ -170,8 +193,8 @@ const Settings = () => {
           <div className="flex items-center gap-6">
             <div className="relative">
               <Avatar className="h-24 w-24">
-                {user?.profileImage ? (
-                  <AvatarImage src={user.profileImage} alt={user?.name || 'User'} />
+                {profileImage ? (
+                  <AvatarImage src={profileImage} alt={user?.name || 'User'} />
                 ) : (
                   <AvatarFallback className="text-2xl">
                     {user?.name?.charAt(0) || 'U'}
@@ -183,9 +206,17 @@ const Settings = () => {
                 variant="outline"
                 className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full"
                 disabled={!isEditing}
+                onClick={handlePhotoClick}
               >
                 <Camera className="h-4 w-4" />
               </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="hidden"
+              />
             </div>
             <div>
               <h3 className="text-xl font-semibold">{user?.name}</h3>

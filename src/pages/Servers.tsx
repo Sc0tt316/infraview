@@ -5,6 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { ServerData } from '@/types/servers';
 import ServersHeader from '@/components/servers/ServersHeader';
 import ServersContent from '@/components/servers/ServersContent';
+import AddServerDialog from '@/components/servers/AddServerDialog';
 
 const Servers = () => {
   const { user } = useAuth();
@@ -15,6 +16,10 @@ const Servers = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   
   const { servers, isLoading, refetchServers } = useServers();
+  const [localServers, setLocalServers] = useState<ServerData[]>([]);
+
+  // Combine servers from hook with locally added servers
+  const allServers = [...servers, ...localServers];
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -27,13 +32,12 @@ const Servers = () => {
     // TODO: Implement server detail modal or navigation
   };
 
-  const handleAddServer = () => {
-    console.log('Add server clicked');
-    // TODO: Implement add server functionality
+  const handleAddServer = (serverData: ServerData) => {
+    setLocalServers(prev => [...prev, serverData]);
   };
 
   // Apply filters
-  const filteredServers = servers.filter(server => {
+  const filteredServers = allServers.filter(server => {
     // Department filter
     if (departmentFilter !== 'all' && server.department !== departmentFilter) {
       return false;
@@ -61,13 +65,24 @@ const Servers = () => {
 
   return (
     <div className="space-y-6">
-      <ServersHeader
-        isLoading={isLoading}
-        isRefreshing={isRefreshing}
-        isAdmin={isAdmin || false}
-        onRefresh={handleRefresh}
-        onAddServer={handleAddServer}
-      />
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Servers</h1>
+          <p className="text-muted-foreground">
+            Monitor and manage your server infrastructure
+          </p>
+        </div>
+        <div className="flex space-x-2">
+          <ServersHeader
+            isLoading={isLoading}
+            isRefreshing={isRefreshing}
+            isAdmin={false}
+            onRefresh={handleRefresh}
+            onAddServer={() => {}}
+          />
+          {isAdmin && <AddServerDialog onAddServer={handleAddServer} />}
+        </div>
+      </div>
 
       <ServersContent
         isLoading={isLoading}
