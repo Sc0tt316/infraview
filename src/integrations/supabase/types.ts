@@ -231,6 +231,72 @@ export type Database = {
         }
         Relationships: []
       }
+      servers: {
+        Row: {
+          added_date: string | null
+          cpu_usage: number
+          created_at: string | null
+          department: string | null
+          disk_usage: number
+          hostname: string
+          id: string
+          ip_address: string
+          last_active: string | null
+          location: string
+          memory_usage: number
+          name: string
+          operating_system: string
+          server_type: string
+          specs: Json | null
+          status: string
+          sub_status: string | null
+          updated_at: string | null
+          uptime: string | null
+        }
+        Insert: {
+          added_date?: string | null
+          cpu_usage?: number
+          created_at?: string | null
+          department?: string | null
+          disk_usage?: number
+          hostname: string
+          id?: string
+          ip_address: string
+          last_active?: string | null
+          location: string
+          memory_usage?: number
+          name: string
+          operating_system: string
+          server_type: string
+          specs?: Json | null
+          status?: string
+          sub_status?: string | null
+          updated_at?: string | null
+          uptime?: string | null
+        }
+        Update: {
+          added_date?: string | null
+          cpu_usage?: number
+          created_at?: string | null
+          department?: string | null
+          disk_usage?: number
+          hostname?: string
+          id?: string
+          ip_address?: string
+          last_active?: string | null
+          location?: string
+          memory_usage?: number
+          name?: string
+          operating_system?: string
+          server_type?: string
+          specs?: Json | null
+          status?: string
+          sub_status?: string | null
+          updated_at?: string | null
+          uptime?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

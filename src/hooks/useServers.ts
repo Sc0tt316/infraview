@@ -1,30 +1,30 @@
 
 import { useState, useEffect } from 'react';
-import { mockServers } from '@/services/server/mockServerData';
+import { serverService } from '@/services/server';
 import { ServerData } from '@/types/servers';
 
 export const useServers = () => {
   const [servers, setServers] = useState<ServerData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    // Simulate API call
-    const fetchServers = async () => {
-      setIsLoading(true);
-      // Simulate network delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setServers(mockServers);
+  const fetchServers = async () => {
+    setIsLoading(true);
+    try {
+      const data = await serverService.getAllServers();
+      setServers(data);
+    } catch (error) {
+      console.error('Error fetching servers:', error);
+    } finally {
       setIsLoading(false);
-    };
+    }
+  };
 
+  useEffect(() => {
     fetchServers();
   }, []);
 
   const refetchServers = async () => {
-    setIsLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 300));
-    setServers([...mockServers]); // Refresh data
-    setIsLoading(false);
+    await fetchServers();
   };
 
   return {

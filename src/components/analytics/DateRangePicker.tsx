@@ -23,48 +23,55 @@ const DateRangePicker = ({ dateRange, setDateRange, onApply }: DateRangePickerPr
   };
 
   return (
-    <Popover open={isOpen} onOpenChange={setIsOpen}>
-      <PopoverTrigger asChild>
-        <Button variant="outline" className="gap-2 h-10 px-3 min-w-[240px] justify-start">
-          <CalendarIcon size={16} />
-          <span className="truncate">
+    <div className="relative">
+      <Popover open={isOpen} onOpenChange={setIsOpen}>
+        <PopoverTrigger asChild>
+          <Button 
+            variant="outline" 
+            className={cn(
+              "w-[280px] justify-start text-left font-normal",
+              !dateRange && "text-muted-foreground"
+            )}
+          >
+            <CalendarIcon className="mr-2 h-4 w-4" />
             {dateRange?.from ? (
               dateRange.to ? (
                 <>
-                  {format(dateRange.from, 'MMM dd, yyyy')} - {format(dateRange.to, 'MMM dd, yyyy')}
+                  {format(dateRange.from, 'LLL dd, y')} -{' '}
+                  {format(dateRange.to, 'LLL dd, y')}
                 </>
               ) : (
-                format(dateRange.from, 'MMM dd, yyyy')
+                format(dateRange.from, 'LLL dd, y')
               )
             ) : (
-              'Select date range'
+              <span>Pick a date range</span>
             )}
-          </span>
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-auto p-0" align="end">
-        <div className="p-3 border-b">
-          <h3 className="font-medium">Select date range</h3>
-        </div>
-        <Calendar
-          initialFocus
-          mode="range"
-          defaultMonth={dateRange?.from}
-          selected={dateRange}
-          onSelect={setDateRange}
-          numberOfMonths={2}
-          className={cn("p-3 pointer-events-auto")}
-        />
-        <div className="p-3 bg-muted/20 border-t flex justify-end gap-2">
-          <Button variant="outline" size="sm" onClick={() => setIsOpen(false)}>
-            Cancel
           </Button>
-          <Button size="sm" onClick={handleApply}>
-            Apply Range
-          </Button>
-        </div>
-      </PopoverContent>
-    </Popover>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="start">
+          <div className="p-3 border-b">
+            <h3 className="font-medium">Select date range</h3>
+          </div>
+          <Calendar
+            initialFocus
+            mode="range"
+            defaultMonth={dateRange?.from}
+            selected={dateRange}
+            onSelect={setDateRange}
+            numberOfMonths={2}
+            className="p-3"
+          />
+          <div className="p-3 bg-muted/20 border-t flex justify-end gap-2">
+            <Button variant="outline" size="sm" onClick={() => setIsOpen(false)}>
+              Cancel
+            </Button>
+            <Button size="sm" onClick={handleApply}>
+              Apply Range
+            </Button>
+          </div>
+        </PopoverContent>
+      </Popover>
+    </div>
   );
 };
 

@@ -1,125 +1,201 @@
 
-import React from 'react';
-import { NavLink } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useLocation, Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { Home, Printer, Server, BarChart2, Bell, Settings, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
+import { 
+  LayoutDashboard, 
+  Printer, 
+  Activity, 
+  Bell, 
+  BarChart3, 
+  Settings, 
+  Users,
+  Server,
+  LogOut,
+  ChevronLeft,
+  ChevronRight
+} from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { User } from '@/types/user';
-import { useTheme } from '@/context/ThemeContext';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Logo from '@/components/common/Logo';
 
-interface SidebarProps {
-  isOpen: boolean;
-  toggleSidebar: () => void;
-  user: User | null;
-}
+const navigation = [
+  { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+  { name: 'Printers', href: '/printers', icon: Printer },
+  { name: 'Servers', href: '/servers', icon: Server },
+  { name: 'Activity', href: '/activity', icon: Activity },
+  { name: 'Alerts', href: '/alerts', icon: Bell },
+  { name: 'Analytics', href: '/analytics', icon: BarChart3 },
+];
 
-const Sidebar: React.FC<SidebarProps> = ({
-  isOpen,
-  toggleSidebar,
-  user
-}) => {
-  const {
-    logout
-  } = useAuth();
-  const {
-    theme
-  } = useTheme();
-  
-  const handleLogout = () => {
-    logout();
-  };
-  
-  const navigation = [{
-    name: 'Dashboard',
-    href: '/',
-    icon: Home
-  }, {
-    name: 'Printers',
-    href: '/printers',
-    icon: Printer
-  }, {
-    name: 'Servers',
-    href: '/servers',
-    icon: Server
-  }, {
-    name: 'Analytics',
-    href: '/analytics',
-    icon: BarChart2
-  }, {
-    name: 'Alerts',
-    href: '/alerts',
-    icon: Bell
-  }];
+const adminNavigation = [
+  { name: 'Users', href: '/users', icon: Users },
+  { name: 'Settings', href: '/settings', icon: Settings },
+];
 
-  // Safe implementation of getting user initials
-  const getUserInitials = () => {
-    if (!user || !user.name) return 'U';
-    const nameParts = user.name.trim().split(' ');
-    if (nameParts.length === 0 || !nameParts[0]) return 'U';
-    if (nameParts.length === 1 || !nameParts[1]) {
-      return nameParts[0].charAt(0) || 'U';
+export const Sidebar = () => {
+  const location = useLocation();
+  const { user, signOut } = useAuth();
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  
+  const isAdmin = user?.role === 'admin';
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Error signing out:', error);
     }
-    return `${nameParts[0].charAt(0)}${nameParts[1].charAt(0)}`;
   };
-  
-  return <aside className={cn("fixed inset-y-0 left-0 z-50 flex flex-col transition-transform duration-300 bg-card border-r border-border", isOpen ? "translate-x-0 w-64" : "-translate-x-full md:translate-x-0 md:w-20")}>
-      {/* Logo and Brand */}
-      <div className="flex h-16 items-center px-4 border-b border-border py-0 mx-0 my-0">
-        <div className={cn("flex items-center transition-all duration-300", isOpen ? "justify-start" : "justify-center w-full")}>
-          <Logo size="sm" />
-        </div>
-      </div>
-      
-      {/* Navigation */}
-      <nav className="flex-1 space-y-1 py-4 overflow-y-auto scrollbar-none mx-0 px-[4px] rounded">
-        {navigation.map(item => <NavLink key={item.name} to={item.href} className={({
-        isActive
-      }) => cn(isOpen ? "sidebar-link" : "flex flex-col items-center justify-center px-2 py-3 rounded-lg text-xs", isActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent hover:text-foreground", "transition-all duration-200 font-medium")}>
-            <item.icon className={cn("flex-shrink-0", isOpen ? "h-5 w-5 mr-3" : "h-5 w-5 mb-1")} />
-            {isOpen && (
-              <span className="whitespace-nowrap">
-                {item.name}
-              </span>
-            )}
-          </NavLink>)}
-      </nav>
-      
-      {/* User Section */}
-      <div className="p-4 border-t border-border py-[20px] px-[4px]">
-        <div className={cn("flex items-center", isOpen ? "justify-between" : "flex-col")}>
-          <div className={cn("flex", isOpen ? "items-center" : "flex-col items-center")}>
-            <Avatar className="h-8 w-8">
-              <AvatarImage src={user?.profileImage || ''} alt={user?.name || ''} />
-              <AvatarFallback className="bg-primary/20 text-primary">
-                {getUserInitials()}
-              </AvatarFallback>
-            </Avatar>
-            {isOpen && <div className="ml-3">
-                <p className="text-sm font-medium text-foreground">
-                  {user?.name || 'Anonymous User'}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {user?.email || 'no-email@example.com'}
-                </p>
-              </div>}
-          </div>
-          
-          <div className={cn("flex", isOpen ? "space-x-2" : "flex-col mt-4 space-y-2")}>
-            <NavLink to="/settings">
-              <Button variant="ghost" size="icon" className="text-muted-foreground hover:bg-accent hover:text-foreground h-8 w-8 flex-shrink-0">
-                <Settings size={18} />
-              </Button>
-            </NavLink>
-            <Button variant="ghost" size="icon" onClick={handleLogout} className="text-red-500 hover:bg-red-500/10 hover:text-red-600 h-8 w-8 flex-shrink-0">
-              <LogOut size={18} />
-            </Button>
-          </div>
-        </div>
-      </div>
-    </aside>;
-};
 
-export default Sidebar;
+  const toggleSidebar = () => {
+    setIsCollapsed(!isCollapsed);
+  };
+
+  if (isMobile) {
+    return null; // Mobile sidebar is handled by MobileSidebar component
+  }
+
+  return (
+    <div className={cn(
+      "relative flex flex-col h-full bg-card border-r transition-all duration-300",
+      isCollapsed ? "w-16" : "w-64"
+    )}>
+      {/* Header */}
+      <div className="flex items-center justify-between p-4 border-b">
+        <div className={cn(
+          "transition-opacity duration-300",
+          isCollapsed ? "opacity-0" : "opacity-100"
+        )}>
+          {!isCollapsed && (
+            <div className="flex items-center -ml-1">
+              <Logo size="sm" />
+            </div>
+          )}
+        </div>
+        
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={toggleSidebar}
+          className="h-8 w-8"
+        >
+          {isCollapsed ? (
+            <ChevronRight className="h-4 w-4" />
+          ) : (
+            <ChevronLeft className="h-4 w-4" />
+          )}
+        </Button>
+      </div>
+
+      {/* Navigation */}
+      <ScrollArea className="flex-1 px-3 py-4">
+        <div className="space-y-2">
+          {navigation.map((item) => {
+            const isActive = location.pathname === item.href;
+            const Icon = item.icon;
+            
+            return (
+              <Link key={item.name} to={item.href}>
+                <Button
+                  variant={isActive ? 'secondary' : 'ghost'}
+                  className={cn(
+                    "w-full justify-start gap-3 h-10",
+                    isCollapsed && "px-2 justify-center"
+                  )}
+                >
+                  <Icon className="h-4 w-4 flex-shrink-0" />
+                  {!isCollapsed && (
+                    <span className="truncate">{item.name}</span>
+                  )}
+                </Button>
+              </Link>
+            );
+          })}
+        </div>
+
+        {isAdmin && (
+          <>
+            <Separator className="my-4" />
+            <div className="space-y-2">
+              <div className={cn(
+                "px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider",
+                isCollapsed && "px-2 text-center"
+              )}>
+                {!isCollapsed && 'Admin'}
+              </div>
+              {adminNavigation.map((item) => {
+                const isActive = location.pathname === item.href;
+                const Icon = item.icon;
+                
+                return (
+                  <Link key={item.name} to={item.href}>
+                    <Button
+                      variant={isActive ? 'secondary' : 'ghost'}
+                      className={cn(
+                        "w-full justify-start gap-3 h-10",
+                        isCollapsed && "px-2 justify-center"
+                      )}
+                    >
+                      <Icon className="h-4 w-4 flex-shrink-0" />
+                      {!isCollapsed && (
+                        <span className="truncate">{item.name}</span>
+                      )}
+                    </Button>
+                  </Link>
+                );
+              })}
+            </div>
+          </>
+        )}
+      </ScrollArea>
+
+      {/* User section */}
+      <div className="border-t p-3">
+        <div className={cn(
+          "flex items-center gap-3 p-2 rounded-lg",
+          isCollapsed && "justify-center"
+        )}>
+          <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-sm font-medium">
+            {user?.name?.[0]?.toUpperCase() || 'U'}
+          </div>
+          {!isCollapsed && (
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium truncate">
+                {user?.name || 'User'}
+              </p>
+              <p className="text-xs text-muted-foreground truncate">
+                {user?.email}
+              </p>
+            </div>
+          )}
+        </div>
+        
+        <Button
+          variant="ghost"
+          onClick={handleSignOut}
+          className={cn(
+            "w-full justify-start gap-3 mt-2 h-10",
+            isCollapsed && "px-2 justify-center"
+          )}
+        >
+          <LogOut className="h-4 w-4 flex-shrink-0" />
+          {!isCollapsed && <span>Sign Out</span>}
+        </Button>
+      </div>
+    </div>
+  );
+};
