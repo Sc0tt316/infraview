@@ -97,22 +97,118 @@ export const userService = {
     }
   },
   
-  // Verify current user password before allowing edits
-  verifyCurrentPassword: async (email: string, password: string): Promise<boolean> => {
+  // Add a new user - Fixed to properly handle profile creation
+  addUser: async (userData: Partial<UserData & { password?: string }>): Promise<UserData | null> => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password
+      console.log('Adding user with data:', userData);
+      
+      if (!userData.password || !userData.email) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Email and password are required to create a new user."
+        });
+        return null;
+      }
+
+      // First create the user in Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+        email: userData.email,
+        password: userData.password,
+        email_confirm: true,
+        user_metadata: {
+          name: userData.name || ''
+        }
       });
       
-      return !error;
+      if (authError) {
+        console.error('Auth user creation error:', authError);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: `Failed to create user account: ${authError.message}`
+        });
+        return null;
+      }
+      
+      const userId = authData.user.id;
+      console.log('Created auth user with ID:', userId);
+      
+      // Create the profile with the auth user ID using the service role client
+      const profileData = {
+        id: userId,
+        name: userData.name || '',
+        email: userData.email,
+        role: userData.role || 'user',
+        department: userData.department || '',
+        phone: userData.phone || '',
+        status: 'active',
+        profile_image: userData.profileImage
+      };
+      
+      console.log('Creating profile with data:', profileData);
+      
+      // Use a direct insert with the service role to bypass RLS
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .insert([profileData])
+        .select('*')
+        .single();
+      
+      if (profileError) {
+        console.error('Profile creation error:', profileError);
+        // Try to clean up the auth user if profile creation failed
+        try {
+          await supabase.auth.admin.deleteUser(userId);
+        } catch (cleanupError) {
+          console.error('Failed to cleanup auth user:', cleanupError);
+        }
+        
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: `Failed to create user profile: ${profileError.message}`
+        });
+        return null;
+      }
+      
+      console.log('Successfully created profile:', profile);
+      
+      // Log the activity
+      await logUserActivity(
+        'User Added',
+        `New user "${profile.name}" was added to the system with role: ${profile.role}`,
+        'success'
+      );
+
+      toast({
+        title: "Success",
+        description: `User "${profile.name}" has been added successfully.`
+      });
+      
+      return {
+        id: profile.id,
+        name: profile.name || 'Unknown',
+        email: profile.email || 'No email',
+        role: profile.role as 'admin' | 'manager' | 'user' || 'user',
+        department: profile.department || '',
+        phone: profile.phone || '',
+        status: profile.status as 'active' | 'inactive' | 'pending',
+        lastActive: profile.last_active,
+        profileImage: profile.profile_image
+      };
     } catch (error) {
-      console.error('Password verification error:', error);
-      return false;
+      console.error('Error adding user:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to add user. Please try again."
+      });
+      return null;
     }
   },
   
-  // Update user profile (now requires password verification for sensitive changes)
+  // Update user profile
   updateUser: async (id: string, updateData: Partial<UserData & { password?: string }>, isPasswordVerified: boolean = false): Promise<UserData | null> => {
     try {
       // Handle special case for new users
@@ -206,7 +302,7 @@ export const userService = {
         throw error;
       }
       
-      // Log the activity (only for successful updates, not info messages)
+      // Log the activity
       const changes = [];
       if (isEmailChanged) changes.push('email changed');
       if (isPasswordChanged) changes.push('password changed');
@@ -219,7 +315,6 @@ export const userService = {
         'success'
       );
 
-      // Only show success toast, not info about changes
       toast({
         title: "Success",
         description: `User "${profile.name}" has been updated successfully.`
@@ -242,100 +337,6 @@ export const userService = {
         variant: "destructive",
         title: "Error",
         description: "Failed to update user. Please try again."
-      });
-      return null;
-    }
-  },
-  
-  // Add a new user
-  addUser: async (userData: Partial<UserData & { password?: string }>): Promise<UserData | null> => {
-    try {
-      // First create the user in Supabase Auth if password is provided
-      if (userData.password && userData.email) {
-        const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-          email: userData.email,
-          password: userData.password,
-          email_confirm: true // Auto-confirm email
-        });
-        
-        if (authError) {
-          console.error('Auth user creation error:', authError);
-          toast({
-            variant: "destructive",
-            title: "Error",
-            description: `Failed to create user account: ${authError.message}`
-          });
-          return null;
-        }
-        
-        // Use the auth user ID for the profile
-        const userId = authData.user.id;
-        
-        // Create the profile with the auth user ID
-        const profileData = {
-          id: userId,
-          name: userData.name || '',
-          email: userData.email,
-          role: userData.role || 'user',
-          department: userData.department || '',
-          phone: userData.phone || '',
-          status: 'active',
-          profile_image: userData.profileImage
-        };
-        
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .insert([profileData])
-          .select('*')
-          .single();
-        
-        if (profileError) {
-          console.error('Profile creation error:', profileError);
-          toast({
-            variant: "destructive",
-            title: "Error",
-            description: `Failed to create user profile: ${profileError.message}`
-          });
-          return null;
-        }
-        
-        // Log the activity
-        await logUserActivity(
-          'User Added',
-          `New user "${profile.name}" was added to the system with role: ${profile.role}`,
-          'success'
-        );
-
-        toast({
-          title: "Success",
-          description: `User "${profile.name}" has been added successfully.`
-        });
-        
-        return {
-          id: profile.id,
-          name: profile.name || 'Unknown',
-          email: profile.email || 'No email',
-          role: profile.role as 'admin' | 'manager' | 'user' || 'user',
-          department: profile.department || '',
-          phone: profile.phone || '',
-          status: profile.status as 'active' | 'inactive' | 'pending',
-          lastActive: profile.last_active,
-          profileImage: profile.profile_image
-        };
-      } else {
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Email and password are required to create a new user."
-        });
-        return null;
-      }
-    } catch (error) {
-      console.error('Error adding user:', error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to add user. Please try again."
       });
       return null;
     }
@@ -391,6 +392,21 @@ export const userService = {
         title: "Error",
         description: "Failed to delete user. Please try again."
       });
+      return false;
+    }
+  },
+
+  // Verify current user password before allowing edits
+  verifyCurrentPassword: async (email: string, password: string): Promise<boolean> => {
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+      
+      return !error;
+    } catch (error) {
+      console.error('Password verification error:', error);
       return false;
     }
   },
