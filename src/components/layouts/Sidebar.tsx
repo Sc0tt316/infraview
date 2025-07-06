@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import Logo from '@/components/common/Logo';
+import { User } from '@/types/user';
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
@@ -35,10 +36,15 @@ const adminNavigation = [
   { name: 'Settings', href: '/settings', icon: Settings },
 ];
 
-export const Sidebar = () => {
+interface SidebarProps {
+  isOpen: boolean;
+  toggleSidebar: () => void;
+  user: User | null;
+}
+
+export const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar, user }) => {
   const location = useLocation();
-  const { user, logout } = useAuth();
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const { logout } = useAuth();
   const [isMobile, setIsMobile] = useState(false);
   
   const isAdmin = user?.role === 'admin';
@@ -61,10 +67,6 @@ export const Sidebar = () => {
     }
   };
 
-  const toggleSidebar = () => {
-    setIsCollapsed(!isCollapsed);
-  };
-
   if (isMobile) {
     return null; // Mobile sidebar is handled by MobileSidebar component
   }
@@ -72,15 +74,15 @@ export const Sidebar = () => {
   return (
     <div className={cn(
       "relative flex flex-col h-full bg-card border-r transition-all duration-300",
-      isCollapsed ? "w-16" : "w-64"
+      isOpen ? "w-64" : "w-16"
     )}>
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b">
         <div className={cn(
           "transition-opacity duration-300",
-          isCollapsed ? "opacity-0" : "opacity-100"
+          !isOpen ? "opacity-0" : "opacity-100"
         )}>
-          {!isCollapsed && (
+          {isOpen && (
             <div className="flex items-center -ml-1">
               <Logo size="sm" />
             </div>
@@ -93,7 +95,7 @@ export const Sidebar = () => {
           onClick={toggleSidebar}
           className="h-8 w-8"
         >
-          {isCollapsed ? (
+          {!isOpen ? (
             <ChevronRight className="h-4 w-4" />
           ) : (
             <ChevronLeft className="h-4 w-4" />
@@ -114,11 +116,11 @@ export const Sidebar = () => {
                   variant={isActive ? 'secondary' : 'ghost'}
                   className={cn(
                     "w-full justify-start gap-3 h-10",
-                    isCollapsed && "px-2 justify-center"
+                    !isOpen && "px-2 justify-center"
                   )}
                 >
                   <Icon className="h-4 w-4 flex-shrink-0" />
-                  {!isCollapsed && (
+                  {isOpen && (
                     <span className="truncate">{item.name}</span>
                   )}
                 </Button>
@@ -133,9 +135,9 @@ export const Sidebar = () => {
             <div className="space-y-2">
               <div className={cn(
                 "px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider",
-                isCollapsed && "px-2 text-center"
+                !isOpen && "px-2 text-center"
               )}>
-                {!isCollapsed && 'Admin'}
+                {isOpen && 'Admin'}
               </div>
               {adminNavigation.map((item) => {
                 const isActive = location.pathname === item.href;
@@ -147,11 +149,11 @@ export const Sidebar = () => {
                       variant={isActive ? 'secondary' : 'ghost'}
                       className={cn(
                         "w-full justify-start gap-3 h-10",
-                        isCollapsed && "px-2 justify-center"
+                        !isOpen && "px-2 justify-center"
                       )}
                     >
                       <Icon className="h-4 w-4 flex-shrink-0" />
-                      {!isCollapsed && (
+                      {isOpen && (
                         <span className="truncate">{item.name}</span>
                       )}
                     </Button>
@@ -167,12 +169,12 @@ export const Sidebar = () => {
       <div className="border-t p-3">
         <div className={cn(
           "flex items-center gap-3 p-2 rounded-lg",
-          isCollapsed && "justify-center"
+          !isOpen && "justify-center"
         )}>
           <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-sm font-medium">
             {user?.name?.[0]?.toUpperCase() || 'U'}
           </div>
-          {!isCollapsed && (
+          {isOpen && (
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">
                 {user?.name || 'User'}
@@ -189,11 +191,11 @@ export const Sidebar = () => {
           onClick={handleSignOut}
           className={cn(
             "w-full justify-start gap-3 mt-2 h-10",
-            isCollapsed && "px-2 justify-center"
+            !isOpen && "px-2 justify-center"
           )}
         >
           <LogOut className="h-4 w-4 flex-shrink-0" />
-          {!isCollapsed && <span>Sign Out</span>}
+          {isOpen && <span>Sign Out</span>}
         </Button>
       </div>
     </div>
