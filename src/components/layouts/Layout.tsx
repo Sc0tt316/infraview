@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import Sidebar from '@/components/layouts/Sidebar';
+import { Sidebar } from '@/components/layouts/Sidebar';
 import Header from '@/components/layouts/Header';
 import MobileSidebar from '@/components/layouts/MobileSidebar';
 import { cn } from '@/lib/utils';
