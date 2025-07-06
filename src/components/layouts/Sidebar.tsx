@@ -37,7 +37,7 @@ const adminNavigation = [
 
 export const Sidebar = () => {
   const location = useLocation();
-  const { user, signOut } = useAuth();
+  const { user, logout } = useAuth();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   
@@ -55,7 +55,7 @@ export const Sidebar = () => {
 
   const handleSignOut = async () => {
     try {
-      await signOut();
+      await logout();
     } catch (error) {
       console.error('Error signing out:', error);
     }
