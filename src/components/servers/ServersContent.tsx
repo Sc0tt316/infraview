@@ -20,6 +20,7 @@ interface ServersContentProps {
   statusFilter: string;
   setStatusFilter: (status: string) => void;
   onRemoveServer?: (serverId: string) => void;
+  onEditServer?: (server: ServerData) => void;
   onRefreshServer?: (serverId: string) => void;
 }
 
@@ -37,6 +38,7 @@ const ServersContent: React.FC<ServersContentProps> = ({
   statusFilter,
   setStatusFilter,
   onRemoveServer,
+  onEditServer,
   onRefreshServer
 }) => {
   if (isLoading) {
@@ -105,6 +107,7 @@ const ServersContent: React.FC<ServersContentProps> = ({
               onOpenDetails={() => onServerClick(server)}
               isAdmin={isAdmin}
               onRemoveServer={onRemoveServer}
+              onEditServer={onEditServer}
               onRefreshServer={onRefreshServer}
             />
           ))}

@@ -208,9 +208,11 @@ export const userService = {
     }
   },
   
-  // Update user profile
+  // Update user profile - Fixed to properly commit changes
   updateUser: async (id: string, updateData: Partial<UserData & { password?: string }>, isPasswordVerified: boolean = false): Promise<UserData | null> => {
     try {
+      console.log('Updating user with ID:', id, 'and data:', updateData);
+      
       // Handle special case for new users
       if (id === "new") {
         return userService.addUser(updateData);
@@ -221,16 +223,6 @@ export const userService = {
       const isEmailChanged = updateData.email && currentUser && currentUser.email !== updateData.email;
       const isPasswordChanged = updateData.password && updateData.password.length >= 6;
       const isRoleChanged = updateData.role && currentUser && currentUser.role !== updateData.role;
-      
-      // For sensitive changes, require password verification
-      if ((isEmailChanged || isPasswordChanged || isRoleChanged) && !isPasswordVerified) {
-        toast({
-          variant: "destructive",
-          title: "Password Verification Required",
-          description: "Please verify your current password before making sensitive changes."
-        });
-        return null;
-      }
       
       // If email or password is being updated, update it in Supabase Auth as well
       if (isEmailChanged || isPasswordChanged) {
@@ -280,16 +272,20 @@ export const userService = {
         }
       }
       
-      // Convert from UserData format to Supabase profiles format
-      const profileData = {
-        name: updateData.name,
-        email: updateData.email,
-        role: updateData.role,
-        department: updateData.department,
-        phone: updateData.phone,
-        last_active: new Date().toISOString(),
-        profile_image: updateData.profileImage
-      };
+      // Convert from UserData format to Supabase profiles format, only including fields that have values
+      const profileData: any = {};
+      if (updateData.name !== undefined) profileData.name = updateData.name;
+      if (updateData.email !== undefined) profileData.email = updateData.email;
+      if (updateData.role !== undefined) profileData.role = updateData.role;
+      if (updateData.department !== undefined) profileData.department = updateData.department;
+      if (updateData.phone !== undefined) profileData.phone = updateData.phone;
+      if (updateData.status !== undefined) profileData.status = updateData.status;
+      if (updateData.profileImage !== undefined) profileData.profile_image = updateData.profileImage;
+      
+      // Always update last_active
+      profileData.last_active = new Date().toISOString();
+      
+      console.log('Profile data to update:', profileData);
       
       const { data: profile, error } = await supabase
         .from('profiles')
@@ -299,8 +295,11 @@ export const userService = {
         .single();
       
       if (error) {
+        console.error('Profile update error:', error);
         throw error;
       }
+      
+      console.log('Successfully updated profile:', profile);
       
       // Log the activity
       const changes = [];

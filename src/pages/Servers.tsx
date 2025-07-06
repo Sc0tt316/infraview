@@ -8,10 +8,18 @@ import { hasPermission } from '@/utils/permissions';
 import ServersHeader from '@/components/servers/ServersHeader';
 import ServersContent from '@/components/servers/ServersContent';
 import AddServerDialog from '@/components/servers/AddServerDialog';
-import { Button } from '@/components/ui/button';
-import { RotateCcw } from 'lucide-react';
+import EditServerDialog from '@/components/servers/EditServerDialog';
 import { toast } from '@/hooks/use-toast';
-import { clearAndRegenerateServerData } from '@/services/server/serverDataGenerator';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const Servers = () => {
   const { user } = useAuth();
@@ -21,7 +29,8 @@ const Servers = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [isRegenerating, setIsRegenerating] = useState(false);
+  const [serverToDelete, setServerToDelete] = useState<string | null>(null);
+  const [serverToEdit, setServerToEdit] = useState<ServerData | null>(null);
   const { servers, isLoading, refetchServers } = useServers();
 
   const handleRefresh = async () => {
@@ -61,11 +70,48 @@ const Servers = () => {
       return;
     }
     
-    const success = await serverService.removeServer(serverId);
+    setServerToDelete(serverId);
+  };
+
+  const confirmDeleteServer = async () => {
+    if (!serverToDelete) return;
+    
+    const success = await serverService.removeServer(serverToDelete);
     if (success) {
       await refetchServers();
+      toast({
+        title: "Success",
+        description: "Server has been deleted successfully."
+      });
     }
-    console.log('Server removed:', serverId);
+    setServerToDelete(null);
+  };
+
+  const handleEditServer = (server: ServerData) => {
+    if (!canManageServers) {
+      toast({
+        title: "Access Denied",
+        description: "You don't have permission to edit servers.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setServerToEdit(server);
+  };
+
+  const handleUpdateServer = async (serverData: ServerData) => {
+    if (!serverToEdit) return;
+    
+    const success = await serverService.updateServer(serverToEdit.id, serverData);
+    if (success) {
+      await refetchServers();
+      toast({
+        title: "Success",
+        description: "Server has been updated successfully."
+      });
+    }
+    setServerToEdit(null);
   };
 
   const handleRefreshServer = async (serverId: string) => {
@@ -91,44 +137,6 @@ const Servers = () => {
       await refetchServers();
     }
     console.log('Server refreshed:', serverId);
-  };
-
-  const handleRegenerateData = async () => {
-    if (!hasPermission(user, 'manage_servers')) {
-      toast({
-        title: "Access Denied",
-        description: "You don't have permission to regenerate server data.",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    setIsRegenerating(true);
-    try {
-      const success = await clearAndRegenerateServerData();
-      if (success) {
-        await refetchServers();
-        toast({
-          title: "Success",
-          description: "Server data has been regenerated successfully."
-        });
-      } else {
-        toast({
-          title: "Error",
-          description: "Failed to regenerate server data.",
-          variant: "destructive"
-        });
-      }
-    } catch (error) {
-      console.error('Error regenerating server data:', error);
-      toast({
-        title: "Error",
-        description: "Failed to regenerate server data.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsRegenerating(false);
-    }
   };
 
   // Apply filters
@@ -170,17 +178,7 @@ const Servers = () => {
             onAddServer={() => {}}
           />
           {canManageServers && (
-            <>
-              <Button 
-                variant="outline" 
-                onClick={handleRegenerateData}
-                disabled={isRegenerating}
-              >
-                <RotateCcw className={`h-4 w-4 mr-2 ${isRegenerating ? 'animate-spin' : ''}`} />
-                Regenerate Data
-              </Button>
-              <AddServerDialog onAddServer={handleAddServer} />
-            </>
+            <AddServerDialog onAddServer={handleAddServer} />
           )}
         </div>
       </div>
@@ -199,8 +197,36 @@ const Servers = () => {
         statusFilter={statusFilter}
         setStatusFilter={setStatusFilter}
         onRemoveServer={canManageServers ? handleRemoveServer : undefined}
+        onEditServer={canManageServers ? handleEditServer : undefined}
         onRefreshServer={canManageServers ? handleRefreshServer : undefined}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!serverToDelete} onOpenChange={() => setServerToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Server</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this server? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteServer} className="bg-red-600 hover:bg-red-700">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Edit Server Dialog */}
+      {serverToEdit && (
+        <EditServerDialog
+          server={serverToEdit}
+          onUpdateServer={handleUpdateServer}
+          onClose={() => setServerToEdit(null)}
+        />
+      )}
     </div>
   );
 };

@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ServerData } from '@/types/servers';
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Server, Cpu, HardDrive, MemoryStick, MoreVertical, Trash2, RefreshCw } from "lucide-react";
+import { Server, Cpu, HardDrive, MemoryStick, MoreVertical, Trash2, RefreshCw, Edit } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,6 +18,7 @@ interface ServerCardProps {
   onOpenDetails: (id: string) => void;
   isAdmin: boolean;
   onRemoveServer?: (serverId: string) => void;
+  onEditServer?: (server: ServerData) => void;
   onRefreshServer?: (serverId: string) => void;
 }
 
@@ -43,6 +44,7 @@ export const ServerCard: React.FC<ServerCardProps> = ({
   onOpenDetails, 
   isAdmin,
   onRemoveServer,
+  onEditServer,
   onRefreshServer
 }) => {
   const handleCardClick = (e: React.MouseEvent) => {
@@ -57,6 +59,13 @@ export const ServerCard: React.FC<ServerCardProps> = ({
     e.stopPropagation();
     if (onRemoveServer) {
       onRemoveServer(server.id);
+    }
+  };
+
+  const handleEditServer = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onEditServer) {
+      onEditServer(server);
     }
   };
 
@@ -98,6 +107,10 @@ export const ServerCard: React.FC<ServerCardProps> = ({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem onClick={handleEditServer}>
+                    <Edit className="mr-2 h-4 w-4" />
+                    Edit Server
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={handleRefreshServer}>
                     <RefreshCw className="mr-2 h-4 w-4" />
                     Refresh Server

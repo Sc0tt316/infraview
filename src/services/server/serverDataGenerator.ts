@@ -1,3 +1,4 @@
+
 import { ServerData } from '@/types/servers';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -40,7 +41,7 @@ const serverTypes = [
   'Monitoring Server', 'Log Server', 'Cache Server'
 ];
 
-const statuses = ['online', 'offline', 'warning', 'error', 'maintenance'];
+const statuses: ServerData['status'][] = ['online', 'offline', 'warning', 'error', 'maintenance'];
 
 const generateSpecs = () => {
   const cpuCores = [4, 8, 16, 32, 64][Math.floor(Math.random() * 5)];
