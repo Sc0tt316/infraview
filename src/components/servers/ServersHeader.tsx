@@ -1,13 +1,16 @@
+
 import React from 'react';
 import { RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+
 interface ServersHeaderProps {
-  onAddServer: () => void;
+  onAddServer?: () => void;
   onRefresh: () => void;
   isLoading?: boolean;
   isRefreshing?: boolean;
   isAdmin?: boolean;
 }
+
 const ServersHeader: React.FC<ServersHeaderProps> = ({
   onAddServer,
   onRefresh,
@@ -15,7 +18,8 @@ const ServersHeader: React.FC<ServersHeaderProps> = ({
   isRefreshing = false,
   isAdmin = false
 }) => {
-  return <div className="flex items-center justify-between">
+  return (
+    <div className="flex items-center justify-between">
       <div>
         
         
@@ -24,10 +28,14 @@ const ServersHeader: React.FC<ServersHeaderProps> = ({
         <Button variant="outline" onClick={onRefresh} disabled={isLoading || isRefreshing}>
           <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
         </Button>
-        {isAdmin && <Button onClick={onAddServer}>
+        {isAdmin && onAddServer && (
+          <Button onClick={onAddServer}>
             Add Server
-          </Button>}
+          </Button>
+        )}
       </div>
-    </div>;
+    </div>
+  );
 };
+
 export default ServersHeader;
