@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -9,7 +8,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Separator } from '@/components/ui/separator';
 import { printerService } from '@/services/printer';
 import { toast } from '@/hooks/use-toast';
-
 interface EnhancedPrinterCardProps {
   printer: PrinterData;
   onEdit?: (printer: PrinterData) => void;
@@ -17,7 +15,6 @@ interface EnhancedPrinterCardProps {
   onViewDetails?: (printer: PrinterData) => void;
   isAdmin?: boolean;
 }
-
 const EnhancedPrinterCard: React.FC<EnhancedPrinterCardProps> = ({
   printer,
   onEdit,
@@ -26,31 +23,37 @@ const EnhancedPrinterCard: React.FC<EnhancedPrinterCardProps> = ({
   isAdmin = false
 }) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
-
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
-      case 'online': return 'bg-green-500';
-      case 'offline': return 'bg-red-500';
-      case 'warning': return 'bg-yellow-500';
-      case 'error': return 'bg-red-600';
-      default: return 'bg-gray-500';
+      case 'online':
+        return 'bg-green-500';
+      case 'offline':
+        return 'bg-red-500';
+      case 'warning':
+        return 'bg-yellow-500';
+      case 'error':
+        return 'bg-red-600';
+      default:
+        return 'bg-gray-500';
     }
   };
-
   const getStatusBadgeVariant = (status: string) => {
     switch (status.toLowerCase()) {
-      case 'online': return 'default';
-      case 'offline': return 'destructive';
-      case 'warning': return 'outline';
-      case 'error': return 'destructive';
-      default: return 'secondary';
+      case 'online':
+        return 'default';
+      case 'offline':
+        return 'destructive';
+      case 'warning':
+        return 'outline';
+      case 'error':
+        return 'destructive';
+      default:
+        return 'secondary';
     }
   };
-
   const handleRefresh = async (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsRefreshing(true);
-    
     try {
       if (printer.ipAddress) {
         await printerService.pollPrinter({
@@ -60,7 +63,7 @@ const EnhancedPrinterCard: React.FC<EnhancedPrinterCardProps> = ({
         });
         toast({
           title: "Success",
-          description: "Printer status refreshed successfully",
+          description: "Printer status refreshed successfully"
         });
       } else {
         toast({
@@ -79,7 +82,6 @@ const EnhancedPrinterCard: React.FC<EnhancedPrinterCardProps> = ({
       setTimeout(() => setIsRefreshing(false), 1000);
     }
   };
-
   const handleEdit = (e: React.MouseEvent) => {
     e.stopPropagation();
     console.log('Edit button clicked for printer:', printer);
@@ -87,7 +89,6 @@ const EnhancedPrinterCard: React.FC<EnhancedPrinterCardProps> = ({
       onEdit(printer);
     }
   };
-
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
     console.log('Delete button clicked for printer:', printer);
@@ -95,21 +96,17 @@ const EnhancedPrinterCard: React.FC<EnhancedPrinterCardProps> = ({
       onDelete(printer);
     }
   };
-
   const handleCardClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
     if (target.closest('[data-radix-popper-content-wrapper]') || target.closest('button')) {
       return;
     }
-    
     console.log('Card clicked for printer:', printer);
     if (onViewDetails) {
       onViewDetails(printer);
     }
   };
-
-  return (
-    <Card className="cursor-pointer hover:shadow-md transition-shadow duration-200 h-full" onClick={handleCardClick}>
+  return <Card className="cursor-pointer hover:shadow-md transition-shadow duration-200 h-full" onClick={handleCardClick}>
       <CardContent className="p-4 h-full flex flex-col">
         {/* Header */}
         <div className="flex items-start justify-between mb-4">
@@ -130,15 +127,11 @@ const EnhancedPrinterCard: React.FC<EnhancedPrinterCardProps> = ({
           <div className="flex items-center gap-2 flex-shrink-0">
             <div className="flex items-center gap-1">
               <div className={`w-2 h-2 rounded-full ${getStatusColor(printer.status)}`} />
-              {printer.status === 'online' ? 
-                <Wifi className="h-3 w-3 text-green-600" /> : 
-                <WifiOff className="h-3 w-3 text-red-600" />
-              }
+              {printer.status === 'online' ? <Wifi className="h-3 w-3 text-green-600" /> : <WifiOff className="h-3 w-3 text-red-600" />}
             </div>
             
-            {isAdmin && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+            {isAdmin && <DropdownMenu>
+                <DropdownMenuTrigger asChild onClick={e => e.stopPropagation()}>
                   <Button variant="ghost" className="h-8 w-8 p-0">
                     <MoreVertical className="h-4 w-4" />
                   </Button>
@@ -155,8 +148,7 @@ const EnhancedPrinterCard: React.FC<EnhancedPrinterCardProps> = ({
                     Delete Printer
                   </DropdownMenuItem>
                 </DropdownMenuContent>
-              </DropdownMenu>
-            )}
+              </DropdownMenu>}
           </div>
         </div>
 
@@ -184,10 +176,9 @@ const EnhancedPrinterCard: React.FC<EnhancedPrinterCardProps> = ({
                     <span className="text-xs font-medium">{printer.inkLevel || 0}%</span>
                   </div>
                   <div className="w-full bg-muted rounded-full h-1.5 mt-1">
-                    <div 
-                      className="bg-black h-1.5 rounded-full transition-all duration-300" 
-                      style={{ width: `${printer.inkLevel || 0}%` }}
-                    />
+                    <div className="bg-black h-1.5 rounded-full transition-all duration-300" style={{
+                    width: `${printer.inkLevel || 0}%`
+                  }} />
                   </div>
                 </div>
               </div>
@@ -200,7 +191,9 @@ const EnhancedPrinterCard: React.FC<EnhancedPrinterCardProps> = ({
                     <span className="text-xs font-medium">57%</span>
                   </div>
                   <div className="w-full bg-muted rounded-full h-1.5 mt-1">
-                    <div className="bg-cyan-500 h-1.5 rounded-full transition-all duration-300" style={{ width: '57%' }} />
+                    <div className="bg-cyan-500 h-1.5 rounded-full transition-all duration-300" style={{
+                    width: '57%'
+                  }} />
                   </div>
                 </div>
               </div>
@@ -213,7 +206,9 @@ const EnhancedPrinterCard: React.FC<EnhancedPrinterCardProps> = ({
                     <span className="text-xs font-medium">26%</span>
                   </div>
                   <div className="w-full bg-muted rounded-full h-1.5 mt-1">
-                    <div className="bg-magenta-500 h-1.5 rounded-full transition-all duration-300" style={{ width: '26%' }} />
+                    <div className="bg-magenta-500 h-1.5 rounded-full transition-all duration-300" style={{
+                    width: '26%'
+                  }} />
                   </div>
                 </div>
               </div>
@@ -226,7 +221,9 @@ const EnhancedPrinterCard: React.FC<EnhancedPrinterCardProps> = ({
                     <span className="text-xs font-medium">95%</span>
                   </div>
                   <div className="w-full bg-muted rounded-full h-1.5 mt-1">
-                    <div className="bg-yellow-400 h-1.5 rounded-full transition-all duration-300" style={{ width: '95%' }} />
+                    <div className="bg-yellow-400 h-1.5 rounded-full transition-all duration-300" style={{
+                    width: '95%'
+                  }} />
                   </div>
                 </div>
               </div>
@@ -239,13 +236,9 @@ const EnhancedPrinterCard: React.FC<EnhancedPrinterCardProps> = ({
                 <span className="text-xs font-medium">{printer.paperLevel || 0}%</span>
               </div>
               <div className="w-full bg-muted rounded-full h-2">
-                <div 
-                  className={`h-2 rounded-full transition-all duration-300 ${
-                    (printer.paperLevel || 0) > 50 ? 'bg-green-500' : 
-                    (printer.paperLevel || 0) > 20 ? 'bg-yellow-500' : 'bg-red-500'
-                  }`}
-                  style={{ width: `${printer.paperLevel || 0}%` }}
-                />
+                <div className={`h-2 rounded-full transition-all duration-300 ${(printer.paperLevel || 0) > 50 ? 'bg-green-500' : (printer.paperLevel || 0) > 20 ? 'bg-yellow-500' : 'bg-red-500'}`} style={{
+                width: `${printer.paperLevel || 0}%`
+              }} />
               </div>
             </div>
           </div>
@@ -256,16 +249,12 @@ const EnhancedPrinterCard: React.FC<EnhancedPrinterCardProps> = ({
           <Separator className="mb-3" />
           <div className="flex justify-between items-center text-xs text-muted-foreground">
             <span className="truncate">{printer.location}</span>
-            {printer.department && (
-              <Badge variant="outline" className="text-xs">
+            {printer.department && <Badge variant="outline" className="text-xs">
                 {printer.department}
-              </Badge>
-            )}
+              </Badge>}
           </div>
         </div>
       </CardContent>
-    </Card>
-  );
+    </Card>;
 };
-
 export default EnhancedPrinterCard;
