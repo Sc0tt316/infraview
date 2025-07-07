@@ -6,20 +6,25 @@ import { usePrinterStatusUpdates } from '@/hooks/usePrinterStatusUpdates';
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
 import { PrinterData } from '@/types/printers';
+import { useAuth } from '@/context/AuthContext';
+import { hasPermission } from '@/utils/permissions';
 
 interface PrinterActionsProps {
   printer: PrinterData;
-  isAdmin: boolean;
   onEdit?: () => void;
   onDelete?: () => void;
 }
 
 const PrinterActions: React.FC<PrinterActionsProps> = ({
   printer,
-  isAdmin,
   onEdit,
   onDelete
 }) => {
+  const { user } = useAuth();
+  const canRefreshPrinters = hasPermission(user, 'refresh_printers');
+  const canEditPrinters = hasPermission(user, 'edit_printers');
+  const canDeletePrinters = hasPermission(user, 'delete_printers');
+  
   const {
     isPolling,
     lastUpdated,
@@ -29,6 +34,15 @@ const PrinterActions: React.FC<PrinterActionsProps> = ({
   const hasIpAddress = !!printer.ipAddress;
 
   const handleManualPoll = async () => {
+    if (!canRefreshPrinters) {
+      toast({
+        title: "Access Denied",
+        description: "You don't have permission to refresh printer status",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     try {
       await pollPrinterStatus(true);
     } catch (error) {
@@ -52,7 +66,7 @@ const PrinterActions: React.FC<PrinterActionsProps> = ({
             size="default"
             className="w-full flex items-center justify-center gap-2"
             onClick={handleManualPoll}
-            disabled={isPolling || !hasIpAddress}
+            disabled={isPolling || !hasIpAddress || !canRefreshPrinters}
           >
             <RefreshCw className={`h-4 w-4 ${isPolling ? "animate-spin" : ""}`} />
             <span>Refresh Printer Status</span>
@@ -64,6 +78,12 @@ const PrinterActions: React.FC<PrinterActionsProps> = ({
             </p>
           )}
           
+          {!canRefreshPrinters && (
+            <p className="text-xs text-muted-foreground">
+              Manager or admin permissions required
+            </p>
+          )}
+          
           {lastUpdated && (
             <p className="text-xs text-muted-foreground">
               Last updated: {formatDistanceToNow(lastUpdated, { addSuffix: true })}
@@ -71,12 +91,12 @@ const PrinterActions: React.FC<PrinterActionsProps> = ({
           )}
         </div>
 
-        {/* Admin Actions */}
-        {isAdmin && (
+        {/* Manager/Admin Actions */}
+        {(canEditPrinters || canDeletePrinters) && (
           <div className="space-y-2 pt-2 border-t">
-            <h4 className="text-sm font-medium text-muted-foreground">Admin Actions</h4>
+            <h4 className="text-sm font-medium text-muted-foreground">Management Actions</h4>
             
-            {onEdit && (
+            {onEdit && canEditPrinters && (
               <Button
                 variant="outline"
                 size="default"
@@ -88,7 +108,7 @@ const PrinterActions: React.FC<PrinterActionsProps> = ({
               </Button>
             )}
             
-            {onDelete && (
+            {onDelete && canDeletePrinters && (
               <Button
                 variant="destructive"
                 size="default"

@@ -208,7 +208,7 @@ export const userService = {
     }
   },
   
-  // Update user profile - Fixed to properly commit changes
+  // Update user profile - Fixed to properly handle auth email updates
   updateUser: async (id: string, updateData: Partial<UserData & { password?: string }>, isPasswordVerified: boolean = false): Promise<UserData | null> => {
     try {
       console.log('Updating user with ID:', id, 'and data:', updateData);
@@ -228,48 +228,24 @@ export const userService = {
       if (isEmailChanged || isPasswordChanged) {
         console.log('Updating authentication credentials...');
         
-        // Get the current session to check if we're updating the current user
-        const { data: { session } } = await supabase.auth.getSession();
+        // Always use admin API to update user credentials since we're managing users
+        const updatePayload: any = {};
+        if (isEmailChanged) updatePayload.email = updateData.email;
+        if (isPasswordChanged) updatePayload.password = updateData.password;
         
-        if (session && session.user.id === id) {
-          // If updating current user's credentials, use updateUser
-          const updatePayload: any = {};
-          if (isEmailChanged) updatePayload.email = updateData.email;
-          if (isPasswordChanged) updatePayload.password = updateData.password;
-          
-          const { error: authError } = await supabase.auth.updateUser(updatePayload);
-          
-          if (authError) {
-            console.error('Auth update error:', authError);
-            toast({
-              variant: "destructive",
-              title: "Error",
-              description: `Failed to update authentication: ${authError.message}`
-            });
-            return null;
-          }
-        } else {
-          // For admin updating another user's credentials, use admin API
-          if (isEmailChanged || isPasswordChanged) {
-            console.log('Admin updating another user credentials - using admin API');
-            
-            const updatePayload: any = {};
-            if (isEmailChanged) updatePayload.email = updateData.email;
-            if (isPasswordChanged) updatePayload.password = updateData.password;
-            
-            const { error: adminAuthError } = await supabase.auth.admin.updateUserById(id, updatePayload);
-            
-            if (adminAuthError) {
-              console.error('Admin auth update error:', adminAuthError);
-              toast({
-                variant: "destructive",
-                title: "Error",
-                description: `Failed to update user authentication: ${adminAuthError.message}`
-              });
-              return null;
-            }
-          }
+        const { error: adminAuthError } = await supabase.auth.admin.updateUserById(id, updatePayload);
+        
+        if (adminAuthError) {
+          console.error('Admin auth update error:', adminAuthError);
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: `Failed to update user authentication: ${adminAuthError.message}`
+          });
+          return null;
         }
+        
+        console.log('Successfully updated authentication credentials');
       }
       
       // Convert from UserData format to Supabase profiles format, only including fields that have values

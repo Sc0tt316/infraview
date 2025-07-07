@@ -5,13 +5,18 @@ import { useAuth } from '@/context/AuthContext';
 import { PrinterData } from '@/types/printers';
 import { printerService } from '@/services/printer';
 import { alertService } from '@/services/analytics/alertService';
+import { hasPermission } from '@/utils/permissions';
 import PrintersHeader from '@/components/printers/PrintersHeader';
 import PrintersContent from '@/components/printers/PrintersContent';
 import PrinterDialogs from '@/components/printers/PrinterDialogs';
 
 const Printers = () => {
   const { user } = useAuth();
-  const isAdmin = user?.role === 'admin';
+  const canAddPrinters = hasPermission(user, 'add_printers');
+  const canEditPrinters = hasPermission(user, 'edit_printers');
+  const canDeletePrinters = hasPermission(user, 'delete_printers');
+  const canRefreshPrinters = hasPermission(user, 'refresh_printers');
+  
   const [showAddPrinter, setShowAddPrinter] = useState(false);
   const [selectedPrinterId, setSelectedPrinterId] = useState<string | null>(null);
   const [departmentFilter, setDepartmentFilter] = useState<string>('all');
@@ -24,6 +29,10 @@ const Printers = () => {
   const { printers, isLoading, error, refetchPrinters } = usePrinters();
 
   const handleRefresh = async () => {
+    if (!canRefreshPrinters) {
+      return;
+    }
+    
     setIsRefreshing(true);
     // Use SNMP to update all printers when refreshing
     try {
@@ -44,21 +53,30 @@ const Printers = () => {
   };
 
   const handleAddPrinter = () => {
+    if (!canAddPrinters) {
+      return;
+    }
     setShowAddPrinter(true);
   };
 
   const handleDeletePrinter = (printer: PrinterData) => {
+    if (!canDeletePrinters) {
+      return;
+    }
     console.log('Delete printer requested:', printer);
     setPrinterToDelete(printer);
   };
 
   const handleEditPrinter = (printer: PrinterData) => {
+    if (!canEditPrinters) {
+      return;
+    }
     console.log('Edit printer requested:', printer);
     setPrinterToEdit(printer);
   };
 
   const confirmDeletePrinter = async () => {
-    if (printerToDelete) {
+    if (printerToDelete && canDeletePrinters) {
       console.log('Confirming delete for printer:', printerToDelete);
       const success = await printerService.deletePrinter(printerToDelete.id, printerToDelete.name);
       if (success) {
@@ -133,9 +151,9 @@ const Printers = () => {
       <PrintersHeader
         isLoading={isLoading}
         isRefreshing={isRefreshing}
-        isAdmin={isAdmin || false}
+        isAdmin={canAddPrinters}
         onRefresh={handleRefresh}
-        onAddPrinter={handleAddPrinter}
+        onAddPrinter={canAddPrinters ? handleAddPrinter : undefined}
       />
 
       <PrintersContent
@@ -144,12 +162,12 @@ const Printers = () => {
         searchQuery={searchQuery}
         selectedDepartment={departmentFilter}
         selectedStatus={statusFilter}
-        isAdmin={isAdmin || false}
-        onAddPrinter={handleAddPrinter}
+        isAdmin={canEditPrinters || canDeletePrinters}
+        onAddPrinter={canAddPrinters ? handleAddPrinter : undefined}
         onPrinterClick={handlePrinterClick}
         onPrinterSelect={handlePrinterClick}
-        onEditPrinter={handleEditPrinter}
-        onDeletePrinter={handleDeletePrinter}
+        onEditPrinter={canEditPrinters ? handleEditPrinter : undefined}
+        onDeletePrinter={canDeletePrinters ? handleDeletePrinter : undefined}
         departmentFilter={departmentFilter}
         setDepartmentFilter={setDepartmentFilter}
         statusFilter={statusFilter}
@@ -166,7 +184,7 @@ const Printers = () => {
         setPrinterToDelete={setPrinterToDelete}
         selectedPrinterId={selectedPrinterId}
         setSelectedPrinterId={setSelectedPrinterId}
-        isAdmin={isAdmin || false}
+        isAdmin={canEditPrinters || canDeletePrinters}
         onConfirmDelete={confirmDeletePrinter}
         onPrinterEditSuccess={handlePrinterEditSuccess}
         onPrinterAddSuccess={handlePrinterAddSuccess}

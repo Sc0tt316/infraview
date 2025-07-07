@@ -23,6 +23,8 @@ export const hasPermission = (user: User | null, permission: string): boolean =>
       return user.role === 'admin' || user.role === 'manager';
     case 'edit_servers':
       return user.role === 'admin' || user.role === 'manager';
+    case 'refresh_printers':
+      return user.role === 'admin' || user.role === 'manager';
     case 'view_dashboard':
       return true; // All users can view dashboard
     case 'resolve_alerts':
