@@ -31,7 +31,6 @@ const Servers = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [serverToDelete, setServerToDelete] = useState<string | null>(null);
   const [serverToEdit, setServerToEdit] = useState<ServerData | null>(null);
-  const [showAddDialog, setShowAddDialog] = useState(false);
   const { servers, isLoading, refetchServers } = useServers();
 
   const handleRefresh = async () => {
@@ -58,7 +57,6 @@ const Servers = () => {
     const addedServer = await serverService.addServer(serverData);
     if (addedServer) {
       await refetchServers();
-      setShowAddDialog(false);
     }
   };
 
@@ -174,7 +172,6 @@ const Servers = () => {
         isRefreshing={isRefreshing}
         isAdmin={canManageServers}
         onRefresh={handleRefresh}
-        onAddServer={() => setShowAddDialog(true)}
       />
 
       <ServersContent
@@ -196,11 +193,8 @@ const Servers = () => {
       />
 
       {/* Add Server Dialog */}
-      {showAddDialog && (
-        <AddServerDialog 
-          onAddServer={handleAddServer} 
-          onClose={() => setShowAddDialog(false)}
-        />
+      {canAddServers && (
+        <AddServerDialog onAddServer={handleAddServer} />
       )}
 
       {/* Delete Confirmation Dialog */}
