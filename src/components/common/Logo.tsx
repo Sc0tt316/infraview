@@ -32,7 +32,7 @@ const Logo: React.FC<LogoProps> = ({
       <div className={cn("bg-primary flex items-center justify-center rounded-md border transition-transform duration-500 hover:rotate-[360deg]", sizeClasses[validSize].container, className)}>
         <span className={cn("text-primary-foreground font-bold", sizeClasses[validSize].text)}>M</span>
       </div>
-      <span className={cn("font-medium text-primary truncate", sizeClasses[validSize].text)}>    M-InfraView</span>
+      <span className={cn("font-medium text-primary truncate", sizeClasses[validSize].text)}>‎ ‎ ‎ M-InfraView</span>
     </Link>;
 };
 export default Logo;
