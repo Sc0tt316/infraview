@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Zap, RefreshCw, Bell, RotateCw } from 'lucide-react';
+import { Activity, Database, AlertTriangle, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface SystemStatusData {
@@ -73,7 +73,7 @@ const SystemStatus: React.FC = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="flex items-center">
             <div className={`h-10 w-10 ${statusData.printServerStatus === 'online' ? 'bg-green-50' : 'bg-red-50'} flex items-center justify-center rounded-full mr-3`}>
-              <Zap className={`h-5 w-5 ${statusData.printServerStatus === 'online' ? 'text-green-600' : 'text-red-600'}`} />
+              <Activity className={`h-5 w-5 ${statusData.printServerStatus === 'online' ? 'text-green-600' : 'text-red-600'}`} />
             </div>
             <div>
               <p className="text-sm font-medium">Print Server</p>
@@ -82,7 +82,7 @@ const SystemStatus: React.FC = () => {
           </div>
           <div className="flex items-center">
             <div className={`h-10 w-10 ${statusData.printQueueStatus === 'operational' ? 'bg-green-50' : 'bg-yellow-50'} flex items-center justify-center rounded-full mr-3`}>
-              <RefreshCw className={`h-5 w-5 ${statusData.printQueueStatus === 'operational' ? 'text-green-600' : 'text-yellow-600'}`} />
+              <Database className={`h-5 w-5 ${statusData.printQueueStatus === 'operational' ? 'text-green-600' : 'text-yellow-600'}`} />
             </div>
             <div>
               <p className="text-sm font-medium">Print Queue</p>
@@ -91,7 +91,7 @@ const SystemStatus: React.FC = () => {
           </div>
           <div className="flex items-center">
             <div className={`h-10 w-10 ${statusData.errorRate < 5 ? 'bg-green-50' : 'bg-yellow-50'} flex items-center justify-center rounded-full mr-3`}>
-              <Bell className={`h-5 w-5 ${statusData.errorRate < 5 ? 'text-green-600' : 'text-yellow-600'}`} />
+              <AlertTriangle className={`h-5 w-5 ${statusData.errorRate < 5 ? 'text-green-600' : 'text-yellow-600'}`} />
             </div>
             <div>
               <p className="text-sm font-medium">Alerts</p>
@@ -102,7 +102,7 @@ const SystemStatus: React.FC = () => {
           </div>
           <div className="flex items-center">
             <div className="h-10 w-10 bg-green-50 flex items-center justify-center rounded-full mr-3">
-              <RotateCw className="h-5 w-5 text-green-600" />
+              <Clock className="h-5 w-5 text-green-600" />
             </div>
             <div>
               <p className="text-sm font-medium">Last Sync</p>

@@ -31,6 +31,7 @@ const Servers = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [serverToDelete, setServerToDelete] = useState<string | null>(null);
   const [serverToEdit, setServerToEdit] = useState<ServerData | null>(null);
+  const [showAddDialog, setShowAddDialog] = useState(false);
   const { servers, isLoading, refetchServers } = useServers();
 
   const handleRefresh = async () => {
@@ -57,6 +58,7 @@ const Servers = () => {
     const addedServer = await serverService.addServer(serverData);
     if (addedServer) {
       await refetchServers();
+      setShowAddDialog(false);
     }
   };
 
@@ -167,21 +169,13 @@ const Servers = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div></div>
-        <div className="flex space-x-2">
-          <ServersHeader
-            isLoading={isLoading}
-            isRefreshing={isRefreshing}
-            isAdmin={canManageServers}
-            onRefresh={handleRefresh}
-            onAddServer={() => {}}
-          />
-          {canManageServers && (
-            <AddServerDialog onAddServer={handleAddServer} />
-          )}
-        </div>
-      </div>
+      <ServersHeader
+        isLoading={isLoading}
+        isRefreshing={isRefreshing}
+        isAdmin={canManageServers}
+        onRefresh={handleRefresh}
+        onAddServer={() => setShowAddDialog(true)}
+      />
 
       <ServersContent
         isLoading={isLoading}
@@ -200,6 +194,14 @@ const Servers = () => {
         onEditServer={canManageServers ? handleEditServer : undefined}
         onRefreshServer={canManageServers ? handleRefreshServer : undefined}
       />
+
+      {/* Add Server Dialog */}
+      {showAddDialog && (
+        <AddServerDialog 
+          onAddServer={handleAddServer} 
+          onClose={() => setShowAddDialog(false)}
+        />
+      )}
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!serverToDelete} onOpenChange={() => setServerToDelete(null)}>
