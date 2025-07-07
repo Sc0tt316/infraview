@@ -1,3 +1,4 @@
+
 import { apiService } from './api';
 import { toast } from '@/hooks/use-toast';
 import { UserData } from '@/types/user';
@@ -97,7 +98,7 @@ export const userService = {
     }
   },
   
-  // Add a new user - Fixed to properly handle profile creation
+  // Add a new user - Simplified to work with current auth setup
   addUser: async (userData: Partial<UserData & { password?: string }>): Promise<UserData | null> => {
     try {
       console.log('Adding user with data:', userData);
@@ -111,13 +112,15 @@ export const userService = {
         return null;
       }
 
-      // First create the user in Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      // Create auth user using sign up
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email: userData.email,
         password: userData.password,
-        email_confirm: true,
-        user_metadata: {
-          name: userData.name || ''
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+          data: {
+            name: userData.name || ''
+          }
         }
       });
       
@@ -131,10 +134,19 @@ export const userService = {
         return null;
       }
       
+      if (!authData.user) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to create user account"
+        });
+        return null;
+      }
+      
       const userId = authData.user.id;
       console.log('Created auth user with ID:', userId);
       
-      // Create the profile with the auth user ID using the service role client
+      // Create the profile manually
       const profileData = {
         id: userId,
         name: userData.name || '',
@@ -148,7 +160,6 @@ export const userService = {
       
       console.log('Creating profile with data:', profileData);
       
-      // Use a direct insert with the service role to bypass RLS
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .insert([profileData])
@@ -157,13 +168,6 @@ export const userService = {
       
       if (profileError) {
         console.error('Profile creation error:', profileError);
-        // Try to clean up the auth user if profile creation failed
-        try {
-          await supabase.auth.admin.deleteUser(userId);
-        } catch (cleanupError) {
-          console.error('Failed to cleanup auth user:', cleanupError);
-        }
-        
         toast({
           variant: "destructive",
           title: "Error",
@@ -208,7 +212,7 @@ export const userService = {
     }
   },
   
-  // Update user profile - Fixed to properly handle auth email updates
+  // Update user profile - Simplified to work with current permissions
   updateUser: async (id: string, updateData: Partial<UserData & { password?: string }>, isPasswordVerified: boolean = false): Promise<UserData | null> => {
     try {
       console.log('Updating user with ID:', id, 'and data:', updateData);
@@ -216,36 +220,6 @@ export const userService = {
       // Handle special case for new users
       if (id === "new") {
         return userService.addUser(updateData);
-      }
-      
-      // Get current user data to check if sensitive data is changing
-      const currentUser = await userService.getUserById(id);
-      const isEmailChanged = updateData.email && currentUser && currentUser.email !== updateData.email;
-      const isPasswordChanged = updateData.password && updateData.password.length >= 6;
-      const isRoleChanged = updateData.role && currentUser && currentUser.role !== updateData.role;
-      
-      // If email or password is being updated, update it in Supabase Auth as well
-      if (isEmailChanged || isPasswordChanged) {
-        console.log('Updating authentication credentials...');
-        
-        // Always use admin API to update user credentials since we're managing users
-        const updatePayload: any = {};
-        if (isEmailChanged) updatePayload.email = updateData.email;
-        if (isPasswordChanged) updatePayload.password = updateData.password;
-        
-        const { error: adminAuthError } = await supabase.auth.admin.updateUserById(id, updatePayload);
-        
-        if (adminAuthError) {
-          console.error('Admin auth update error:', adminAuthError);
-          toast({
-            variant: "destructive",
-            title: "Error",
-            description: `Failed to update user authentication: ${adminAuthError.message}`
-          });
-          return null;
-        }
-        
-        console.log('Successfully updated authentication credentials');
       }
       
       // Convert from UserData format to Supabase profiles format, only including fields that have values
@@ -278,15 +252,9 @@ export const userService = {
       console.log('Successfully updated profile:', profile);
       
       // Log the activity
-      const changes = [];
-      if (isEmailChanged) changes.push('email changed');
-      if (isPasswordChanged) changes.push('password changed');
-      if (isRoleChanged) changes.push('role changed');
-      const changesText = changes.length > 0 ? ` (${changes.join(', ')})` : '';
-      
       await logUserActivity(
         'User Updated',
-        `User "${profile.name}" profile was updated${changesText}`,
+        `User "${profile.name}" profile was updated`,
         'success'
       );
 
@@ -317,7 +285,7 @@ export const userService = {
     }
   },
   
-  // Delete a user
+  // Delete a user - Simplified to work with current permissions
   deleteUser: async (id: string): Promise<boolean> => {
     try {
       const { data: profile, error: fetchError } = await supabase
@@ -330,14 +298,7 @@ export const userService = {
         throw fetchError;
       }
 
-      // Delete from auth first, then from profiles
-      const { error: authError } = await supabase.auth.admin.deleteUser(id);
-      
-      if (authError) {
-        console.error('Auth deletion error:', authError);
-        // Continue with profile deletion even if auth deletion fails
-      }
-
+      // Delete the profile (the auth user will need to be handled separately)
       const { error } = await supabase
         .from('profiles')
         .delete()
