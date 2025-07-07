@@ -13,31 +13,28 @@ interface PrinterFormData {
   serialNumber?: string;
 }
 
-// Helper function to generate random values
-const generateRandomPrinterValues = () => {
-  const statuses = ['online', 'offline', 'warning', 'error', 'maintenance'];
-  const randomStatus = statuses[Math.floor(Math.random() * statuses.length)];
-  
+// Helper function to generate realistic starting values for new printers
+const generateRealisticPrinterValues = () => {
   return {
-    status: randomStatus,
-    ink_level: Math.floor(Math.random() * 101), // 0-100
-    paper_level: Math.floor(Math.random() * 101), // 0-100
-    job_count: Math.floor(Math.random() * 1000), // 0-999
+    status: 'offline', // New printers start offline until connected
+    ink_level: 0, // Start with empty ink
+    paper_level: 0, // Start with no paper
+    job_count: 0, // No jobs processed yet
     supplies: {
-      black: Math.floor(Math.random() * 101),
-      cyan: Math.floor(Math.random() * 101),
-      magenta: Math.floor(Math.random() * 101),
-      yellow: Math.floor(Math.random() * 101),
-      waste: Math.floor(Math.random() * 101)
+      black: 0,
+      cyan: 0,
+      magenta: 0,
+      yellow: 0,
+      waste: 0
     },
     stats: {
-      dailyPrints: Math.floor(Math.random() * 100),
-      weeklyPrints: Math.floor(Math.random() * 500),
-      monthlyPrints: Math.floor(Math.random() * 2000),
-      totalPrints: Math.floor(Math.random() * 10000),
-      totalPages: Math.floor(Math.random() * 50000),
-      monthlyPages: Math.floor(Math.random() * 10000),
-      jams: Math.floor(Math.random() * 20)
+      dailyPrints: 0,
+      weeklyPrints: 0,
+      monthlyPrints: 0,
+      totalPrints: 0,
+      totalPages: 0,
+      monthlyPages: 0,
+      jams: 0
     }
   };
 };
@@ -46,7 +43,7 @@ export const addPrinter = async (printerData: PrinterFormData): Promise<string |
   try {
     console.log('Adding printer:', printerData);
     
-    const randomValues = generateRandomPrinterValues();
+    const realisticValues = generateRealisticPrinterValues();
     
     const printerToAdd = {
       name: printerData.name,
@@ -55,14 +52,14 @@ export const addPrinter = async (printerData: PrinterFormData): Promise<string |
       department: printerData.department || null,
       ip_address: printerData.ipAddress || null,
       serial_number: printerData.serialNumber || null,
-      status: randomValues.status,
-      ink_level: randomValues.ink_level,
-      paper_level: randomValues.paper_level,
-      job_count: randomValues.job_count,
+      status: realisticValues.status,
+      ink_level: realisticValues.ink_level,
+      paper_level: realisticValues.paper_level,
+      job_count: realisticValues.job_count,
       last_active: new Date().toISOString(),
       added_date: new Date().toISOString(),
-      supplies: randomValues.supplies,
-      stats: randomValues.stats
+      supplies: realisticValues.supplies,
+      stats: realisticValues.stats
     };
 
     const { data, error } = await supabase
@@ -84,13 +81,13 @@ export const addPrinter = async (printerData: PrinterFormData): Promise<string |
       printerName: data.name,
       action: 'Printer Added',
       timestamp: new Date().toISOString(),
-      details: `New printer "${data.name}" (${data.model}) was added to ${data.location} with randomly generated values`,
+      details: `New printer "${data.name}" (${data.model}) was added to ${data.location} with initial empty values`,
       status: 'success'
     });
 
     toast({
       title: "Printer Added",
-      description: `${data.name} has been successfully added with random values.`
+      description: `${data.name} has been successfully added with initial empty values.`
     });
 
     return data.id;

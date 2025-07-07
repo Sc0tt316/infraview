@@ -150,11 +150,12 @@ const Users = () => {
     try {
       const success = await userService.deleteUser(selectedUser.id);
       if (success) {
+        // Close the dialog and refresh the data
         setShowUserDetails(false);
-        setTimeout(() => {
-          setSelectedUser(null);
-          setUserLogs([]);
-        }, 300);
+        setSelectedUser(null);
+        setUserLogs([]);
+        // Force refresh of users list
+        await refetch();
       }
     } catch (error) {
       console.error("Error deleting user:", error);
@@ -225,6 +226,8 @@ const Users = () => {
           phone: "+212 ",
           password: ""
         });
+        // Force refresh of users list
+        await refetch();
       }
     } catch (error) {
       console.error("Error adding user:", error);
@@ -248,6 +251,9 @@ const Users = () => {
         });
         setShowEditModal(false);
         setShowUserDetails(false);
+        setSelectedUser(null);
+        // Force refresh of users list
+        await refetch();
       }
     } catch (error) {
       console.error("Error updating user:", error);

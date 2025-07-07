@@ -35,6 +35,12 @@ const PrinterDialogs: React.FC<PrinterDialogsProps> = ({
   onPrinterEditSuccess,
   onPrinterAddSuccess
 }) => {
+  const handleConfirmDelete = async () => {
+    await onConfirmDelete();
+    // Ensure dialog closes after deletion
+    setPrinterToDelete(null);
+  };
+
   return (
     <>
       {/* Add Printer Dialog */}
@@ -75,7 +81,7 @@ const PrinterDialogs: React.FC<PrinterDialogsProps> = ({
                 <Button variant="outline" onClick={() => setPrinterToDelete(null)}>
                   Cancel
                 </Button>
-                <Button variant="destructive" onClick={onConfirmDelete}>
+                <Button variant="destructive" onClick={handleConfirmDelete}>
                   Delete
                 </Button>
               </div>

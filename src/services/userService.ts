@@ -1,4 +1,3 @@
-
 import { apiService } from './api';
 import { toast } from '@/hooks/use-toast';
 import { UserData } from '@/types/user';
@@ -98,7 +97,7 @@ export const userService = {
     }
   },
   
-  // Add a new user - Simplified to work with current auth setup
+  // Add a new user - Fixed to work without UUID conflicts
   addUser: async (userData: Partial<UserData & { password?: string }>): Promise<UserData | null> => {
     try {
       console.log('Adding user with data:', userData);
@@ -112,14 +111,17 @@ export const userService = {
         return null;
       }
 
-      // Create auth user using sign up
+      // Create auth user using sign up - Supabase will auto-generate UUID
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: userData.email,
         password: userData.password,
         options: {
           emailRedirectTo: `${window.location.origin}/`,
           data: {
-            name: userData.name || ''
+            name: userData.name || '',
+            role: userData.role || 'user',
+            department: userData.department || '',
+            phone: userData.phone || ''
           }
         }
       });
@@ -138,47 +140,86 @@ export const userService = {
         toast({
           variant: "destructive",
           title: "Error",
-          description: "Failed to create user account"
+          description: "Failed to create user account - no user returned"
         });
         return null;
       }
       
-      const userId = authData.user.id;
-      console.log('Created auth user with ID:', userId);
+      console.log('Successfully created auth user:', authData.user.id);
       
-      // Create the profile manually
-      const profileData = {
-        id: userId,
-        name: userData.name || '',
-        email: userData.email,
-        role: userData.role || 'user',
-        department: userData.department || '',
-        phone: userData.phone || '',
-        status: 'active',
-        profile_image: userData.profileImage
-      };
-      
-      console.log('Creating profile with data:', profileData);
+      // Wait for the trigger to create the profile, then update it with additional data
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Give trigger time to run
       
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .insert([profileData])
+        .update({
+          name: userData.name || '',
+          role: userData.role || 'user',
+          department: userData.department || '',
+          phone: userData.phone || '',
+          status: 'active'
+        })
+        .eq('id', authData.user.id)
         .select('*')
         .single();
       
       if (profileError) {
-        console.error('Profile creation error:', profileError);
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: `Failed to create user profile: ${profileError.message}`
-        });
+        console.error('Profile update error:', profileError);
+        // If profile doesn't exist yet, create it manually
+        if (profileError.code === 'PGRST116') {
+          const { data: newProfile, error: insertError } = await supabase
+            .from('profiles')
+            .insert([{
+              id: authData.user.id,
+              name: userData.name || '',
+              email: userData.email,
+              role: userData.role || 'user',
+              department: userData.department || '',
+              phone: userData.phone || '',
+              status: 'active'
+            }])
+            .select('*')
+            .single();
+            
+          if (insertError) {
+            console.error('Profile creation error:', insertError);
+            toast({
+              variant: "destructive",
+              title: "Error",
+              description: `Failed to create user profile: ${insertError.message}`
+            });
+            return null;
+          }
+          
+          const createdProfile = newProfile;
+          await logUserActivity(
+            'User Added',
+            `New user "${createdProfile.name}" was added to the system with role: ${createdProfile.role}`,
+            'success'
+          );
+
+          toast({
+            title: "Success",
+            description: `User "${createdProfile.name}" has been added successfully.`
+          });
+          
+          return {
+            id: createdProfile.id,
+            name: createdProfile.name || 'Unknown',
+            email: createdProfile.email || 'No email',
+            role: createdProfile.role as 'admin' | 'manager' | 'user' || 'user',
+            department: createdProfile.department || '',
+            phone: createdProfile.phone || '',
+            status: createdProfile.status as 'active' | 'inactive' | 'pending',
+            lastActive: createdProfile.last_active,
+            profileImage: createdProfile.profile_image
+          };
+        }
         return null;
       }
       
-      console.log('Successfully created profile:', profile);
+      console.log('Successfully updated profile:', profile);
       
-      // Log the activity
       await logUserActivity(
         'User Added',
         `New user "${profile.name}" was added to the system with role: ${profile.role}`,
@@ -250,6 +291,27 @@ export const userService = {
       }
       
       console.log('Successfully updated profile:', profile);
+      
+      // If email is being updated, update the auth user's email too
+      if (updateData.email && updateData.email !== profile.email) {
+        try {
+          const { error: emailError } = await supabase.auth.updateUser({
+            email: updateData.email
+          });
+          
+          if (emailError) {
+            console.error('Error updating auth email:', emailError);
+            // Don't fail the whole operation if email update fails
+            toast({
+              title: "Warning",
+              description: "Profile updated but auth email update failed. Please contact admin.",
+              variant: "destructive"
+            });
+          }
+        } catch (emailErr) {
+          console.error('Auth email update error:', emailErr);
+        }
+      }
       
       // Log the activity
       await logUserActivity(
