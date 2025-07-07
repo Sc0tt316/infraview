@@ -124,7 +124,7 @@ const EnhancedPrinterCard: React.FC<EnhancedPrinterCardProps> = ({
             </div>
           </div>
           
-          <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="flex items-center gap-2 flex-shrink-0 py-[10px]">
             <div className="flex items-center gap-1">
               <div className={`w-2 h-2 rounded-full ${getStatusColor(printer.status)}`} />
               {printer.status === 'online' ? <Wifi className="h-3 w-3 text-green-600" /> : <WifiOff className="h-3 w-3 text-red-600" />}
