@@ -46,26 +46,12 @@ export const userService = {
       
       if (error) {
         console.error('Error fetching profiles:', error);
-        // If direct query fails, try with RLS bypass for service role
-        const { data: serviceProfiles, error: serviceError } = await supabase
-          .rpc('get_all_profiles');
-        
-        if (serviceError) {
-          console.error('Service RPC error:', serviceError);
-          throw error; // Use original error
-        }
-        
-        return serviceProfiles?.map(profile => ({
-          id: profile.id,
-          name: profile.name || 'Unknown',
-          email: profile.email || 'No email',
-          role: profile.role as 'admin' | 'manager' | 'user' || 'user',
-          department: profile.department,
-          phone: profile.phone || '',
-          status: profile.status as 'active' | 'inactive' | 'pending' || 'active',
-          lastActive: profile.last_active,
-          profileImage: profile.profile_image
-        })) || [];
+        // Just return empty array if we can't fetch profiles
+        return [];
+      }
+      
+      if (!profiles) {
+        return [];
       }
       
       return profiles.map(profile => ({
@@ -73,7 +59,7 @@ export const userService = {
         name: profile.name || 'Unknown',
         email: profile.email || 'No email',
         role: profile.role as 'admin' | 'manager' | 'user' || 'user',
-        department: profile.department,
+        department: profile.department || '',
         phone: profile.phone || '',
         status: profile.status as 'active' | 'inactive' | 'pending' || 'active',
         lastActive: profile.last_active,
@@ -112,7 +98,7 @@ export const userService = {
         name: profile.name || 'Unknown',
         email: profile.email || 'No email',
         role: profile.role as 'admin' | 'manager' | 'user' || 'user',
-        department: profile.department,
+        department: profile.department || '',
         phone: profile.phone || '',
         status: profile.status as 'active' | 'inactive' | 'pending' || 'active',
         lastActive: profile.last_active,
@@ -312,7 +298,7 @@ export const userService = {
         name: profile.name || 'Unknown',
         email: profile.email || 'No email',
         role: profile.role as 'admin' | 'manager' | 'user' || 'user',
-        department: profile.department,
+        department: profile.department || '',
         phone: profile.phone || '',
         status: profile.status as 'active' | 'inactive' | 'pending' || 'active',
         lastActive: profile.last_active,
