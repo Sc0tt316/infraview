@@ -3,30 +3,13 @@ import React from 'react';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Droplets, FileText, Zap } from 'lucide-react';
-import { Printer } from '@/types/printer';
+import { SuppliesData } from '@/types/printers';
 
 interface SupplyLevelsProps {
-  printer: Printer;
+  supplies?: SuppliesData;
 }
 
-const SupplyLevels: React.FC<SupplyLevelsProps> = ({ printer }) => {
-  const getSupplyLevel = (supplyType: string) => {
-    if (printer.supplies && typeof printer.supplies === 'object') {
-      const supplies = printer.supplies as any;
-      return supplies[supplyType] || 0;
-    }
-    // Fallback to individual fields
-    switch (supplyType) {
-      case 'ink':
-      case 'toner':
-        return printer.ink_level || 0;
-      case 'paper':
-        return printer.paper_level || 0;
-      default:
-        return 0;
-    }
-  };
-
+const SupplyLevels: React.FC<SupplyLevelsProps> = ({ supplies }) => {
   const getSupplyColor = (level: number) => {
     if (level > 50) return 'bg-green-500';
     if (level > 20) return 'bg-yellow-500';
@@ -39,33 +22,69 @@ const SupplyLevels: React.FC<SupplyLevelsProps> = ({ printer }) => {
     return 'text-red-600';
   };
 
-  const supplies = [
-    {
-      name: 'Ink/Toner',
-      level: getSupplyLevel('ink') || getSupplyLevel('toner'),
+  if (!supplies) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Droplets className="h-5 w-5" />
+            Supply Levels
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground">No supply data available</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const supplyItems = [];
+
+  // Add black toner/ink
+  if (supplies.black !== undefined) {
+    supplyItems.push({
+      name: 'Black Toner',
+      level: supplies.black,
       icon: Droplets,
       unit: '%'
-    },
-    {
-      name: 'Paper',
-      level: getSupplyLevel('paper'),
-      icon: FileText,
-      unit: '%'
-    }
-  ];
+    });
+  }
 
-  // Add additional supplies if they exist in the supplies object
-  if (printer.supplies && typeof printer.supplies === 'object') {
-    const suppliesObj = printer.supplies as any;
-    Object.keys(suppliesObj).forEach(key => {
-      if (!['ink', 'toner', 'paper'].includes(key.toLowerCase())) {
-        supplies.push({
-          name: key.charAt(0).toUpperCase() + key.slice(1),
-          level: suppliesObj[key] || 0,
-          icon: Zap,
-          unit: '%'
-        });
-      }
+  // Add color supplies if available
+  if (supplies.cyan !== undefined) {
+    supplyItems.push({
+      name: 'Cyan Toner',
+      level: supplies.cyan,
+      icon: Droplets,
+      unit: '%'
+    });
+  }
+
+  if (supplies.magenta !== undefined) {
+    supplyItems.push({
+      name: 'Magenta Toner',
+      level: supplies.magenta,
+      icon: Droplets,
+      unit: '%'
+    });
+  }
+
+  if (supplies.yellow !== undefined) {
+    supplyItems.push({
+      name: 'Yellow Toner',
+      level: supplies.yellow,
+      icon: Droplets,
+      unit: '%'
+    });
+  }
+
+  // Add waste if available
+  if (supplies.waste !== undefined) {
+    supplyItems.push({
+      name: 'Waste Toner',
+      level: supplies.waste,
+      icon: Zap,
+      unit: '%'
     });
   }
 
@@ -78,7 +97,7 @@ const SupplyLevels: React.FC<SupplyLevelsProps> = ({ printer }) => {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {supplies.map((supply, index) => {
+        {supplyItems.map((supply, index) => {
           const IconComponent = supply.icon;
           return (
             <div key={index} className="space-y-2">

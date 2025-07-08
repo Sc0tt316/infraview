@@ -2,28 +2,23 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart, FileText, Clock, TrendingUp } from 'lucide-react';
-import { Printer } from '@/types/printer';
+import { PrinterStats } from '@/types/printers';
 
 interface PrinterStatisticsProps {
-  printer: Printer;
+  stats?: PrinterStats;
+  jobCount?: number;
+  lastActive?: string;
 }
 
-const PrinterStatistics: React.FC<PrinterStatisticsProps> = ({ printer }) => {
+const PrinterStatistics: React.FC<PrinterStatisticsProps> = ({ stats, jobCount, lastActive }) => {
   const getStatValue = (statKey: string, fallback: number = 0) => {
-    if (printer.stats && typeof printer.stats === 'object') {
-      const stats = printer.stats as any;
-      return stats[statKey] || fallback;
+    if (stats && typeof stats === 'object') {
+      return (stats as any)[statKey] || fallback;
     }
     return fallback;
   };
 
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return 'Never';
-    return new Date(dateString).toLocaleDateString();
-  };
-
   const formatUptime = () => {
-    const lastActive = printer.last_active;
     if (!lastActive) return 'Unknown';
     
     const now = new Date();
@@ -39,13 +34,13 @@ const PrinterStatistics: React.FC<PrinterStatisticsProps> = ({ printer }) => {
   const statistics = [
     {
       label: 'Total Jobs',
-      value: printer.job_count?.toString() || '0',
+      value: jobCount?.toString() || '0',
       icon: FileText,
       description: 'Print jobs processed'
     },
     {
-      label: 'Pages Printed',
-      value: getStatValue('pages_printed', 0).toString(),
+      label: 'Total Pages',
+      value: getStatValue('totalPages', 0).toString(),
       icon: BarChart,
       description: 'Total pages printed'
     },
@@ -56,10 +51,10 @@ const PrinterStatistics: React.FC<PrinterStatisticsProps> = ({ printer }) => {
       description: 'Last activity time'
     },
     {
-      label: 'Avg Daily Jobs',
-      value: getStatValue('avg_daily_jobs', 0).toString(),
+      label: 'Monthly Prints',
+      value: getStatValue('monthlyPrints', 0).toString(),
       icon: TrendingUp,
-      description: 'Average jobs per day'
+      description: 'Prints this month'
     }
   ];
 

@@ -1,13 +1,12 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Printer, Wifi, WifiOff, AlertTriangle, CheckCircle } from 'lucide-react';
-import { Printer as PrinterType } from '@/types/printer';
+import { PrinterData } from '@/types/printers';
 
 interface PrinterCardProps {
-  printer: PrinterType;
+  printer: PrinterData;
   onClick: () => void;
 }
 
@@ -44,25 +43,8 @@ const PrinterCard: React.FC<PrinterCardProps> = ({ printer, onClick }) => {
     }
   };
 
-  const getSupplyLevel = (supplyType: string) => {
-    if (printer.supplies && typeof printer.supplies === 'object') {
-      const supplies = printer.supplies as any;
-      return supplies[supplyType] || 0;
-    }
-    // Fallback to individual fields
-    switch (supplyType) {
-      case 'ink':
-      case 'toner':
-        return printer.ink_level || 0;
-      case 'paper':
-        return printer.paper_level || 0;
-      default:
-        return 0;
-    }
-  };
-
-  const inkLevel = getSupplyLevel('ink') || getSupplyLevel('toner');
-  const paperLevel = getSupplyLevel('paper');
+  const inkLevel = printer.inkLevel || 0;
+  const paperLevel = printer.paperLevel || 0;
 
   return (
     <Card 
@@ -136,11 +118,11 @@ const PrinterCard: React.FC<PrinterCardProps> = ({ printer, onClick }) => {
         <div className="flex justify-between items-center pt-2 border-t">
           <div className="text-sm">
             <span className="text-muted-foreground">Jobs: </span>
-            <span className="font-medium">{printer.job_count || 0}</span>
+            <span className="font-medium">{printer.jobCount || 0}</span>
           </div>
           <div className="text-sm">
             <span className="text-muted-foreground">IP: </span>
-            <span className="font-medium">{printer.ip_address || 'N/A'}</span>
+            <span className="font-medium">{printer.ipAddress || 'N/A'}</span>
           </div>
         </div>
       </CardContent>

@@ -27,3 +27,23 @@ export type PrinterFormValues = z.infer<typeof printerFormSchema>;
 export interface ExtendedPrinterFormValues extends PrinterFormValues {
   autoDiscovery?: boolean;
 }
+
+// Main Printer interface that matches our database structure
+export interface Printer {
+  id: string;
+  name: string;
+  model: string;
+  location: string;
+  status: 'online' | 'offline' | 'error' | 'warning' | 'maintenance';
+  sub_status?: string;
+  ink_level: number;
+  paper_level: number;
+  job_count?: number;
+  last_active?: string;
+  ip_address?: string;
+  department?: string;
+  serial_number?: string;
+  added_date?: string;
+  supplies?: any;
+  stats?: any;
+}

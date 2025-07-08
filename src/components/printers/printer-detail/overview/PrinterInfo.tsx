@@ -1,12 +1,11 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Info, MapPin, Building, Wifi, Calendar } from 'lucide-react';
-import { Printer } from '@/types/printer';
+import { PrinterData } from '@/types/printers';
 
 interface PrinterInfoProps {
-  printer: Printer;
+  printer: PrinterData;
 }
 
 const PrinterInfo: React.FC<PrinterInfoProps> = ({ printer }) => {
@@ -49,17 +48,17 @@ const PrinterInfo: React.FC<PrinterInfoProps> = ({ printer }) => {
     },
     {
       label: 'IP Address',
-      value: printer.ip_address || 'N/A',
+      value: printer.ipAddress || 'N/A',
       icon: Wifi
     },
     {
       label: 'Serial Number',
-      value: printer.serial_number || 'N/A',
+      value: printer.serialNumber || 'N/A',
       icon: Info
     },
     {
       label: 'Added Date',
-      value: formatDate(printer.added_date),
+      value: formatDate(printer.addedDate),
       icon: Calendar
     }
   ];
@@ -74,8 +73,8 @@ const PrinterInfo: React.FC<PrinterInfoProps> = ({ printer }) => {
           </div>
           <Badge variant="outline" className={getStatusColor(printer.status)}>
             <span className="capitalize">{printer.status}</span>
-            {printer.sub_status && (
-              <span className="ml-1 text-xs">({printer.sub_status})</span>
+            {printer.subStatus && (
+              <span className="ml-1 text-xs">({printer.subStatus})</span>
             )}
           </Badge>
         </CardTitle>
