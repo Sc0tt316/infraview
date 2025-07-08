@@ -1,125 +1,102 @@
+
 import React from 'react';
-import { format } from 'date-fns';
-import { PrinterData } from '@/types/printers';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Info, MapPin, Building, Wifi, Calendar } from 'lucide-react';
+import { Printer } from '@/types/printer';
 
 interface PrinterInfoProps {
-  printer: PrinterData;
+  printer: Printer;
 }
 
 const PrinterInfo: React.FC<PrinterInfoProps> = ({ printer }) => {
-  const getStatusBadge = () => {
-    if (!printer.status) return null;
-    
-    let badgeClasses = "capitalize text-white font-medium text-xs";
-    switch (printer.status) {
-      case 'online': badgeClasses += " bg-green-500"; break;
-      case 'offline': badgeClasses += " bg-gray-500"; break;
-      case 'error': badgeClasses += " bg-red-500"; break;
-      case 'warning': badgeClasses += " bg-amber-500"; break;
-      case 'maintenance': badgeClasses += " bg-blue-500"; break;
-      default: badgeClasses += " bg-gray-500"; break;
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'online':
+      case 'active':
+        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100';
+      case 'offline':
+        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100';
+      case 'warning':
+        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100';
+      case 'error':
+        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100';
+      default:
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-100';
     }
-    
-    return <Badge className={badgeClasses}>{printer.status}</Badge>;
   };
 
-  const getSubStatusDisplay = () => {
-    // If printer is offline or has connection issues, show "No Connection"
-    if (printer.status === 'offline' || printer.status === 'error') {
-      return (
-        <div className="text-xs text-red-400 mt-1">
-          No Connection
-        </div>
-      );
-    }
-    
-    // Otherwise show the regular sub status if available
-    if (printer.subStatus) {
-      return (
-        <div className="text-xs text-muted-foreground mt-1">
-          {printer.subStatus}
-        </div>
-      );
-    }
-    
-    return null;
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return 'N/A';
+    return new Date(dateString).toLocaleDateString();
   };
+
+  const infoItems = [
+    {
+      label: 'Model',
+      value: printer.model,
+      icon: Info
+    },
+    {
+      label: 'Location',
+      value: printer.location,
+      icon: MapPin
+    },
+    {
+      label: 'Department',
+      value: printer.department || 'N/A',
+      icon: Building
+    },
+    {
+      label: 'IP Address',
+      value: printer.ip_address || 'N/A',
+      icon: Wifi
+    },
+    {
+      label: 'Serial Number',
+      value: printer.serial_number || 'N/A',
+      icon: Info
+    },
+    {
+      label: 'Added Date',
+      value: formatDate(printer.added_date),
+      icon: Calendar
+    }
+  ];
 
   return (
-    <div className="w-full">
-      <h3 className="text-base font-medium mb-3">Printer Information</h3>
-      
-      {/* Compact grid layout for printer info */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4 text-sm">
-        <div className="space-y-1">
-          <div className="text-xs text-muted-foreground font-medium">NAME</div>
-          <div className="font-medium truncate">{printer.name}</div>
-        </div>
-        
-        <div className="space-y-1">
-          <div className="text-xs text-muted-foreground font-medium">MODEL</div>
-          <div className="truncate">{printer.model}</div>
-        </div>
-        
-        <div className="space-y-1">
-          <div className="text-xs text-muted-foreground font-medium">LOCATION</div>
-          <div className="truncate">{printer.location}</div>
-        </div>
-        
-        <div className="space-y-1">
-          <div className="text-xs text-muted-foreground font-medium">STATUS</div>
-          <div>
-            {getStatusBadge()}
-            {getSubStatusDisplay()}
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Info className="h-5 w-5" />
+            Printer Information
           </div>
-        </div>
-        
-        <div className="space-y-1">
-          <div className="text-xs text-muted-foreground font-medium">IP ADDRESS</div>
-          <div className="truncate text-xs">{printer.ipAddress || 'N/A'}</div>
-        </div>
-        
-        <div className="space-y-1">
-          <div className="text-xs text-muted-foreground font-medium">DEPARTMENT</div>
-          <div className="truncate">{printer.department || 'N/A'}</div>
-        </div>
-      </div>
-      
-      {/* Additional info in second row */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 text-sm mt-4 pt-3 border-t">
-        <div className="space-y-1">
-          <div className="text-xs text-muted-foreground font-medium">SERIAL NUMBER</div>
-          <div className="truncate text-xs">{printer.serialNumber || 'N/A'}</div>
-        </div>
-        
-        <div className="space-y-1">
-          <div className="text-xs text-muted-foreground font-medium">DATE ADDED</div>
-          <div className="text-xs">
-            {printer.addedDate ? format(new Date(printer.addedDate), 'MMM dd, yyyy') : 'N/A'}
-          </div>
-        </div>
-        
-        <div className="space-y-1">
-          <div className="text-xs text-muted-foreground font-medium">DRUM STATUS</div>
-          <div className="text-xs">
-            {printer.supplies && typeof printer.supplies === 'object' ? (
-              (() => {
-                const drumLevel = (printer.supplies as any).drum || 85;
-                const drumColor = drumLevel < 10 ? "text-red-500" : drumLevel < 25 ? "text-amber-500" : "text-green-600";
-                return (
-                  <span className={drumColor}>
-                    {drumLevel}% - {drumLevel > 75 ? 'Good' : drumLevel > 25 ? 'Fair' : 'Replace Soon'}
-                  </span>
-                );
-              })()
-            ) : (
-              <span className="text-muted-foreground">Not Available</span>
+          <Badge variant="outline" className={getStatusColor(printer.status)}>
+            <span className="capitalize">{printer.status}</span>
+            {printer.sub_status && (
+              <span className="ml-1 text-xs">({printer.sub_status})</span>
             )}
-          </div>
+          </Badge>
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {infoItems.map((item, index) => {
+            const IconComponent = item.icon;
+            return (
+              <div key={index} className="flex items-center gap-3">
+                <IconComponent className="h-4 w-4 text-muted-foreground" />
+                <div className="flex-1">
+                  <div className="text-sm font-medium">{item.label}</div>
+                  <div className="text-sm text-muted-foreground">{item.value}</div>
+                </div>
+              </div>
+            );
+          })}
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 
