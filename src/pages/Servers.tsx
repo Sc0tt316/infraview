@@ -31,6 +31,7 @@ const Servers = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [serverToDelete, setServerToDelete] = useState<string | null>(null);
   const [serverToEdit, setServerToEdit] = useState<ServerData | null>(null);
+  const [showAddDialog, setShowAddDialog] = useState(false);
   const { servers, isLoading, refetchServers } = useServers();
 
   const handleRefresh = async () => {
@@ -39,12 +40,7 @@ const Servers = () => {
     setTimeout(() => setIsRefreshing(false), 1000);
   };
 
-  const handleServerClick = (server: ServerData) => {
-    console.log('Server clicked:', server);
-    // TODO: Implement server detail modal or navigation
-  };
-
-  const handleAddServer = async (serverData: ServerData) => {
+  const handleAddServer = () => {
     if (!canAddServers) {
       toast({
         title: "Access Denied",
@@ -53,10 +49,19 @@ const Servers = () => {
       });
       return;
     }
-    
+    setShowAddDialog(true);
+  };
+
+  const handleServerClick = (server: ServerData) => {
+    console.log('Server clicked:', server);
+    // TODO: Implement server detail modal or navigation
+  };
+
+  const handleAddServerSubmit = async (serverData: ServerData) => {
     const addedServer = await serverService.addServer(serverData);
     if (addedServer) {
       await refetchServers();
+      setShowAddDialog(false);
     }
   };
 
@@ -170,8 +175,9 @@ const Servers = () => {
       <ServersHeader
         isLoading={isLoading}
         isRefreshing={isRefreshing}
-        isAdmin={canManageServers}
+        isAdmin={canAddServers}
         onRefresh={handleRefresh}
+        onAddServer={handleAddServer}
       />
 
       <ServersContent
@@ -193,8 +199,11 @@ const Servers = () => {
       />
 
       {/* Add Server Dialog */}
-      {canAddServers && (
-        <AddServerDialog onAddServer={handleAddServer} />
+      {showAddDialog && (
+        <AddServerDialog 
+          onAddServer={handleAddServerSubmit}
+          onClose={() => setShowAddDialog(false)}
+        />
       )}
 
       {/* Delete Confirmation Dialog */}

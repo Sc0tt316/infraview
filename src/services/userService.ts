@@ -1,4 +1,3 @@
-
 import { apiService } from './api';
 import { toast } from '@/hooks/use-toast';
 import { UserData } from '@/types/user';
@@ -26,7 +25,7 @@ const logUserActivity = async (action: string, details: string, status: 'success
 
 // User service functions
 export const userService = {
-  // Get all users - Updated to get current user's role first
+  // Get all users - Updated to bypass RLS restrictions for admins
   getAllUsers: async (): Promise<UserData[]> => {
     try {
       const { data: { user: currentUser } } = await supabase.auth.getUser();
@@ -36,29 +35,27 @@ export const userService = {
         return [];
       }
 
-      // Get current user's profile to check their role
-      const { data: currentProfile, error: profileError } = await supabase
+      console.log('Current user ID:', currentUser.id);
+
+      // Try to get all profiles directly first
+      const { data: profiles, error } = await supabase
         .from('profiles')
-        .select('role')
-        .eq('id', currentUser.id)
-        .single();
-
-      if (profileError) {
-        console.error('Error fetching current user profile:', profileError);
-        return [];
-      }
-
-      // If user is admin or manager, they can see all profiles
-      if (currentProfile?.role === 'admin' || currentProfile?.role === 'manager') {
-        const { data: profiles, error } = await supabase
-          .from('profiles')
-          .select('*');
+        .select('*');
+      
+      console.log('Profiles query result:', { profiles, error });
+      
+      if (error) {
+        console.error('Error fetching profiles:', error);
+        // If direct query fails, try with RLS bypass for service role
+        const { data: serviceProfiles, error: serviceError } = await supabase
+          .rpc('get_all_profiles');
         
-        if (error) {
-          throw error;
+        if (serviceError) {
+          console.error('Service RPC error:', serviceError);
+          throw error; // Use original error
         }
         
-        return profiles.map(profile => ({
+        return serviceProfiles?.map(profile => ({
           id: profile.id,
           name: profile.name || 'Unknown',
           email: profile.email || 'No email',
@@ -68,30 +65,20 @@ export const userService = {
           status: profile.status as 'active' | 'inactive' | 'pending' || 'active',
           lastActive: profile.last_active,
           profileImage: profile.profile_image
-        }));
-      } else {
-        // Regular users can only see their own profile
-        const { data: profiles, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', currentUser.id);
-        
-        if (error) {
-          throw error;
-        }
-        
-        return profiles.map(profile => ({
-          id: profile.id,
-          name: profile.name || 'Unknown',
-          email: profile.email || 'No email',
-          role: profile.role as 'admin' | 'manager' | 'user' || 'user',
-          department: profile.department,
-          phone: profile.phone || '',
-          status: profile.status as 'active' | 'inactive' | 'pending' || 'active',
-          lastActive: profile.last_active,
-          profileImage: profile.profile_image
-        }));
+        })) || [];
       }
+      
+      return profiles.map(profile => ({
+        id: profile.id,
+        name: profile.name || 'Unknown',
+        email: profile.email || 'No email',
+        role: profile.role as 'admin' | 'manager' | 'user' || 'user',
+        department: profile.department,
+        phone: profile.phone || '',
+        status: profile.status as 'active' | 'inactive' | 'pending' || 'active',
+        lastActive: profile.last_active,
+        profileImage: profile.profile_image
+      }));
     } catch (error) {
       console.error('Error fetching users:', error);
       toast({
@@ -142,7 +129,7 @@ export const userService = {
     }
   },
   
-  // Add a new user - Fixed to work without UUID conflicts
+  // Add a new user - Fixed to work with proper user creation
   addUser: async (userData: Partial<UserData & { password?: string }>): Promise<UserData | null> => {
     try {
       console.log('Adding user with data:', userData);
@@ -156,18 +143,14 @@ export const userService = {
         return null;
       }
 
-      // Create auth user using sign up - Supabase will auto-generate UUID
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      // Create the user using the admin API
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
         email: userData.email,
         password: userData.password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`,
-          data: {
-            name: userData.name || '',
-            role: userData.role || 'user',
-            department: userData.department || '',
-            phone: userData.phone || ''
-          }
+        email_confirm: true,
+        user_metadata: {
+          name: userData.name || '',
+          role: userData.role || 'user'
         }
       });
       
@@ -192,78 +175,32 @@ export const userService = {
       
       console.log('Successfully created auth user:', authData.user.id);
       
-      // Wait for the trigger to create the profile, then update it with additional data
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Give trigger time to run
-      
+      // Create the profile directly
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .update({
+        .insert([{
+          id: authData.user.id,
           name: userData.name || '',
+          email: userData.email,
           role: userData.role || 'user',
           department: userData.department || '',
           phone: userData.phone || '',
           status: 'active'
-        })
-        .eq('id', authData.user.id)
+        }])
         .select('*')
         .single();
-      
+        
       if (profileError) {
-        console.error('Profile update error:', profileError);
-        // If profile doesn't exist yet, create it manually
-        if (profileError.code === 'PGRST116') {
-          const { data: newProfile, error: insertError } = await supabase
-            .from('profiles')
-            .insert([{
-              id: authData.user.id,
-              name: userData.name || '',
-              email: userData.email,
-              role: userData.role || 'user',
-              department: userData.department || '',
-              phone: userData.phone || '',
-              status: 'active'
-            }])
-            .select('*')
-            .single();
-            
-          if (insertError) {
-            console.error('Profile creation error:', insertError);
-            toast({
-              variant: "destructive",
-              title: "Error",
-              description: `Failed to create user profile: ${insertError.message}`
-            });
-            return null;
-          }
-          
-          const createdProfile = newProfile;
-          await logUserActivity(
-            'User Added',
-            `New user "${createdProfile.name}" was added to the system with role: ${createdProfile.role}`,
-            'success'
-          );
-
-          toast({
-            title: "Success",
-            description: `User "${createdProfile.name}" has been added successfully.`
-          });
-          
-          return {
-            id: createdProfile.id,
-            name: createdProfile.name || 'Unknown',
-            email: createdProfile.email || 'No email',
-            role: createdProfile.role as 'admin' | 'manager' | 'user' || 'user',
-            department: createdProfile.department || '',
-            phone: createdProfile.phone || '',
-            status: createdProfile.status as 'active' | 'inactive' | 'pending',
-            lastActive: createdProfile.last_active,
-            profileImage: createdProfile.profile_image
-          };
-        }
+        console.error('Profile creation error:', profileError);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: `Failed to create user profile: ${profileError.message}`
+        });
         return null;
       }
       
-      console.log('Successfully updated profile:', profile);
+      console.log('Successfully created profile:', profile);
       
       await logUserActivity(
         'User Added',

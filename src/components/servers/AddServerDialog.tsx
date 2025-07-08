@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,12 +8,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 
 interface AddServerDialogProps {
   onAddServer: (serverData: any) => void;
+  onClose?: () => void;
 }
 
 const AddServerDialog: React.FC<AddServerDialogProps> = ({
-  onAddServer
+  onAddServer,
+  onClose
 }) => {
-  const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     hostname: '',
@@ -34,9 +35,9 @@ const AddServerDialog: React.FC<AddServerDialogProps> = ({
       id: `server-${Date.now()}`,
       ...formData,
       status: 'offline' as const,
-      cpuUsage: 0, // Set to 0
-      memoryUsage: 0, // Set to 0
-      diskUsage: 0, // Set to 0
+      cpuUsage: 0,
+      memoryUsage: 0,
+      diskUsage: 0,
       uptime: '0 days',
       lastActive: new Date().toLocaleString(),
       addedDate: new Date().toISOString(),
@@ -48,7 +49,6 @@ const AddServerDialog: React.FC<AddServerDialogProps> = ({
     };
 
     onAddServer(newServer);
-    setIsOpen(false);
     setFormData({
       name: '',
       hostname: '',
@@ -67,13 +67,14 @@ const AddServerDialog: React.FC<AddServerDialogProps> = ({
     }));
   };
 
+  const handleClose = () => {
+    if (onClose) {
+      onClose();
+    }
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button className="my-[9px]">
-          Add Server
-        </Button>
-      </DialogTrigger>
+    <Dialog open={true} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Add New Server</DialogTitle>
@@ -147,7 +148,7 @@ const AddServerDialog: React.FC<AddServerDialogProps> = ({
           </div>
           
           <div className="flex justify-end space-x-2 pt-4">
-            <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>
+            <Button type="button" variant="outline" onClick={handleClose}>
               Cancel
             </Button>
             <Button type="submit">
