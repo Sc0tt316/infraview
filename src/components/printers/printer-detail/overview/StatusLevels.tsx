@@ -1,6 +1,8 @@
+
 import React from 'react';
 import { Progress } from '@/components/ui/progress';
 import { PrinterData } from '@/types/printers';
+
 interface StatusLevelsProps {
   inkLevel: number;
   paperLevel: number;
@@ -8,6 +10,7 @@ interface StatusLevelsProps {
   subStatus?: string;
   supplies?: PrinterData['supplies'];
 }
+
 const StatusLevels: React.FC<StatusLevelsProps> = ({
   supplies,
   paperLevel
@@ -20,7 +23,9 @@ const StatusLevels: React.FC<StatusLevelsProps> = ({
         magenta,
         yellow
       } = supplies;
-      return <div className="space-y-3">
+      
+      return (
+        <div className="space-y-3">
           <h4 className="text-sm font-medium">Toner Levels</h4>
           
           {/* Black Toner */}
@@ -35,7 +40,8 @@ const StatusLevels: React.FC<StatusLevelsProps> = ({
           </div>
           
           {/* Color Toners - only show if available */}
-          {cyan !== undefined && <div className="space-y-1">
+          {cyan !== undefined && (
+            <div className="space-y-1">
               <div className="flex justify-between text-xs">
                 <span>Cyan Toner</span>
                 <span className={cyan < 10 ? "text-red-500" : cyan < 25 ? "text-amber-500" : "text-green-600"}>
@@ -43,9 +49,11 @@ const StatusLevels: React.FC<StatusLevelsProps> = ({
                 </span>
               </div>
               <Progress value={cyan} className="h-2" />
-            </div>}
+            </div>
+          )}
           
-          {magenta !== undefined && <div className="space-y-1">
+          {magenta !== undefined && (
+            <div className="space-y-1">
               <div className="flex justify-between text-xs">
                 <span>Magenta Toner</span>
                 <span className={magenta < 10 ? "text-red-500" : magenta < 25 ? "text-amber-500" : "text-green-600"}>
@@ -53,9 +61,11 @@ const StatusLevels: React.FC<StatusLevelsProps> = ({
                 </span>
               </div>
               <Progress value={magenta} className="h-2" />
-            </div>}
+            </div>
+          )}
           
-          {yellow !== undefined && <div className="space-y-1">
+          {yellow !== undefined && (
+            <div className="space-y-1">
               <div className="flex justify-between text-xs">
                 <span>Yellow Toner</span>
                 <span className={yellow < 10 ? "text-red-500" : yellow < 25 ? "text-amber-500" : "text-green-600"}>
@@ -63,13 +73,17 @@ const StatusLevels: React.FC<StatusLevelsProps> = ({
                 </span>
               </div>
               <Progress value={yellow} className="h-2" />
-            </div>}
-        </div>;
+            </div>
+          )}
+        </div>
+      );
     }
     return null;
   };
+
   const renderPaperLevel = () => {
-    return <div className="space-y-3">
+    return (
+      <div className="space-y-3">
         <h4 className="text-sm font-medium">Paper Level</h4>
         <div className="space-y-1">
           <div className="flex justify-between text-xs">
@@ -80,8 +94,16 @@ const StatusLevels: React.FC<StatusLevelsProps> = ({
           </div>
           <Progress value={paperLevel} className="h-2" />
         </div>
-      </div>;
+      </div>
+    );
   };
-  return;
+
+  return (
+    <div className="space-y-4">
+      {renderTonerLevels()}
+      {renderPaperLevel()}
+    </div>
+  );
 };
+
 export default StatusLevels;

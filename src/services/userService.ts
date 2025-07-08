@@ -115,63 +115,35 @@ export const userService = {
     }
   },
   
-  // Add a new user - Fixed to work with proper user creation
+  // Add a new user - Create profile only since admin user creation requires service role
   addUser: async (userData: Partial<UserData & { password?: string }>): Promise<UserData | null> => {
     try {
       console.log('Adding user with data:', userData);
       
-      if (!userData.password || !userData.email) {
+      if (!userData.email) {
         toast({
           variant: "destructive",
           title: "Error",
-          description: "Email and password are required to create a new user."
+          description: "Email is required to create a new user."
         });
         return null;
       }
 
-      // Create the user using the admin API
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email: userData.email,
-        password: userData.password,
-        email_confirm: true,
-        user_metadata: {
-          name: userData.name || '',
-          role: userData.role || 'user'
-        }
-      });
-      
-      if (authError) {
-        console.error('Auth user creation error:', authError);
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: `Failed to create user account: ${authError.message}`
-        });
-        return null;
-      }
-      
-      if (!authData.user) {
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Failed to create user account - no user returned"
-        });
-        return null;
-      }
-      
-      console.log('Successfully created auth user:', authData.user.id);
+      // For now, we'll create a profile without auth user since admin API is not available
+      // In a real scenario, you would need service role key for user creation
+      const profileId = crypto.randomUUID();
       
       // Create the profile directly
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .insert([{
-          id: authData.user.id,
+          id: profileId,
           name: userData.name || '',
           email: userData.email,
           role: userData.role || 'user',
           department: userData.department || '',
           phone: userData.phone || '',
-          status: 'active'
+          status: 'pending' // Set to pending since no auth user is created
         }])
         .select('*')
         .single();
@@ -196,7 +168,7 @@ export const userService = {
 
       toast({
         title: "Success",
-        description: `User "${profile.name}" has been added successfully.`
+        description: `User "${profile.name}" has been added successfully. Note: User will need to sign up separately.`
       });
       
       return {
@@ -259,27 +231,6 @@ export const userService = {
       }
       
       console.log('Successfully updated profile:', profile);
-      
-      // If email is being updated, update the auth user's email too
-      if (updateData.email && updateData.email !== profile.email) {
-        try {
-          const { error: emailError } = await supabase.auth.updateUser({
-            email: updateData.email
-          });
-          
-          if (emailError) {
-            console.error('Error updating auth email:', emailError);
-            // Don't fail the whole operation if email update fails
-            toast({
-              title: "Warning",
-              description: "Profile updated but auth email update failed. Please contact admin.",
-              variant: "destructive"
-            });
-          }
-        } catch (emailErr) {
-          console.error('Auth email update error:', emailErr);
-        }
-      }
       
       // Log the activity
       await logUserActivity(

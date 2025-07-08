@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Separator } from '@/components/ui/separator';
 import { printerService } from '@/services/printer';
 import { toast } from '@/hooks/use-toast';
+
 interface EnhancedPrinterCardProps {
   printer: PrinterData;
   onEdit?: (printer: PrinterData) => void;
@@ -15,6 +17,7 @@ interface EnhancedPrinterCardProps {
   onViewDetails?: (printer: PrinterData) => void;
   isAdmin?: boolean;
 }
+
 const EnhancedPrinterCard: React.FC<EnhancedPrinterCardProps> = ({
   printer,
   onEdit,
@@ -23,6 +26,7 @@ const EnhancedPrinterCard: React.FC<EnhancedPrinterCardProps> = ({
   isAdmin = false
 }) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
+
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case 'online':
@@ -37,6 +41,7 @@ const EnhancedPrinterCard: React.FC<EnhancedPrinterCardProps> = ({
         return 'bg-gray-500';
     }
   };
+
   const getStatusBadgeVariant = (status: string) => {
     switch (status.toLowerCase()) {
       case 'online':
@@ -51,9 +56,11 @@ const EnhancedPrinterCard: React.FC<EnhancedPrinterCardProps> = ({
         return 'secondary';
     }
   };
+
   const handleRefresh = async (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsRefreshing(true);
+
     try {
       if (printer.ipAddress) {
         await printerService.pollPrinter({
@@ -82,6 +89,7 @@ const EnhancedPrinterCard: React.FC<EnhancedPrinterCardProps> = ({
       setTimeout(() => setIsRefreshing(false), 1000);
     }
   };
+
   const handleEdit = (e: React.MouseEvent) => {
     e.stopPropagation();
     console.log('Edit button clicked for printer:', printer);
@@ -89,6 +97,7 @@ const EnhancedPrinterCard: React.FC<EnhancedPrinterCardProps> = ({
       onEdit(printer);
     }
   };
+
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
     console.log('Delete button clicked for printer:', printer);
@@ -96,6 +105,7 @@ const EnhancedPrinterCard: React.FC<EnhancedPrinterCardProps> = ({
       onDelete(printer);
     }
   };
+
   const handleCardClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
     if (target.closest('[data-radix-popper-content-wrapper]') || target.closest('button')) {
@@ -106,7 +116,9 @@ const EnhancedPrinterCard: React.FC<EnhancedPrinterCardProps> = ({
       onViewDetails(printer);
     }
   };
-  return <Card className="cursor-pointer hover:shadow-md transition-shadow duration-200 h-full" onClick={handleCardClick}>
+
+  return (
+    <Card className="cursor-pointer hover:shadow-md transition-shadow duration-200 h-full" onClick={handleCardClick}>
       <CardContent className="p-4 h-full flex flex-col">
         {/* Header */}
         <div className="flex items-start justify-between mb-4">
@@ -130,7 +142,8 @@ const EnhancedPrinterCard: React.FC<EnhancedPrinterCardProps> = ({
               {printer.status === 'online' ? <Wifi className="h-3 w-3 text-green-600" /> : <WifiOff className="h-3 w-3 text-red-600" />}
             </div>
             
-            {isAdmin && <DropdownMenu>
+            {isAdmin && (
+              <DropdownMenu>
                 <DropdownMenuTrigger asChild onClick={e => e.stopPropagation()}>
                   <Button variant="ghost" className="h-8 w-8 p-0">
                     <MoreVertical className="h-4 w-4" />
@@ -148,7 +161,8 @@ const EnhancedPrinterCard: React.FC<EnhancedPrinterCardProps> = ({
                     Delete Printer
                   </DropdownMenuItem>
                 </DropdownMenuContent>
-              </DropdownMenu>}
+              </DropdownMenu>
+            )}
           </div>
         </div>
 
@@ -173,60 +187,70 @@ const EnhancedPrinterCard: React.FC<EnhancedPrinterCardProps> = ({
                 <div className="flex-1 min-w-0">
                   <div className="flex justify-between items-center">
                     <span className="text-xs text-muted-foreground">Black</span>
-                    <span className="text-xs font-medium">{printer.inkLevel || 0}%</span>
+                    <span className="text-xs font-medium">{printer.supplies?.black || printer.inkLevel || 0}%</span>
                   </div>
                   <div className="w-full bg-muted rounded-full h-1.5 mt-1">
-                    <div className="bg-black h-1.5 rounded-full transition-all duration-300" style={{
-                    width: `${printer.inkLevel || 0}%`
-                  }} />
+                    <div 
+                      className="bg-black h-1.5 rounded-full transition-all duration-300" 
+                      style={{ width: `${printer.supplies?.black || printer.inkLevel || 0}%` }} 
+                    />
                   </div>
                 </div>
               </div>
               
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-cyan-500 rounded-sm flex-shrink-0"></div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs text-muted-foreground">Cyan</span>
-                    <span className="text-xs font-medium">57%</span>
-                  </div>
-                  <div className="w-full bg-muted rounded-full h-1.5 mt-1">
-                    <div className="bg-cyan-500 h-1.5 rounded-full transition-all duration-300" style={{
-                    width: '57%'
-                  }} />
+              {printer.supplies?.cyan !== undefined && (
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-cyan-500 rounded-sm flex-shrink-0"></div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-muted-foreground">Cyan</span>
+                      <span className="text-xs font-medium">{printer.supplies.cyan}%</span>
+                    </div>
+                    <div className="w-full bg-muted rounded-full h-1.5 mt-1">
+                      <div 
+                        className="bg-cyan-500 h-1.5 rounded-full transition-all duration-300" 
+                        style={{ width: `${printer.supplies.cyan}%` }} 
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
               
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-magenta-500 rounded-sm flex-shrink-0"></div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs text-muted-foreground">Magenta</span>
-                    <span className="text-xs font-medium">26%</span>
-                  </div>
-                  <div className="w-full bg-muted rounded-full h-1.5 mt-1">
-                    <div className="bg-magenta-500 h-1.5 rounded-full transition-all duration-300" style={{
-                    width: '26%'
-                  }} />
+              {printer.supplies?.magenta !== undefined && (
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-magenta-500 rounded-sm flex-shrink-0"></div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-muted-foreground">Magenta</span>
+                      <span className="text-xs font-medium">{printer.supplies.magenta}%</span>
+                    </div>
+                    <div className="w-full bg-muted rounded-full h-1.5 mt-1">
+                      <div 
+                        className="bg-magenta-500 h-1.5 rounded-full transition-all duration-300" 
+                        style={{ width: `${printer.supplies.magenta}%` }} 
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
               
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-yellow-400 rounded-sm flex-shrink-0"></div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs text-muted-foreground">Yellow</span>
-                    <span className="text-xs font-medium">95%</span>
-                  </div>
-                  <div className="w-full bg-muted rounded-full h-1.5 mt-1">
-                    <div className="bg-yellow-400 h-1.5 rounded-full transition-all duration-300" style={{
-                    width: '95%'
-                  }} />
+              {printer.supplies?.yellow !== undefined && (
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-yellow-400 rounded-sm flex-shrink-0"></div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-muted-foreground">Yellow</span>
+                      <span className="text-xs font-medium">{printer.supplies.yellow}%</span>
+                    </div>
+                    <div className="w-full bg-muted rounded-full h-1.5 mt-1">
+                      <div 
+                        className="bg-yellow-400 h-1.5 rounded-full transition-all duration-300" 
+                        style={{ width: `${printer.supplies.yellow}%` }} 
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Paper Level */}
@@ -236,9 +260,13 @@ const EnhancedPrinterCard: React.FC<EnhancedPrinterCardProps> = ({
                 <span className="text-xs font-medium">{printer.paperLevel || 0}%</span>
               </div>
               <div className="w-full bg-muted rounded-full h-2">
-                <div className={`h-2 rounded-full transition-all duration-300 ${(printer.paperLevel || 0) > 50 ? 'bg-green-500' : (printer.paperLevel || 0) > 20 ? 'bg-yellow-500' : 'bg-red-500'}`} style={{
-                width: `${printer.paperLevel || 0}%`
-              }} />
+                <div 
+                  className={`h-2 rounded-full transition-all duration-300 ${
+                    (printer.paperLevel || 0) > 50 ? 'bg-green-500' : 
+                    (printer.paperLevel || 0) > 20 ? 'bg-yellow-500' : 'bg-red-500'
+                  }`} 
+                  style={{ width: `${printer.paperLevel || 0}%` }} 
+                />
               </div>
             </div>
           </div>
@@ -249,12 +277,16 @@ const EnhancedPrinterCard: React.FC<EnhancedPrinterCardProps> = ({
           <Separator className="mb-3" />
           <div className="flex justify-between items-center text-xs text-muted-foreground">
             <span className="truncate">{printer.location}</span>
-            {printer.department && <Badge variant="outline" className="text-xs">
+            {printer.department && (
+              <Badge variant="outline" className="text-xs">
                 {printer.department}
-              </Badge>}
+              </Badge>
+            )}
           </div>
         </div>
       </CardContent>
-    </Card>;
+    </Card>
+  );
 };
+
 export default EnhancedPrinterCard;
