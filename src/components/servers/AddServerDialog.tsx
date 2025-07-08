@@ -1,12 +1,15 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
 interface AddServerDialogProps {
   onAddServer: (serverData: any) => void;
 }
+
 const AddServerDialog: React.FC<AddServerDialogProps> = ({
   onAddServer
 }) => {
@@ -20,19 +23,20 @@ const AddServerDialog: React.FC<AddServerDialogProps> = ({
     serverType: '',
     operatingSystem: ''
   });
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.hostname || !formData.ipAddress) {
-      // Removed toast notification
       return;
     }
+
     const newServer = {
       id: `server-${Date.now()}`,
       ...formData,
-      status: 'online' as const,
-      cpuUsage: Math.floor(Math.random() * 100),
-      memoryUsage: Math.floor(Math.random() * 100),
-      diskUsage: Math.floor(Math.random() * 100),
+      status: 'offline' as const,
+      cpuUsage: 0, // Set to 0
+      memoryUsage: 0, // Set to 0
+      diskUsage: 0, // Set to 0
       uptime: '0 days',
       lastActive: new Date().toLocaleString(),
       addedDate: new Date().toISOString(),
@@ -42,6 +46,7 @@ const AddServerDialog: React.FC<AddServerDialogProps> = ({
         storage: '500GB SSD'
       }
     };
+
     onAddServer(newServer);
     setIsOpen(false);
     setFormData({
@@ -53,16 +58,17 @@ const AddServerDialog: React.FC<AddServerDialogProps> = ({
       serverType: '',
       operatingSystem: ''
     });
-
-    // Removed toast notification
   };
+
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
   };
-  return <Dialog open={isOpen} onOpenChange={setIsOpen}>
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button className="my-[9px]">
           Add Server
@@ -150,6 +156,8 @@ const AddServerDialog: React.FC<AddServerDialogProps> = ({
           </div>
         </form>
       </DialogContent>
-    </Dialog>;
+    </Dialog>
+  );
 };
+
 export default AddServerDialog;

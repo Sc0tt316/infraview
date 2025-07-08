@@ -81,13 +81,13 @@ export const addPrinter = async (printerData: PrinterFormData): Promise<string |
       printerName: data.name,
       action: 'Printer Added',
       timestamp: new Date().toISOString(),
-      details: `New printer "${data.name}" (${data.model}) was added to ${data.location} with initial empty values`,
+      details: `New printer "${data.name}" (${data.model}) was added to ${data.location} with all levels set to 0`,
       status: 'success'
     });
 
     toast({
       title: "Printer Added",
-      description: `${data.name} has been successfully added with initial empty values.`
+      description: `${data.name} has been successfully added with all levels set to 0.`
     });
 
     return data.id;

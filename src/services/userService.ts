@@ -1,3 +1,4 @@
+
 import { apiService } from './api';
 import { toast } from '@/hooks/use-toast';
 import { UserData } from '@/types/user';
@@ -25,28 +26,72 @@ const logUserActivity = async (action: string, details: string, status: 'success
 
 // User service functions
 export const userService = {
-  // Get all users
+  // Get all users - Updated to get current user's role first
   getAllUsers: async (): Promise<UserData[]> => {
     try {
-      const { data: profiles, error } = await supabase
-        .from('profiles')
-        .select('*');
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
       
-      if (error) {
-        throw error;
+      if (!currentUser) {
+        console.log('No authenticated user found');
+        return [];
       }
-      
-      return profiles.map(profile => ({
-        id: profile.id,
-        name: profile.name || 'Unknown',
-        email: profile.email || 'No email',
-        role: profile.role as 'admin' | 'manager' | 'user' || 'user',
-        department: profile.department,
-        phone: profile.phone || '',
-        status: profile.status as 'active' | 'inactive' | 'pending' || 'active',
-        lastActive: profile.last_active,
-        profileImage: profile.profile_image
-      }));
+
+      // Get current user's profile to check their role
+      const { data: currentProfile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', currentUser.id)
+        .single();
+
+      if (profileError) {
+        console.error('Error fetching current user profile:', profileError);
+        return [];
+      }
+
+      // If user is admin or manager, they can see all profiles
+      if (currentProfile?.role === 'admin' || currentProfile?.role === 'manager') {
+        const { data: profiles, error } = await supabase
+          .from('profiles')
+          .select('*');
+        
+        if (error) {
+          throw error;
+        }
+        
+        return profiles.map(profile => ({
+          id: profile.id,
+          name: profile.name || 'Unknown',
+          email: profile.email || 'No email',
+          role: profile.role as 'admin' | 'manager' | 'user' || 'user',
+          department: profile.department,
+          phone: profile.phone || '',
+          status: profile.status as 'active' | 'inactive' | 'pending' || 'active',
+          lastActive: profile.last_active,
+          profileImage: profile.profile_image
+        }));
+      } else {
+        // Regular users can only see their own profile
+        const { data: profiles, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', currentUser.id);
+        
+        if (error) {
+          throw error;
+        }
+        
+        return profiles.map(profile => ({
+          id: profile.id,
+          name: profile.name || 'Unknown',
+          email: profile.email || 'No email',
+          role: profile.role as 'admin' | 'manager' | 'user' || 'user',
+          department: profile.department,
+          phone: profile.phone || '',
+          status: profile.status as 'active' | 'inactive' | 'pending' || 'active',
+          lastActive: profile.last_active,
+          profileImage: profile.profile_image
+        }));
+      }
     } catch (error) {
       console.error('Error fetching users:', error);
       toast({
